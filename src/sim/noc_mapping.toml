@@ -1,0 +1,16 @@
+[[mapping]]
+destination = [0, 1]
+src_reg = "RNOut"
+dst_reg = "RSIn"
+[[mapping]]
+destination = [0, -1]
+src_reg = "RSOut"
+dst_reg = "RNIn"
+[[mapping]]
+destination = [1, 0]
+src_reg = "REOut"
+dst_reg = "RWIn"
+[[mapping]]
+destination = [-1, 0]
+src_reg = "RWOut"
+dst_reg = "REIn"

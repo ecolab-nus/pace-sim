@@ -1,3 +1,2 @@
-pub mod machine;
 pub mod isa;
-pub mod simulation;
+pub mod sim;
