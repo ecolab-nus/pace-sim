@@ -20,7 +20,7 @@ pub fn parse_add(s: &str) -> IResult<&str, Instruction> {
     let (s, b) = parse_register(s)?;
     let (s, _) = delimited(space0, tag(","), space0).parse(s)?;
     let (s, c) = parse_register(s)?;
-    Ok((s, Instruction::Add(a, b, c)))
+    Ok((s, Instruction::ADD(a, b, c)))
 }
 
 pub fn parse_sub(s: &str) -> IResult<&str, Instruction> {
@@ -31,5 +31,5 @@ pub fn parse_sub(s: &str) -> IResult<&str, Instruction> {
     let (s, b) = parse_register(s)?;
     let (s, _) = delimited(space0, tag(","), space0).parse(s)?;
     let (s, c) = parse_register(s)?;
-    Ok((s, Instruction::Sub(a, b, c)))
+    Ok((s, Instruction::SUB(a, b, c)))
 }

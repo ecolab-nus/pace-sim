@@ -4,10 +4,35 @@ use super::{execute, parser, registers::Register};
 
 #[derive(Debug, Clone)]
 pub enum Instruction {
-    Nop,
-    Add(Register, Register, Register),
-    Sub(Register, Register, Register),
-    Load(Register, Register),
+    NOP,
+    ADD(Register, Register, Register),
+    SUB(Register, Register, Register),
+    MULT(Register, Register, Register),
+    SEXT(Register, Register),
+    DIV(Register, Register, Register),
+    VADD(Register, Register, Register),
+    VMUL(Register, Register, Register),
+    LS(Register, Register, Register),
+    RS(Register, Register, Register),
+    ASR(Register, Register, Register),
+    AND(Register, Register, Register),
+    OR(Register, Register, Register),
+    XOR(Register, Register, Register),
+    SEL(Register, Register, Register),
+    CMERGE(Register, Register, Register),
+    CMP(Register, Register, Register),
+    CLT(Register, Register, Register),
+    BR(Register, Register),
+    CGT(Register, Register, Register),
+    MOVCL(Register, Register, Register),
+    JUMP(Register),
+    MOVC(Register, Register),
+    LOADD(Register, Register, Register),
+    STORED(Register, Register, Register),
+    LOAD(Register, Register),
+    STORE(Register, Register),
+    LOADB(Register, Register),
+    STOREB(Register, Register),
 }
 
 #[derive(Debug, Clone)]
@@ -28,16 +53,17 @@ impl Default for PEState {
 impl PEState {
     pub fn execute(&mut self, instruction: Instruction) {
         match instruction {
-            Instruction::Nop => {}
-            Instruction::Add(_, _, _) => {
+            Instruction::NOP => {}
+            Instruction::ADD(_, _, _) => {
                 execute::arith::execute_add(self, instruction);
             }
-            Instruction::Sub(_, _, _) => {
+            Instruction::SUB(_, _, _) => {
                 execute::arith::execute_sub(self, instruction);
             }
-            Instruction::Load(_, _) => {
+            Instruction::LOAD(_, _) => {
                 execute::mem::execute_load(self, instruction);
             }
+            _ => todo!(),
         }
     }
 

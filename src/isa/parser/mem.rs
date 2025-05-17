@@ -4,7 +4,7 @@ use nom::{
 };
 
 /// Top parser for all arithmetic and logic instructions
-pub fn top(s: &str) -> IResult<&str, Instruction> {
+pub fn top(_: &str) -> IResult<&str, Instruction> {
     todo!()
 }
 
@@ -14,5 +14,5 @@ pub fn parse_load(s: &str) -> IResult<&str, Instruction> {
     let (s, a) = parse_register(s)?;
     let (s, _) = delimited(space0, tag(","), space0).parse(s)?;
     let (s, b) = parse_register(s)?;
-    Ok((s, Instruction::Load(a, b)))
+    Ok((s, Instruction::LOAD(a, b)))
 }
