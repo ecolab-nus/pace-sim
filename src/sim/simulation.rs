@@ -1,20 +1,22 @@
-use crate::isa::instruction::parse_instruction;
-use crate::isa::registers;
 use serde::Deserialize;
 
+use crate::isa::parse::top::parse_configuration;
 use crate::sim::pe::PE;
 
-use super::noc::DEFAULT_NOC_MAPPING;
-
+#[derive(Debug, Clone)]
 pub struct Grid {
     pub shape: (usize, usize),
     pub pes: Vec<PE>,
 }
 
+pub trait Update {
+    fn update(&self, grid: &Grid) -> Grid;
+}
+
 #[derive(Debug, Deserialize)]
 pub struct PEConfig {
     pub coordinates: (usize, usize),
-    pub instructions: Vec<String>,
+    pub configuration: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -52,58 +54,30 @@ impl Grid {
             );
 
             // now parse the instructions and initialize the PE instruction memory
-            for instruction in pe_config.instructions {
-                let (input_str, instruction) = parse_instruction(&instruction).unwrap();
+            for configuration_str in pe_config.configuration {
+                let (input_str, configuration) = parse_configuration(&configuration_str).unwrap();
                 assert!(
                     input_str.is_empty(),
                     "Invalid instruction: {:?}",
-                    instruction
+                    configuration
                 );
-                pe.instructions.push(instruction);
+                pe.configurations.push(configuration);
             }
         }
         Grid { shape, pes }
     }
 
     pub fn pe_at(&self, x: usize, y: usize) -> &PE {
+        assert!(x < self.shape.0 && y < self.shape.1, "Invalid coordinates");
         &self.pes[y * self.shape.0 + x]
     }
 
     pub fn pe_at_mut(&mut self, x: usize, y: usize) -> &mut PE {
+        assert!(x < self.shape.0 && y < self.shape.1, "Invalid coordinates");
         &mut self.pes[y * self.shape.0 + x]
     }
 
     pub fn simulate(&mut self) {
-        for x in 0..self.shape.0 {
-            for y in 0..self.shape.1 {
-                let pe = self.pe_at_mut(x, y);
-                assert!(
-                    pe.is_initialized(),
-                    "PE at coordinates {} {} is not initialized",
-                    x,
-                    y
-                );
-                pe.step();
-
-                // First collect all the values we need to transfer
-                let mut transfers = Vec::new();
-                for effect in DEFAULT_NOC_MAPPING.mapping.iter() {
-                    let src_value = pe
-                        .inner_state
-                        .get_reg_value(registers::reg_name_to_index(&effect.src_reg).unwrap());
-                    let (x_offset, y_offset) = effect.destination;
-                    let (x_dest, y_dest) = (x + x_offset, y + y_offset);
-                    transfers.push((x_dest, y_dest, effect.dst_reg.clone(), src_value));
-                }
-
-                // Now perform all the transfers
-                for (x_dest, y_dest, dst_reg, value) in transfers {
-                    let pe_dest = self.pe_at_mut(x_dest, y_dest);
-                    pe_dest
-                        .inner_state
-                        .set_reg_value(registers::reg_name_to_index(&dst_reg).unwrap(), value);
-                }
-            }
-        }
+        todo!();
     }
 }

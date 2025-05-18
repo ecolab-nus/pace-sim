@@ -1,8 +1,13 @@
-use crate::isa::instruction::{Instruction, PEState};
+use crate::isa::state::PEState;
 
-pub fn execute_load(_: &mut PEState, instruction: Instruction) {
-    let Instruction::LOAD(_, _) = instruction else {
-        panic!("Invalid instruction: {:?}", instruction);
-    };
+pub fn execute_load(_: &mut PEState, _: i64) {
+    todo!()
+}
+
+pub fn execute_store(_: &mut PEState, _: i64) {
+    todo!()
+}
+
+pub fn execute_loadb(_: &mut PEState, _: i64) {
     todo!()
 }
