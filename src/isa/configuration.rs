@@ -1,7 +1,7 @@
-use crate::isa::{instruction::Instruction, router::RouterConfig};
+use crate::isa::{operation::Operation, router::RouterConfig};
 
 #[derive(Debug, Clone)]
 pub struct Configuration {
-    pub instruction: Instruction,
+    pub instruction: Operation,
     pub router_config: RouterConfig,
 }

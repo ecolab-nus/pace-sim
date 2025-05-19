@@ -9,8 +9,13 @@ pub struct Grid {
     pub pes: Vec<PE>,
 }
 
+/// When updating the wires, the updated Grid is given to the next updates
+/// When updating the regs, the updated Grid is not given to the next updates
+/// So, update wires are performed first,
+/// Update regs are performed by the end after all wires are updated,
 pub trait Update {
-    fn update(&self, grid: &Grid) -> Grid;
+    fn update_reg(&self, grid: &Grid) -> Grid;
+    fn update_wire(&self, grid: &Grid) -> Grid;
 }
 
 #[derive(Debug, Deserialize)]

@@ -1,11 +1,11 @@
 use nom::{IResult, bytes::complete::tag};
 
-use crate::isa::instruction::{Instruction, InstructionParser};
+use crate::isa::operation::Operation;
 
 // TODO
-pub struct Add {}
-impl InstructionParser for Add {
-    fn parse(s: &str) -> IResult<&str, Instruction> {
-        todo!()
-    }
-}
+// pub struct Add {}
+// impl InstructionParser for Add {
+//     fn parse(s: &str) -> IResult<&str, Operation> {
+//         todo!()
+//     }
+// }
