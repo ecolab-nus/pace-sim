@@ -1,13 +1,5 @@
 use crate::isa::router::{RouterInDir, RouterSwitchConfig};
 
-pub type Register = usize;
-
-const N_REGS: usize = 12;
-const REGS: [&str; N_REGS] = [
-    "ALUOut", "ALUReg", "SIMDOut", "NorthIn", "SouthIn", "WestIn", "EastIn", "NorthOut",
-    "SouthOut", "WestOut", "EastOut", "ALURes",
-];
-
 #[derive(Debug, Clone, Copy)]
 pub struct RegisterFile {
     pub reg_north_in: i64,
