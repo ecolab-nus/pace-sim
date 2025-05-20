@@ -1,6 +1,6 @@
 use core::panic;
 
-use super::state::{ExecuteCombinatorial, PESignals, PEState};
+use super::state::PEState;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum RouterInDir {

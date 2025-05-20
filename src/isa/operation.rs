@@ -1,6 +1,6 @@
 use nom::IResult;
 
-use super::state::{ExecuteCombinatorial, PESignals, PEState};
+use super::state::{PESignals, PEState};
 
 #[derive(Debug, Clone)]
 pub enum Operation {
@@ -35,8 +35,9 @@ pub enum Operation {
     STOREB,
 }
 
-impl ExecuteCombinatorial for Operation {
-    fn execute_combinatorial(&self, state: &PEState) -> PESignals {
+impl Operation {
+    /// Execute the operation and update the wire signals (TODOs)
+    pub fn execute_combinatorial(&self, state: &PEState) -> PESignals {
         let mut new_signals = state.signals.clone();
         match self {
             Operation::ADD => {

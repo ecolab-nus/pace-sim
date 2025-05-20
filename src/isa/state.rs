@@ -67,14 +67,6 @@ impl Default for PEState {
 //     }
 // }
 
-pub trait ExecuteCombinatorial {
-    fn execute_combinatorial(&self, state: &PEState) -> PESignals;
-}
-
-pub trait ExecuteSequential {
-    fn execute_sequential(&self, state: &PEState) -> PERegisters;
-}
-
 impl Default for PERegisters {
     fn default() -> Self {
         PERegisters {
