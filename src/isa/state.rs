@@ -9,6 +9,7 @@ pub struct PERegisters {
     pub reg_op1: i64,
     pub reg_op2: i64,
     pub reg_res: i64,
+    pub reg_predicate: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -77,6 +78,7 @@ impl Default for PERegisters {
             reg_op1: 0,
             reg_op2: 0,
             reg_res: 0,
+            reg_predicate: false,
         }
     }
 }

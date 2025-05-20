@@ -1,5 +1,3 @@
-use nom::IResult;
-
 use super::state::{PESignals, PEState};
 
 #[derive(Debug, Clone)]
