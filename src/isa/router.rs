@@ -13,7 +13,7 @@ pub enum RouterInDir {
     Open,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct RouterSwitchConfig {
     pub predicate: RouterInDir,
     pub alu_op1: RouterInDir,
@@ -38,29 +38,45 @@ impl Default for RouterSwitchConfig {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct RouterExtraConfig {
-    pub input_register_bypass: RouterRegisterBypassConfig,
-    pub input_register_write: RouterRegisterWriteConfig,
+    pub input_register_bypass: DirectionsOpt,
+    pub input_register_write: DirectionsOpt,
 }
 
-#[derive(Debug, Clone)]
-pub struct RouterRegisterBypassConfig {
+pub enum Direction {
+    North,
+    South,
+    West,
+    East,
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct DirectionsOpt {
     pub north: bool,
     pub south: bool,
     pub west: bool,
     pub east: bool,
 }
 
-#[derive(Debug, Clone)]
-pub struct RouterRegisterWriteConfig {
-    pub north: bool,
-    pub south: bool,
-    pub west: bool,
-    pub east: bool,
+impl Default for DirectionsOpt {
+    fn default() -> Self {
+        Self {
+            north: false,
+            south: false,
+            west: false,
+            east: false,
+        }
+    }
 }
 
-#[derive(Debug, Clone)]
+impl DirectionsOpt {
+    pub fn is_default(&self) -> bool {
+        self.north == false && self.south == false && self.west == false && self.east == false
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct RouterConfig {
     pub switch_config: RouterSwitchConfig,
     pub extra_config: RouterExtraConfig,
