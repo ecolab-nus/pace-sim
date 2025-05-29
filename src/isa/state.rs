@@ -23,12 +23,13 @@ pub struct PESignals {
     pub wire_south_out: Option<u64>,
     pub wire_west_out: Option<u64>,
     pub wire_east_out: Option<u64>,
+    pub wire_dmem_addr: Option<u64>,
+    pub wire_dmem_data: Option<u64>,
 }
 
 #[derive(Debug, Clone)]
 pub struct PEState {
     pub regs: PERegisters,
-    pub router_config: RouterConfig,
     pub signals: PESignals,
 }
 
@@ -36,7 +37,6 @@ impl Default for PEState {
     fn default() -> Self {
         PEState {
             regs: PERegisters::default(),
-            router_config: RouterConfig::default(),
             signals: PESignals::default(),
         }
     }
@@ -95,6 +95,8 @@ impl Default for PESignals {
             wire_west_out: None,
             wire_east_out: None,
             wire_alu_out: 0,
+            wire_dmem_addr: None,
+            wire_dmem_data: None,
         }
     }
 }

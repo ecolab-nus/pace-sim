@@ -1,10 +1,11 @@
 use super::{state::PEState, value::ScalarValue};
 
+type Immediate = Option<u16>;
 #[derive(Debug, Clone)]
 pub enum Operation {
     NOP,
-    ADD,
-    SUB,
+    ADD(Immediate),
+    SUB(Immediate),
     MULT,
     SEXT,
     DIV,
@@ -37,16 +38,22 @@ impl Operation {
     /// Execute the operation and update the wire signals (TODOs)
     pub fn execute_combinatorial(&self, state: &mut PEState) {
         match self {
-            Operation::ADD => {
+            Operation::ADD(immediate) => {
                 // converting the u64 to scalar value
                 let op1: i16 = ScalarValue::from(state.regs.reg_op1).into();
-                let op2: i16 = ScalarValue::from(state.regs.reg_op2).into();
+                let op2: i16 = immediate
+                    .map(|i| i as i16)
+                    .unwrap_or(ScalarValue::from(state.regs.reg_op2).into());
                 // wrapping_add ignores overflows
                 state.signals.wire_alu_out = (op1.wrapping_add(op2) as u16) as u64;
             }
-            Operation::SUB => {
+            Operation::SUB(immediate) => {
                 let op1: i16 = ScalarValue::from(state.regs.reg_op1).into();
-                let op2: i16 = ScalarValue::from(state.regs.reg_op2).into();
+                // op2 from immediate or from reg_op2, depending on the msb bit,
+                // this is represented by the immediate field
+                let op2: i16 = immediate
+                    .map(|i| i as i16)
+                    .unwrap_or(ScalarValue::from(state.regs.reg_op2).into());
                 // wrapping_sub ignores overflows
                 state.signals.wire_alu_out = (op1.wrapping_sub(op2) as u16) as u64;
             }
@@ -69,26 +76,32 @@ impl Operation {
                 let lhs = state.regs.reg_op1 as u64;
                 let rhs = state.regs.reg_op2 as u32;
                 state.signals.wire_alu_out = (lhs << rhs) as u64;
+                todo!() // this is wrong, TODO
             }
             Operation::RS => {
                 let lhs = state.regs.reg_op1 as u64;
                 let rhs = state.regs.reg_op2 as u32;
                 state.signals.wire_alu_out = (lhs >> rhs) as u64;
+                todo!() // this is wrong, TODO
             }
             Operation::ASR => {
                 let lhs = state.regs.reg_op1 as u64;
                 let rhs = state.regs.reg_op2 as u32;
                 state.signals.wire_alu_out = (lhs >> rhs) as u64;
+                todo!() // this is wrong, TODO
             }
             Operation::AND => {
                 state.signals.wire_alu_out = state.regs.reg_op1 & state.regs.reg_op2;
+                todo!() // this is wrong, TODO
             }
             Operation::OR => {
                 state.signals.wire_alu_out = state.regs.reg_op1 | state.regs.reg_op2;
+                todo!() // this is wrong, TODO
             }
 
             Operation::XOR => {
                 state.signals.wire_alu_out = state.regs.reg_op1 ^ state.regs.reg_op2;
+                todo!() // this is wrong, TODO
             }
 
             Operation::SEL => {
@@ -124,7 +137,7 @@ impl Operation {
             }
 
             Operation::LOADD => {
-                todo!()
+                state.signals.wire_dmem_addr = Some(state.regs.reg_op1);
             }
 
             Operation::STORED => {
@@ -149,9 +162,5 @@ impl Operation {
 
             _ => todo!(),
         }
-    }
-
-    pub fn update_registers(&self, state: &PEState) -> PEState {
-        todo!()
     }
 }

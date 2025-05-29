@@ -1,5 +1,10 @@
 pub mod readable {
-    use nom::{IResult, Parser, branch::alt, bytes::complete::tag};
+    use nom::{
+        IResult, Parser,
+        branch::alt,
+        bytes::complete::tag,
+        character::complete::{digit1, multispace0},
+    };
 
     use crate::isa::operation::Operation;
 
@@ -10,12 +15,29 @@ pub mod readable {
 
     fn parse_add(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("ADD")(input)?;
-        Ok((input, Operation::ADD))
+        Ok((input, Operation::ADD(None)))
+    }
+
+    fn parse_add_immediate(input: &str) -> IResult<&str, Operation> {
+        let (input, _) = tag("ADDI")(input)?;
+        let (input, _) = multispace0(input)?;
+        let (input, immediate) = digit1(input)?;
+        let immediate = immediate.parse::<u16>().unwrap();
+        Ok((input, Operation::ADD(Some(immediate))))
     }
 
     fn parse_sub(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("SUB")(input)?;
-        Ok((input, Operation::SUB))
+        Ok((input, Operation::SUB(None)))
+    }
+
+    /// in SUBI, the immediate is always the second operand
+    fn parse_sub_immediate(input: &str) -> IResult<&str, Operation> {
+        let (input, _) = tag("SUBI")(input)?;
+        let (input, _) = multispace0(input)?;
+        let (input, immediate) = digit1(input)?;
+        let immediate = immediate.parse::<u16>().unwrap();
+        Ok((input, Operation::SUB(Some(immediate))))
     }
 
     fn parse_mult(input: &str) -> IResult<&str, Operation> {
