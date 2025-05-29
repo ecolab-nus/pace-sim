@@ -1,34 +1,34 @@
-use crate::isa::router::RouterSwitchConfig;
+use super::router::RouterConfig;
 
 #[derive(Debug, Clone, Copy)]
 pub struct PERegisters {
-    pub reg_north_in: i64,
-    pub reg_south_in: i64,
-    pub reg_west_in: i64,
-    pub reg_east_in: i64,
-    pub reg_op1: i64,
-    pub reg_op2: i64,
-    pub reg_res: i64,
+    pub reg_north_in: u64,
+    pub reg_south_in: u64,
+    pub reg_west_in: u64,
+    pub reg_east_in: u64,
+    pub reg_op1: u64,
+    pub reg_op2: u64,
+    pub reg_res: u64,
     pub reg_predicate: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct PESignals {
-    pub wire_alu_out: i64,
-    pub wire_north_in: Option<i64>,
-    pub wire_south_in: Option<i64>,
-    pub wire_west_in: Option<i64>,
-    pub wire_east_in: Option<i64>,
-    pub wire_north_out: Option<i64>,
-    pub wire_south_out: Option<i64>,
-    pub wire_west_out: Option<i64>,
-    pub wire_east_out: Option<i64>,
+    pub wire_alu_out: u64,
+    pub wire_north_in: Option<u64>,
+    pub wire_south_in: Option<u64>,
+    pub wire_west_in: Option<u64>,
+    pub wire_east_in: Option<u64>,
+    pub wire_north_out: Option<u64>,
+    pub wire_south_out: Option<u64>,
+    pub wire_west_out: Option<u64>,
+    pub wire_east_out: Option<u64>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct PEState {
     pub regs: PERegisters,
-    pub router_config: RouterSwitchConfig,
+    pub router_config: RouterConfig,
     pub signals: PESignals,
 }
 
@@ -36,7 +36,7 @@ impl Default for PEState {
     fn default() -> Self {
         PEState {
             regs: PERegisters::default(),
-            router_config: RouterSwitchConfig::default(),
+            router_config: RouterConfig::default(),
             signals: PESignals::default(),
         }
     }

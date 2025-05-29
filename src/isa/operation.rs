@@ -1,4 +1,4 @@
-use super::state::{PESignals, PEState};
+use super::{state::PEState, value::ScalarValue};
 
 #[derive(Debug, Clone)]
 pub enum Operation {
@@ -35,20 +35,29 @@ pub enum Operation {
 
 impl Operation {
     /// Execute the operation and update the wire signals (TODOs)
-    pub fn execute_combinatorial(&self, state: &PEState) -> PESignals {
-        let mut new_signals = state.signals.clone();
+    pub fn execute_combinatorial(&self, state: &mut PEState) {
         match self {
             Operation::ADD => {
-                new_signals.wire_alu_out = state.regs.reg_op1 + state.regs.reg_op2;
+                // converting the u64 to scalar value
+                let op1: i16 = ScalarValue::from(state.regs.reg_op1).into();
+                let op2: i16 = ScalarValue::from(state.regs.reg_op2).into();
+                // wrapping_add ignores overflows
+                state.signals.wire_alu_out = (op1.wrapping_add(op2) as u16) as u64;
             }
             Operation::SUB => {
-                new_signals.wire_alu_out = state.regs.reg_op1 - state.regs.reg_op2;
+                let op1: i16 = ScalarValue::from(state.regs.reg_op1).into();
+                let op2: i16 = ScalarValue::from(state.regs.reg_op2).into();
+                // wrapping_sub ignores overflows
+                state.signals.wire_alu_out = (op1.wrapping_sub(op2) as u16) as u64;
             }
             Operation::MULT => {
-                new_signals.wire_alu_out = state.regs.reg_op1 * state.regs.reg_op2;
+                // wrapping_mul ignores overflows
+                state.signals.wire_alu_out = state.regs.reg_op1.wrapping_mul(state.regs.reg_op2);
+                todo!() // TODO: this is not correct
             }
             Operation::DIV => {
-                new_signals.wire_alu_out = state.regs.reg_op1 / state.regs.reg_op2;
+                // wrapping_div ignores overflows
+                state.signals.wire_alu_out = state.regs.reg_op1.wrapping_div(state.regs.reg_op2);
             }
             Operation::VADD => {
                 todo!()
@@ -59,27 +68,27 @@ impl Operation {
             Operation::LS => {
                 let lhs = state.regs.reg_op1 as u64;
                 let rhs = state.regs.reg_op2 as u32;
-                new_signals.wire_alu_out = (lhs << rhs) as i64;
+                state.signals.wire_alu_out = (lhs << rhs) as u64;
             }
             Operation::RS => {
                 let lhs = state.regs.reg_op1 as u64;
                 let rhs = state.regs.reg_op2 as u32;
-                new_signals.wire_alu_out = (lhs >> rhs) as i64;
+                state.signals.wire_alu_out = (lhs >> rhs) as u64;
             }
             Operation::ASR => {
                 let lhs = state.regs.reg_op1 as u64;
                 let rhs = state.regs.reg_op2 as u32;
-                new_signals.wire_alu_out = (lhs >> rhs) as i64;
+                state.signals.wire_alu_out = (lhs >> rhs) as u64;
             }
             Operation::AND => {
-                new_signals.wire_alu_out = state.regs.reg_op1 & state.regs.reg_op2;
+                state.signals.wire_alu_out = state.regs.reg_op1 & state.regs.reg_op2;
             }
             Operation::OR => {
-                new_signals.wire_alu_out = state.regs.reg_op1 | state.regs.reg_op2;
+                state.signals.wire_alu_out = state.regs.reg_op1 | state.regs.reg_op2;
             }
 
             Operation::XOR => {
-                new_signals.wire_alu_out = state.regs.reg_op1 ^ state.regs.reg_op2;
+                state.signals.wire_alu_out = state.regs.reg_op1 ^ state.regs.reg_op2;
             }
 
             Operation::SEL => {
@@ -140,6 +149,9 @@ impl Operation {
 
             _ => todo!(),
         }
-        new_signals
+    }
+
+    pub fn update_registers(&self, state: &PEState) -> PEState {
+        todo!()
     }
 }

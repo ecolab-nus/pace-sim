@@ -38,7 +38,7 @@ impl Default for RouterSwitchConfig {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct RouterExtraConfig {
     pub input_register_bypass: DirectionsOpt,
     pub input_register_write: DirectionsOpt,
@@ -80,6 +80,15 @@ impl DirectionsOpt {
 pub struct RouterConfig {
     pub switch_config: RouterSwitchConfig,
     pub extra_config: RouterExtraConfig,
+}
+
+impl Default for RouterConfig {
+    fn default() -> Self {
+        RouterConfig {
+            switch_config: RouterSwitchConfig::default(),
+            extra_config: RouterExtraConfig::default(),
+        }
+    }
 }
 
 impl RouterConfig {
@@ -150,123 +159,141 @@ impl RouterConfig {
             }
         }
         match self.switch_config.predicate {
-            _ => todo!(),
+            RouterInDir::EastIn => {
+                todo!()
+            }
+            RouterInDir::SouthIn => {
+                todo!()
+            }
+            RouterInDir::WestIn => {
+                todo!()
+            }
+            RouterInDir::NorthIn => {
+                todo!()
+            }
+            RouterInDir::ALUOut => {
+                todo!()
+            }
+            RouterInDir::ALURes => {
+                todo!()
+            }
+            RouterInDir::Open => {
+                todo!()
+            }
         }
         new_state
     }
 
     /// Update the outputs (wires) for the router
-    pub fn update_router_outputs(&self, state: &PEState) -> PEState {
-        let mut new_state = state.clone();
+    pub fn update_router_outputs(&self, state: &mut PEState) {
         match self.switch_config.east_out {
             RouterInDir::EastIn => {
                 if self.extra_config.input_register_bypass.east {
-                    new_state.signals.wire_east_out = Some(state.signals.wire_east_in.unwrap());
+                    state.signals.wire_east_out = Some(state.signals.wire_east_in.unwrap());
                 } else {
-                    new_state.signals.wire_east_out = Some(state.regs.reg_east_in);
+                    state.signals.wire_east_out = Some(state.regs.reg_east_in);
                 }
             }
             RouterInDir::SouthIn => {
                 if self.extra_config.input_register_bypass.south {
-                    new_state.signals.wire_east_out = Some(state.signals.wire_south_in.unwrap());
+                    state.signals.wire_east_out = Some(state.signals.wire_south_in.unwrap());
                 } else {
-                    new_state.signals.wire_east_out = Some(state.regs.reg_south_in);
+                    state.signals.wire_east_out = Some(state.regs.reg_south_in);
                 }
             }
             RouterInDir::WestIn => {
                 if self.extra_config.input_register_bypass.west {
-                    new_state.signals.wire_east_out = Some(state.signals.wire_west_in.unwrap());
+                    state.signals.wire_east_out = Some(state.signals.wire_west_in.unwrap());
                 } else {
-                    new_state.signals.wire_east_out = Some(state.regs.reg_west_in);
+                    state.signals.wire_east_out = Some(state.regs.reg_west_in);
                 }
             }
             RouterInDir::NorthIn => {
                 if self.extra_config.input_register_bypass.north {
-                    new_state.signals.wire_east_out = Some(state.signals.wire_north_in.unwrap());
+                    state.signals.wire_east_out = Some(state.signals.wire_north_in.unwrap());
                 } else {
-                    new_state.signals.wire_east_out = Some(state.regs.reg_north_in);
+                    state.signals.wire_east_out = Some(state.regs.reg_north_in);
                 }
             }
             RouterInDir::ALUOut => {
-                new_state.signals.wire_east_out = Some(state.signals.wire_alu_out);
+                state.signals.wire_east_out = Some(state.signals.wire_alu_out);
             }
             RouterInDir::ALURes => {
-                new_state.signals.wire_east_out = Some(state.regs.reg_res);
+                state.signals.wire_east_out = Some(state.regs.reg_res);
             }
             RouterInDir::Open => {
-                new_state.signals.wire_east_out = None;
+                state.signals.wire_east_out = None;
             }
         }
         match self.switch_config.south_out {
             RouterInDir::EastIn => {
-                new_state.signals.wire_south_out = Some(state.signals.wire_east_in.unwrap());
+                state.signals.wire_south_out = Some(state.signals.wire_east_in.unwrap());
             }
             RouterInDir::SouthIn => {
-                new_state.signals.wire_south_out = Some(state.signals.wire_south_in.unwrap());
+                state.signals.wire_south_out = Some(state.signals.wire_south_in.unwrap());
             }
             RouterInDir::WestIn => {
-                new_state.signals.wire_south_out = Some(state.signals.wire_west_in.unwrap());
+                state.signals.wire_south_out = Some(state.signals.wire_west_in.unwrap());
             }
             RouterInDir::NorthIn => {
-                new_state.signals.wire_south_out = Some(state.signals.wire_north_in.unwrap());
+                state.signals.wire_south_out = Some(state.signals.wire_north_in.unwrap());
             }
             RouterInDir::ALUOut => {
-                new_state.signals.wire_south_out = Some(state.signals.wire_alu_out);
+                state.signals.wire_south_out = Some(state.signals.wire_alu_out);
             }
             RouterInDir::ALURes => {
-                new_state.signals.wire_south_out = Some(state.regs.reg_res);
+                state.signals.wire_south_out = Some(state.regs.reg_res);
             }
             RouterInDir::Open => {
-                new_state.signals.wire_south_out = None;
+                state.signals.wire_south_out = None;
             }
         }
         match self.switch_config.west_out {
             RouterInDir::EastIn => {
-                new_state.signals.wire_west_out = Some(state.signals.wire_east_in.unwrap());
+                state.signals.wire_west_out = Some(state.signals.wire_east_in.unwrap());
             }
             RouterInDir::SouthIn => {
-                new_state.signals.wire_west_out = Some(state.signals.wire_south_in.unwrap());
+                state.signals.wire_west_out = Some(state.signals.wire_south_in.unwrap());
             }
             RouterInDir::WestIn => {
-                new_state.signals.wire_west_out = Some(state.signals.wire_west_in.unwrap());
+                state.signals.wire_west_out = Some(state.signals.wire_west_in.unwrap());
             }
             RouterInDir::NorthIn => {
-                new_state.signals.wire_west_out = Some(state.signals.wire_north_in.unwrap());
+                state.signals.wire_west_out = Some(state.signals.wire_north_in.unwrap());
             }
             RouterInDir::ALUOut => {
-                new_state.signals.wire_west_out = Some(state.signals.wire_alu_out);
+                state.signals.wire_west_out = Some(state.signals.wire_alu_out);
             }
             RouterInDir::ALURes => {
-                new_state.signals.wire_west_out = Some(state.regs.reg_res);
+                state.signals.wire_west_out = Some(state.regs.reg_res);
             }
             RouterInDir::Open => {
-                new_state.signals.wire_west_out = None;
+                state.signals.wire_west_out = None;
             }
         }
         match self.switch_config.north_out {
             RouterInDir::EastIn => {
-                new_state.signals.wire_north_out = Some(state.signals.wire_east_in.unwrap());
+                state.signals.wire_north_out = Some(state.signals.wire_east_in.unwrap());
             }
             RouterInDir::SouthIn => {
-                new_state.signals.wire_north_out = Some(state.signals.wire_south_in.unwrap());
+                state.signals.wire_north_out = Some(state.signals.wire_south_in.unwrap());
             }
             RouterInDir::WestIn => {
-                new_state.signals.wire_north_out = Some(state.signals.wire_west_in.unwrap());
+                state.signals.wire_north_out = Some(state.signals.wire_west_in.unwrap());
             }
             RouterInDir::NorthIn => {
-                new_state.signals.wire_north_out = Some(state.signals.wire_north_in.unwrap());
+                state.signals.wire_north_out = Some(state.signals.wire_north_in.unwrap());
             }
             RouterInDir::ALUOut => {
-                new_state.signals.wire_north_out = Some(state.signals.wire_alu_out);
+                state.signals.wire_north_out = Some(state.signals.wire_alu_out);
             }
             RouterInDir::ALURes => {
-                new_state.signals.wire_north_out = Some(state.regs.reg_res);
+                state.signals.wire_north_out = Some(state.regs.reg_res);
             }
             RouterInDir::Open => {
-                new_state.signals.wire_north_out = None;
+                state.signals.wire_north_out = None;
             }
         }
-        new_state
     }
 
     pub fn update_router_input_registers(&self, state: &PEState) -> PEState {
