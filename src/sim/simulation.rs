@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::isa::parse::top::parse_configuration;
+use crate::isa::parse::configuration::mnemonics::parse_configuration;
 use crate::sim::pe::PE;
 
 #[derive(Debug, Clone)]

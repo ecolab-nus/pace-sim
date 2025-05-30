@@ -1,11 +1,16 @@
 use super::{state::PEState, value::ScalarValue};
 
 type Immediate = Option<u16>;
-#[derive(Debug, Clone)]
+type UpdateRes = bool;
+pub const UPDATE_RES: bool = true;
+pub const NO_UPDATE_RES: bool = false;
+pub const NO_IMMEDIATE: Immediate = None;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Operation {
     NOP,
-    ADD(Immediate),
-    SUB(Immediate),
+    ADD(Immediate, UpdateRes),
+    SUB(Immediate, UpdateRes),
     MULT,
     SEXT,
     DIV,
@@ -27,18 +32,18 @@ pub enum Operation {
     JUMP,
     MOVC,
     LOADD,
-    STORED,
-    LOAD,
-    STORE,
-    LOADB,
-    STOREB,
+    STORED(Immediate),
+    LOAD(Immediate),
+    STORE(Immediate),
+    LOADB(Immediate),
+    STOREB(Immediate),
 }
 
 impl Operation {
     /// Execute the operation and update the wire signals (TODOs)
     pub fn execute_combinatorial(&self, state: &mut PEState) {
         match self {
-            Operation::ADD(immediate) => {
+            Operation::ADD(immediate, _) => {
                 // converting the u64 to scalar value
                 let op1: i16 = ScalarValue::from(state.regs.reg_op1).into();
                 let op2: i16 = immediate
@@ -47,7 +52,7 @@ impl Operation {
                 // wrapping_add ignores overflows
                 state.signals.wire_alu_out = (op1.wrapping_add(op2) as u16) as u64;
             }
-            Operation::SUB(immediate) => {
+            Operation::SUB(immediate, _) => {
                 let op1: i16 = ScalarValue::from(state.regs.reg_op1).into();
                 // op2 from immediate or from reg_op2, depending on the msb bit,
                 // this is represented by the immediate field
@@ -137,30 +142,71 @@ impl Operation {
             }
 
             Operation::LOADD => {
-                state.signals.wire_dmem_addr = Some(state.regs.reg_op1);
+                state.signals.wire_dmem_addr = Some(state.regs.reg_op2);
             }
 
-            Operation::STORED => {
-                todo!()
+            Operation::STORED(immediate) => {
+                state.signals.wire_dmem_data = Some(state.regs.reg_op2);
+                if immediate.is_some() {
+                    state.signals.wire_dmem_addr = Some(immediate.unwrap() as u64);
+                } else {
+                    state.signals.wire_dmem_addr = Some(state.regs.reg_op1);
+                }
             }
 
-            Operation::LOAD => {
-                todo!()
+            Operation::LOAD(immediate) => {
+                if immediate.is_some() {
+                    state.signals.wire_dmem_addr = Some(immediate.unwrap() as u64);
+                } else {
+                    state.signals.wire_dmem_addr = Some(state.regs.reg_op1);
+                }
             }
 
-            Operation::STORE => {
-                todo!()
+            Operation::STORE(immediate) => {
+                state.signals.wire_dmem_data = Some(state.regs.reg_op2);
+                if immediate.is_some() {
+                    state.signals.wire_dmem_addr = Some(immediate.unwrap() as u64);
+                } else {
+                    state.signals.wire_dmem_addr = Some(state.regs.reg_op1);
+                }
             }
 
-            Operation::LOADB => {
-                todo!()
+            Operation::LOADB(immediate) => {
+                if immediate.is_some() {
+                    state.signals.wire_dmem_addr = Some(immediate.unwrap() as u64);
+                } else {
+                    state.signals.wire_dmem_addr = Some(state.regs.reg_op1);
+                }
             }
 
-            Operation::STOREB => {
-                todo!()
+            Operation::STOREB(immediate) => {
+                state.signals.wire_dmem_data = Some(state.regs.reg_op2);
+                if immediate.is_some() {
+                    state.signals.wire_dmem_addr = Some(immediate.unwrap() as u64);
+                } else {
+                    state.signals.wire_dmem_addr = Some(state.regs.reg_op1);
+                }
             }
 
             _ => todo!(),
         }
+    }
+
+    pub fn update_res(&self, state: &PEState) -> PEState {
+        let mut new_state = state.clone();
+        match self {
+            Operation::ADD(_, update_res) => {
+                if *update_res {
+                    new_state.regs.reg_res = state.signals.wire_alu_out;
+                }
+            }
+            Operation::SUB(_, update_res) => {
+                if *update_res {
+                    new_state.regs.reg_res = state.signals.wire_alu_out;
+                }
+            }
+            _ => todo!(),
+        }
+        new_state
     }
 }

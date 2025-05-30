@@ -1,4 +1,4 @@
-pub mod readable {
+pub mod mnemonics {
     use std::collections::HashMap;
 
     use nom::{

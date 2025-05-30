@@ -1,9 +1,11 @@
-pub mod readable {
+pub mod mnemonics {
     use nom::{
         IResult, Parser,
         branch::alt,
         bytes::complete::tag,
         character::complete::{digit1, multispace0},
+        combinator::opt,
+        sequence::tuple,
     };
 
     use crate::isa::operation::Operation;
@@ -15,29 +17,30 @@ pub mod readable {
 
     fn parse_add(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("ADD")(input)?;
-        Ok((input, Operation::ADD(None)))
-    }
-
-    fn parse_add_immediate(input: &str) -> IResult<&str, Operation> {
-        let (input, _) = tag("ADDI")(input)?;
+        let (input, update_res) = alt((tag("!"), tag(""))).parse(input)?;
+        let update_res = update_res == "!";
         let (input, _) = multispace0(input)?;
-        let (input, immediate) = digit1(input)?;
-        let immediate = immediate.parse::<u16>().unwrap();
-        Ok((input, Operation::ADD(Some(immediate))))
+        match digit1::<_, nom::error::Error<&str>>(input) {
+            Ok((input, immediate)) => {
+                let immediate = immediate.parse::<u16>().unwrap();
+                Ok((input, Operation::ADD(Some(immediate), update_res)))
+            }
+            Err(_) => Ok((input, Operation::ADD(None, update_res))),
+        }
     }
 
     fn parse_sub(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("SUB")(input)?;
-        Ok((input, Operation::SUB(None)))
-    }
-
-    /// in SUBI, the immediate is always the second operand
-    fn parse_sub_immediate(input: &str) -> IResult<&str, Operation> {
-        let (input, _) = tag("SUBI")(input)?;
+        let (input, update_res) = alt((tag("!"), tag(""))).parse(input)?;
+        let update_res = update_res == "!";
         let (input, _) = multispace0(input)?;
-        let (input, immediate) = digit1(input)?;
-        let immediate = immediate.parse::<u16>().unwrap();
-        Ok((input, Operation::SUB(Some(immediate))))
+        match digit1::<_, nom::error::Error<&str>>(input) {
+            Ok((input, immediate)) => {
+                let immediate = immediate.parse::<u16>().unwrap();
+                Ok((input, Operation::SUB(Some(immediate), update_res)))
+            }
+            Err(_) => Ok((input, Operation::SUB(None, update_res))),
+        }
     }
 
     fn parse_mult(input: &str) -> IResult<&str, Operation> {
@@ -151,27 +154,55 @@ pub mod readable {
 
     fn parse_stored(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("STORED")(input)?;
-        Ok((input, Operation::STORED))
+        let (input, _) = multispace0(input)?;
+        match digit1::<_, nom::error::Error<&str>>(input) {
+            Ok((input, immediate)) => {
+                let immediate = immediate.parse::<u16>().unwrap();
+                Ok((input, Operation::STORED(Some(immediate))))
+            }
+            Err(_) => Ok((input, Operation::STORED(None))),
+        }
     }
 
     fn parse_load(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("LOAD")(input)?;
-        Ok((input, Operation::LOAD))
+        let (input, _) = multispace0(input)?;
+        match digit1::<_, nom::error::Error<&str>>(input) {
+            Ok((input, immediate)) => {
+                let immediate = immediate.parse::<u16>().unwrap();
+                Ok((input, Operation::LOAD(Some(immediate))))
+            }
+            Err(_) => Ok((input, Operation::LOAD(None))),
+        }
     }
 
     fn parse_store(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("STORE")(input)?;
-        Ok((input, Operation::STORE))
+        let (input, _) = multispace0(input)?;
+        match digit1::<_, nom::error::Error<&str>>(input) {
+            Ok((input, immediate)) => {
+                let immediate = immediate.parse::<u16>().unwrap();
+                Ok((input, Operation::STORE(Some(immediate))))
+            }
+            Err(_) => Ok((input, Operation::STORE(None))),
+        }
     }
 
     fn parse_loadb(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("LOADB")(input)?;
-        Ok((input, Operation::LOADB))
+        Ok((input, Operation::LOADB(None)))
     }
 
     fn parse_storeb(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("STOREB")(input)?;
-        Ok((input, Operation::STOREB))
+        let (input, _) = multispace0(input)?;
+        match digit1::<_, nom::error::Error<&str>>(input) {
+            Ok((input, immediate)) => {
+                let immediate = immediate.parse::<u16>().unwrap();
+                Ok((input, Operation::STOREB(Some(immediate))))
+            }
+            Err(_) => Ok((input, Operation::STOREB(None))),
+        }
     }
 
     fn parse_arithmetic(input: &str) -> IResult<&str, Operation> {
@@ -203,6 +234,8 @@ pub mod readable {
     }
 
     pub fn parse_operation(input: &str) -> IResult<&str, Operation> {
+        let (input, _) = tag("operation:")(input)?;
+        let (input, _) = multispace0(input)?;
         alt((
             parse_nop,
             parse_arithmetic,
@@ -211,5 +244,25 @@ pub mod readable {
             parse_memory,
         ))
         .parse(input)
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test_parse_operation() {
+            let input = "operation: ADD";
+            let (_, operation) = parse_operation(input).unwrap();
+            assert_eq!(operation, Operation::ADD(None, false));
+
+            let input = "operation: ADD!";
+            let (_, operation) = parse_operation(input).unwrap();
+            assert_eq!(operation, Operation::ADD(None, true));
+
+            let input = "operation: SUB 1";
+            let (_, operation) = parse_operation(input).unwrap();
+            assert_eq!(operation, Operation::SUB(Some(1), false));
+        }
     }
 }
