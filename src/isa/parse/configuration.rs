@@ -21,7 +21,7 @@ pub mod mnemonics {
     mod tests {
         use crate::isa::{
             operation::Operation,
-            router::{DirectionsOpt, RouterConfig, RouterInDir, RouterSwitchConfig},
+            router::{DirectionsOpt, RouterInDir, RouterSwitchConfig},
         };
 
         use super::*;

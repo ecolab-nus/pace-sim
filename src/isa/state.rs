@@ -1,5 +1,3 @@
-use super::router::RouterConfig;
-
 #[derive(Debug, Clone, Copy)]
 pub struct PERegisters {
     pub reg_north_in: u64,

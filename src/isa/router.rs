@@ -1,5 +1,3 @@
-use core::panic;
-
 use super::state::PEState;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]

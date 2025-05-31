@@ -4,8 +4,6 @@ pub mod mnemonics {
         branch::alt,
         bytes::complete::tag,
         character::complete::{digit1, multispace0},
-        combinator::opt,
-        sequence::tuple,
     };
 
     use crate::isa::operation::Operation;
@@ -98,29 +96,29 @@ pub mod mnemonics {
         Ok((input, Operation::XOR))
     }
 
-    // TODO
-    fn parse_sel(input: &str) -> IResult<&str, Operation> {
-        let (input, _) = tag("SEL")(input)?;
-        Ok((input, Operation::SEL))
-    }
+    // // TODO
+    // fn parse_sel(input: &str) -> IResult<&str, Operation> {
+    //     let (input, _) = tag("SEL")(input)?;
+    //     Ok((input, Operation::SEL))
+    // }
 
-    // TODO
-    fn parse_cmerge(input: &str) -> IResult<&str, Operation> {
-        let (input, _) = tag("CMERGE")(input)?;
-        Ok((input, Operation::CMERGE))
-    }
+    // // TODO
+    // fn parse_cmerge(input: &str) -> IResult<&str, Operation> {
+    //     let (input, _) = tag("CMERGE")(input)?;
+    //     Ok((input, Operation::CMERGE))
+    // }
 
-    // TODO
-    fn parse_cmp(input: &str) -> IResult<&str, Operation> {
-        let (input, _) = tag("CMP")(input)?;
-        Ok((input, Operation::CMP))
-    }
+    // // TODO
+    // fn parse_cmp(input: &str) -> IResult<&str, Operation> {
+    //     let (input, _) = tag("CMP")(input)?;
+    //     Ok((input, Operation::CMP))
+    // }
 
-    // TODO
-    fn parse_clt(input: &str) -> IResult<&str, Operation> {
-        let (input, _) = tag("CLT")(input)?;
-        Ok((input, Operation::CLT))
-    }
+    // // TODO
+    // fn parse_clt(input: &str) -> IResult<&str, Operation> {
+    //     let (input, _) = tag("CLT")(input)?;
+    //     Ok((input, Operation::CLT))
+    // }
 
     fn parse_br(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("BR")(input)?;
