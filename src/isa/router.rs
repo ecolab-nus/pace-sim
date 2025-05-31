@@ -130,9 +130,7 @@ impl RouterConfig {
             RouterInDir::ALURes => {
                 new_state.regs.reg_op1 = state.regs.reg_res;
             }
-            RouterInDir::Open => {
-                panic!("ALU Op1 cannot be configured to Open")
-            }
+            RouterInDir::Open => {}
         }
         match self.switch_config.alu_op2 {
             RouterInDir::EastIn => {
@@ -153,10 +151,7 @@ impl RouterConfig {
             RouterInDir::ALURes => {
                 new_state.regs.reg_op2 = state.regs.reg_res;
             }
-            RouterInDir::Open => {
-                todo!()
-                // TODO ZHENYU: actually ALU Op2 can be configured only in case of using immediate?
-            }
+            RouterInDir::Open => {}
         }
         match self.switch_config.predicate {
             RouterInDir::EastIn => {
@@ -177,15 +172,13 @@ impl RouterConfig {
             RouterInDir::ALURes => {
                 todo!()
             }
-            RouterInDir::Open => {
-                todo!()
-            }
+            RouterInDir::Open => {}
         }
         new_state
     }
 
     /// Update the outputs (wires) for the router
-    pub fn update_router_outputs(&self, state: &mut PEState) {
+    pub fn update_router_output_signals(&self, state: &mut PEState) {
         match self.switch_config.east_out {
             RouterInDir::EastIn => {
                 if self.extra_config.input_register_bypass.east {

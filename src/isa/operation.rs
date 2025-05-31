@@ -1,3 +1,5 @@
+use crate::sim::dmem::DataMemory;
+
 use super::{state::PEState, value::ScalarValue};
 
 type Immediate = Option<u16>;
@@ -31,7 +33,7 @@ pub enum Operation {
     MOVCL,
     JUMP,
     MOVC,
-    LOADD,
+    LOADD(Immediate),
     STORED(Immediate),
     LOAD(Immediate),
     STORE(Immediate),
@@ -40,7 +42,19 @@ pub enum Operation {
 }
 
 impl Operation {
-    /// Execute the operation and update the wire signals (TODOs)
+    pub fn is_mem(&self) -> bool {
+        matches!(
+            self,
+            Operation::LOADB(_)
+                | Operation::LOAD(_)
+                | Operation::LOADD(_)
+                | Operation::STOREB(_)
+                | Operation::STORE(_)
+        )
+    }
+
+    /// Execute the operation and update the wire signals
+    /// For the memory operations, only the address signals are updated at this stage
     pub fn execute_combinatorial(&self, state: &mut PEState) {
         match self {
             Operation::ADD(immediate, _) => {
@@ -141,16 +155,20 @@ impl Operation {
                 todo!()
             }
 
-            Operation::LOADD => {
-                state.signals.wire_dmem_addr = Some(state.regs.reg_op2);
-            }
-
-            Operation::STORED(immediate) => {
-                state.signals.wire_dmem_data = Some(state.regs.reg_op2);
+            Operation::LOADD(immediate) => {
                 if immediate.is_some() {
                     state.signals.wire_dmem_addr = Some(immediate.unwrap() as u64);
                 } else {
-                    state.signals.wire_dmem_addr = Some(state.regs.reg_op1);
+                    state.signals.wire_dmem_addr = Some(state.regs.reg_op2);
+                }
+            }
+
+            Operation::STORED(immediate) => {
+                state.signals.wire_dmem_data = Some(state.regs.reg_op1);
+                if immediate.is_some() {
+                    state.signals.wire_dmem_addr = Some(immediate.unwrap() as u64);
+                } else {
+                    state.signals.wire_dmem_addr = Some(state.regs.reg_op2);
                 }
             }
 
@@ -158,16 +176,16 @@ impl Operation {
                 if immediate.is_some() {
                     state.signals.wire_dmem_addr = Some(immediate.unwrap() as u64);
                 } else {
-                    state.signals.wire_dmem_addr = Some(state.regs.reg_op1);
+                    state.signals.wire_dmem_addr = Some(state.regs.reg_op2);
                 }
             }
 
             Operation::STORE(immediate) => {
-                state.signals.wire_dmem_data = Some(state.regs.reg_op2);
+                state.signals.wire_dmem_data = Some(state.regs.reg_op1);
                 if immediate.is_some() {
                     state.signals.wire_dmem_addr = Some(immediate.unwrap() as u64);
                 } else {
-                    state.signals.wire_dmem_addr = Some(state.regs.reg_op1);
+                    state.signals.wire_dmem_addr = Some(state.regs.reg_op2);
                 }
             }
 
@@ -175,20 +193,61 @@ impl Operation {
                 if immediate.is_some() {
                     state.signals.wire_dmem_addr = Some(immediate.unwrap() as u64);
                 } else {
-                    state.signals.wire_dmem_addr = Some(state.regs.reg_op1);
+                    state.signals.wire_dmem_addr = Some(state.regs.reg_op2);
                 }
             }
 
             Operation::STOREB(immediate) => {
-                state.signals.wire_dmem_data = Some(state.regs.reg_op2);
+                state.signals.wire_dmem_data = Some(state.regs.reg_op1);
                 if immediate.is_some() {
                     state.signals.wire_dmem_addr = Some(immediate.unwrap() as u64);
                 } else {
-                    state.signals.wire_dmem_addr = Some(state.regs.reg_op1);
+                    state.signals.wire_dmem_addr = Some(state.regs.reg_op2);
                 }
             }
 
+            Operation::NOP => {}
             _ => todo!(),
+        }
+    }
+
+    /// The address has been set in 'execute_combinatorial', here just need to take care of the data coming back
+    pub fn execute_memory(&self, state: &mut PEState, dmem: &mut DataMemory) {
+        match self {
+            Operation::LOADB(_) => {
+                let data = dmem.read8(state.signals.wire_dmem_addr.unwrap()) as u64;
+                state.signals.wire_dmem_data = Some(data);
+                state.signals.wire_alu_out = data;
+            }
+            Operation::LOAD(_) => {
+                let data = dmem.read16(state.signals.wire_dmem_addr.unwrap()) as u64;
+                state.signals.wire_dmem_data = Some(data);
+                state.signals.wire_alu_out = data;
+            }
+            Operation::LOADD(_) => {
+                let data = dmem.read64(state.signals.wire_dmem_addr.unwrap());
+                state.signals.wire_dmem_data = Some(data);
+                state.signals.wire_alu_out = data;
+            }
+            Operation::STOREB(_) => {
+                dmem.write8(
+                    state.signals.wire_dmem_addr.unwrap(),
+                    state.signals.wire_dmem_data.unwrap() as u8,
+                );
+            }
+            Operation::STORE(_) => {
+                dmem.write16(
+                    state.signals.wire_dmem_addr.unwrap(),
+                    state.signals.wire_dmem_data.unwrap() as u16,
+                );
+            }
+            Operation::STORED(_) => {
+                dmem.write64(
+                    state.signals.wire_dmem_addr.unwrap(),
+                    state.signals.wire_dmem_data.unwrap(),
+                );
+            }
+            _ => {}
         }
     }
 
@@ -205,7 +264,7 @@ impl Operation {
                     new_state.regs.reg_res = state.signals.wire_alu_out;
                 }
             }
-            _ => todo!(),
+            _ => {}
         }
         new_state
     }

@@ -149,7 +149,14 @@ pub mod mnemonics {
 
     fn parse_loadd(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("LOADD")(input)?;
-        Ok((input, Operation::LOADD))
+        let (input, _) = multispace0(input)?;
+        match digit1::<_, nom::error::Error<&str>>(input) {
+            Ok((input, immediate)) => {
+                let immediate = immediate.parse::<u16>().unwrap();
+                Ok((input, Operation::LOADD(Some(immediate))))
+            }
+            Err(_) => Ok((input, Operation::LOADD(None))),
+        }
     }
 
     fn parse_stored(input: &str) -> IResult<&str, Operation> {
