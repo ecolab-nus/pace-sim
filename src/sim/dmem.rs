@@ -95,4 +95,43 @@ impl DataMemory {
             DMemMode::NOP => {}
         }
     }
+
+    pub fn dump(&self) -> String {
+        let mut result = String::new();
+        for (i, chunk) in self.data.chunks(32).enumerate() {
+            if i > 0 {
+                result.push('\n');
+            }
+            for (j, block) in chunk.chunks(8).enumerate() {
+                if j > 0 {
+                    result.push_str(" | ");
+                }
+                for (k, &byte) in block.iter().enumerate() {
+                    if k > 0 {
+                        result.push(' ');
+                    }
+                    result.push_str(&format!("{:02x}", byte));
+                }
+            }
+        }
+        result
+    }
+}
+
+mod tests {
+    use std::path::Path;
+
+    use super::*;
+
+    #[test]
+    fn test_dmem_dump() {
+        let mut dmem = DataMemory::new(1024);
+        dmem.write64(0, 0x1234567890abcdef);
+        dmem.write64(8, 0xabcdef1234567890);
+        let dump = dmem.dump();
+        // write to file
+        let project_root = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+        let path = Path::new(&project_root).join("src/sim/tests/dmem.dump");
+        std::fs::write(path, dump).unwrap();
+    }
 }
