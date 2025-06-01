@@ -119,19 +119,17 @@ impl DataMemory {
 }
 
 mod tests {
-    use std::path::Path;
-
-    use super::*;
 
     #[test]
     fn test_dmem_dump() {
+        use super::*;
         let mut dmem = DataMemory::new(1024);
         dmem.write64(0, 0x1234567890abcdef);
         dmem.write64(8, 0xabcdef1234567890);
         let dump = dmem.dump();
         // write to file
         let project_root = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-        let path = Path::new(&project_root).join("src/sim/tests/dmem.dump");
+        let path = std::path::Path::new(&project_root).join("src/sim/tests/dmem.dump");
         std::fs::write(path, dump).unwrap();
     }
 }
