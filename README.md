@@ -1,8 +1,8 @@
 # PACE-Sim
 
 ### Next TODOs:
+- Check the encoding of the (router register write enable) and the (bypass router register) configuration order
 - Trace system
-- Conversion between binary <-> Configuration
 - AGU
 
 ### Further TODOs:

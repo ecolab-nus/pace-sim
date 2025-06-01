@@ -17,6 +17,13 @@ pub mod mnemonics {
         ))
     }
 
+    impl Configuration {
+        pub fn from_str(s: &str) -> Result<Self, String> {
+            let (_, configuration) = parse_configuration(s).map_err(|e| e.to_string())?;
+            Ok(configuration)
+        }
+    }
+
     #[cfg(test)]
     mod tests {
         use crate::isa::{
@@ -68,17 +75,11 @@ pub mod mnemonics {
                 expected_switch_config
             );
             assert_eq!(
-                configuration
-                    .router_config
-                    .extra_config
-                    .input_register_bypass,
+                configuration.router_config.input_register_bypass,
                 expected_register_bypass
             );
             assert_eq!(
-                configuration
-                    .router_config
-                    .extra_config
-                    .input_register_write,
+                configuration.router_config.input_register_write,
                 expected_register_write
             );
         }

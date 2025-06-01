@@ -271,3 +271,6 @@ pub mod mnemonics {
         }
     }
 }
+
+/// This part is to provide the conversion from and to binary
+pub mod binary {}

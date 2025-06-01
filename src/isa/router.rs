@@ -1,45 +1,33 @@
 use super::pe::PE;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[repr(u8)]
 pub enum RouterInDir {
-    EastIn,
-    SouthIn,
-    WestIn,
-    NorthIn,
-    ALUOut,
-    ALURes,
-    Open,
+    EastIn = 0,  // 0
+    SouthIn = 1, // 1
+    WestIn = 2,  // 2
+    NorthIn = 3, // 3
+    ALUOut = 4,  // 4
+    ALURes = 5,  // 5
+    Invalid = 6, // 6
+    Open = 7,    // 7
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub struct RouterSwitchConfig {
-    pub predicate: RouterInDir,
-    pub alu_op1: RouterInDir,
-    pub alu_op2: RouterInDir,
-    pub east_out: RouterInDir,
-    pub south_out: RouterInDir,
-    pub west_out: RouterInDir,
-    pub north_out: RouterInDir,
-}
-
-impl Default for RouterSwitchConfig {
+impl Default for RouterInDir {
     fn default() -> Self {
-        RouterSwitchConfig {
-            predicate: RouterInDir::Open,
-            alu_op1: RouterInDir::Open,
-            alu_op2: RouterInDir::Open,
-            east_out: RouterInDir::Open,
-            south_out: RouterInDir::Open,
-            west_out: RouterInDir::Open,
-            north_out: RouterInDir::Open,
-        }
+        RouterInDir::Open
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Default)]
-pub struct RouterExtraConfig {
-    pub input_register_bypass: DirectionsOpt,
-    pub input_register_write: DirectionsOpt,
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+pub struct RouterSwitchConfig {
+    pub predicate: RouterInDir,
+    pub alu_op2: RouterInDir,
+    pub alu_op1: RouterInDir,
+    pub north_out: RouterInDir,
+    pub west_out: RouterInDir,
+    pub south_out: RouterInDir,
+    pub east_out: RouterInDir,
 }
 
 pub enum Direction {
@@ -60,14 +48,16 @@ pub struct DirectionsOpt {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct RouterConfig {
     pub switch_config: RouterSwitchConfig,
-    pub extra_config: RouterExtraConfig,
+    pub input_register_bypass: DirectionsOpt,
+    pub input_register_write: DirectionsOpt,
 }
 
 impl Default for RouterConfig {
     fn default() -> Self {
         RouterConfig {
             switch_config: RouterSwitchConfig::default(),
-            extra_config: RouterExtraConfig::default(),
+            input_register_bypass: DirectionsOpt::default(),
+            input_register_write: DirectionsOpt::default(),
         }
     }
 }
@@ -78,28 +68,28 @@ impl PE {
         let mut new_state = self.clone();
         match router_config.switch_config.alu_op1 {
             RouterInDir::EastIn => {
-                if router_config.extra_config.input_register_bypass.east {
+                if router_config.input_register_bypass.east {
                     new_state.regs.reg_op1 = self.signals.wire_east_in.unwrap();
                 } else {
                     new_state.regs.reg_op1 = self.regs.reg_east_in;
                 }
             }
             RouterInDir::SouthIn => {
-                if router_config.extra_config.input_register_bypass.south {
+                if router_config.input_register_bypass.south {
                     new_state.regs.reg_op1 = self.signals.wire_south_in.unwrap();
                 } else {
                     new_state.regs.reg_op1 = self.regs.reg_south_in;
                 }
             }
             RouterInDir::WestIn => {
-                if router_config.extra_config.input_register_bypass.west {
+                if router_config.input_register_bypass.west {
                     new_state.regs.reg_op1 = self.signals.wire_west_in.unwrap();
                 } else {
                     new_state.regs.reg_op1 = self.regs.reg_west_in;
                 }
             }
             RouterInDir::NorthIn => {
-                if router_config.extra_config.input_register_bypass.north {
+                if router_config.input_register_bypass.north {
                     new_state.regs.reg_op1 = self.signals.wire_north_in.unwrap();
                 } else {
                     new_state.regs.reg_op1 = self.regs.reg_north_in;
@@ -111,6 +101,7 @@ impl PE {
             RouterInDir::ALURes => {
                 new_state.regs.reg_op1 = self.regs.reg_res;
             }
+            RouterInDir::Invalid => unreachable!(),
             RouterInDir::Open => {}
         }
         match router_config.switch_config.alu_op2 {
@@ -132,6 +123,7 @@ impl PE {
             RouterInDir::ALURes => {
                 new_state.regs.reg_op2 = self.regs.reg_res;
             }
+            RouterInDir::Invalid => unreachable!(),
             RouterInDir::Open => {}
         }
         match router_config.switch_config.predicate {
@@ -153,6 +145,7 @@ impl PE {
             RouterInDir::ALURes => {
                 todo!()
             }
+            RouterInDir::Invalid => unreachable!(),
             RouterInDir::Open => {}
         }
         new_state
@@ -162,28 +155,28 @@ impl PE {
     pub fn update_router_output_signals(&mut self, router_config: &RouterConfig) {
         match router_config.switch_config.east_out {
             RouterInDir::EastIn => {
-                if router_config.extra_config.input_register_bypass.east {
+                if router_config.input_register_bypass.east {
                     self.signals.wire_east_out = Some(self.signals.wire_east_in.unwrap());
                 } else {
                     self.signals.wire_east_out = Some(self.regs.reg_east_in);
                 }
             }
             RouterInDir::SouthIn => {
-                if router_config.extra_config.input_register_bypass.south {
+                if router_config.input_register_bypass.south {
                     self.signals.wire_east_out = Some(self.signals.wire_south_in.unwrap());
                 } else {
                     self.signals.wire_east_out = Some(self.regs.reg_south_in);
                 }
             }
             RouterInDir::WestIn => {
-                if router_config.extra_config.input_register_bypass.west {
+                if router_config.input_register_bypass.west {
                     self.signals.wire_east_out = Some(self.signals.wire_west_in.unwrap());
                 } else {
                     self.signals.wire_east_out = Some(self.regs.reg_west_in);
                 }
             }
             RouterInDir::NorthIn => {
-                if router_config.extra_config.input_register_bypass.north {
+                if router_config.input_register_bypass.north {
                     self.signals.wire_east_out = Some(self.signals.wire_north_in.unwrap());
                 } else {
                     self.signals.wire_east_out = Some(self.regs.reg_north_in);
@@ -198,6 +191,7 @@ impl PE {
             RouterInDir::Open => {
                 self.signals.wire_east_out = None;
             }
+            RouterInDir::Invalid => unreachable!(),
         }
         match router_config.switch_config.south_out {
             RouterInDir::EastIn => {
@@ -221,6 +215,7 @@ impl PE {
             RouterInDir::Open => {
                 self.signals.wire_south_out = None;
             }
+            RouterInDir::Invalid => unreachable!(),
         }
         match router_config.switch_config.west_out {
             RouterInDir::EastIn => {
@@ -244,6 +239,7 @@ impl PE {
             RouterInDir::Open => {
                 self.signals.wire_west_out = None;
             }
+            RouterInDir::Invalid => unreachable!(),
         }
         match router_config.switch_config.north_out {
             RouterInDir::EastIn => {
@@ -267,21 +263,22 @@ impl PE {
             RouterInDir::Open => {
                 self.signals.wire_north_out = None;
             }
+            RouterInDir::Invalid => unreachable!(),
         }
     }
 
     pub fn update_router_input_registers(&self, router_config: &RouterConfig) -> PE {
         let mut new_state = self.clone();
-        if router_config.extra_config.input_register_write.north {
+        if router_config.input_register_write.north {
             new_state.regs.reg_north_in = self.signals.wire_north_in.unwrap();
         }
-        if router_config.extra_config.input_register_write.south {
+        if router_config.input_register_write.south {
             new_state.regs.reg_south_in = self.signals.wire_south_in.unwrap();
         }
-        if router_config.extra_config.input_register_write.west {
+        if router_config.input_register_write.west {
             new_state.regs.reg_west_in = self.signals.wire_west_in.unwrap();
         }
-        if router_config.extra_config.input_register_write.east {
+        if router_config.input_register_write.east {
             new_state.regs.reg_east_in = self.signals.wire_east_in.unwrap();
         }
         new_state

@@ -12,7 +12,7 @@ pub mod mnemonics {
     };
 
     use crate::isa::router::{
-        Direction, DirectionsOpt, RouterConfig, RouterExtraConfig, RouterInDir, RouterSwitchConfig,
+        Direction, DirectionsOpt, RouterConfig, RouterInDir, RouterSwitchConfig,
     };
 
     // Parser for the enum variants
@@ -143,7 +143,7 @@ pub mod mnemonics {
         Ok((input, (name.to_string(), dirs)))
     }
 
-    pub fn parse_extra_config(input: &str) -> IResult<&str, RouterExtraConfig> {
+    pub fn parse_extra_config(input: &str) -> IResult<&str, (DirectionsOpt, DirectionsOpt)> {
         let mut bypass = DirectionsOpt::default();
         let mut write = DirectionsOpt::default();
         let (input, (name, dirs1)) = parse_named_directions(input)?;
@@ -174,13 +174,7 @@ pub mod mnemonics {
                 panic!("Unknown field for router extra config: {}", name);
             }
         }
-        Ok((
-            input,
-            RouterExtraConfig {
-                input_register_bypass: bypass,
-                input_register_write: write,
-            },
-        ))
+        Ok((input, (bypass, write)))
     }
 
     pub fn parse_router_config(input: &str) -> IResult<&str, RouterConfig> {
@@ -190,7 +184,8 @@ pub mod mnemonics {
             input,
             RouterConfig {
                 switch_config,
-                extra_config,
+                input_register_bypass: extra_config.0,
+                input_register_write: extra_config.1,
             },
         ))
     }
@@ -292,17 +287,15 @@ pub mod mnemonics {
                     west_out: RouterInDir::WestIn,
                     north_out: RouterInDir::NorthIn,
                 },
-                extra_config: RouterExtraConfig {
-                    input_register_bypass: DirectionsOpt {
-                        north: true,
-                        south: true,
-                        ..Default::default()
-                    },
-                    input_register_write: DirectionsOpt {
-                        east: true,
-                        west: true,
-                        ..Default::default()
-                    },
+                input_register_bypass: DirectionsOpt {
+                    north: true,
+                    south: true,
+                    ..Default::default()
+                },
+                input_register_write: DirectionsOpt {
+                    east: true,
+                    west: true,
+                    ..Default::default()
                 },
             };
             assert_eq!(cfg, expected);

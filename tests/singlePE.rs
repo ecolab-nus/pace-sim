@@ -29,20 +29,8 @@ fn test_single_pe() {
                 west_out: RouterInDir::Open,
                 north_out: RouterInDir::Open,
             },
-            extra_config: RouterExtraConfig {
-                input_register_bypass: DirectionsOpt {
-                    north: false,
-                    south: false,
-                    east: false,
-                    west: false,
-                },
-                input_register_write: DirectionsOpt {
-                    east: false,
-                    west: false,
-                    north: false,
-                    south: false,
-                },
-            },
+            input_register_bypass: DirectionsOpt::default(),
+            input_register_write: DirectionsOpt::default(),
         },
     };
 
@@ -59,10 +47,8 @@ fn test_single_pe() {
                 west_out: RouterInDir::Open,
                 north_out: RouterInDir::Open,
             },
-            extra_config: RouterExtraConfig {
-                input_register_bypass: DirectionsOpt::default(),
-                input_register_write: DirectionsOpt::default(),
-            },
+            input_register_bypass: DirectionsOpt::default(),
+            input_register_write: DirectionsOpt::default(),
         },
     };
 
@@ -79,10 +65,8 @@ fn test_single_pe() {
                 west_out: RouterInDir::Open,
                 north_out: RouterInDir::Open,
             },
-            extra_config: RouterExtraConfig {
-                input_register_bypass: DirectionsOpt::default(),
-                input_register_write: DirectionsOpt::default(),
-            },
+            input_register_bypass: DirectionsOpt::default(),
+            input_register_write: DirectionsOpt::default(),
         },
     };
 
@@ -99,10 +83,8 @@ fn test_single_pe() {
                 west_out: RouterInDir::Open,
                 north_out: RouterInDir::Open,
             },
-            extra_config: RouterExtraConfig {
-                input_register_bypass: DirectionsOpt::default(),
-                input_register_write: DirectionsOpt::default(),
-            },
+            input_register_bypass: DirectionsOpt::default(),
+            input_register_write: DirectionsOpt::default(),
         },
     };
 
@@ -119,7 +101,8 @@ fn test_single_pe() {
                 west_out: RouterInDir::Open,
                 north_out: RouterInDir::Open,
             },
-            extra_config: RouterExtraConfig::default(),
+            input_register_bypass: DirectionsOpt::default(),
+            input_register_write: DirectionsOpt::default(),
         },
     };
 
