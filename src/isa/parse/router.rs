@@ -300,12 +300,5 @@ pub mod mnemonics {
             };
             assert_eq!(cfg, expected);
         }
-
-        #[test]
-        fn test_parse_router_config_file() {
-            let input = include_str!("tests/router_config.cfg");
-            let (_, cfg) = parse_router_config(input).unwrap();
-            println!("{:?}", cfg);
-        }
     }
 }

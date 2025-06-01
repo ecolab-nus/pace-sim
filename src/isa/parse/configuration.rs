@@ -1,7 +1,10 @@
 pub mod mnemonics {
     use nom::{IResult, character::complete::multispace0};
 
-    use crate::isa::{configuration::Configuration, parse::operation, parse::router};
+    use crate::isa::{
+        configuration::{Configuration, Program},
+        parse::{operation, router},
+    };
 
     pub fn parse_configuration(s: &str) -> IResult<&str, Configuration> {
         let (input, operation) = operation::mnemonics::parse_operation(s)?;
@@ -21,6 +24,17 @@ pub mod mnemonics {
         pub fn from_str(s: &str) -> Result<Self, String> {
             let (_, configuration) = parse_configuration(s).map_err(|e| e.to_string())?;
             Ok(configuration)
+        }
+    }
+
+    impl Program {
+        pub fn from_str(s: &str) -> Result<Self, String> {
+            let mut configurations = Vec::new();
+            for line in s.lines() {
+                let configuration = Configuration::from_str(line)?;
+                configurations.push(configuration);
+            }
+            Ok(Program { configurations })
         }
     }
 

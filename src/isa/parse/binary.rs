@@ -1,8 +1,10 @@
 use crate::isa::{
-    configuration::Configuration,
+    configuration::{Configuration, Program},
     operation::Operation,
     router::{DirectionsOpt, RouterConfig, RouterInDir, RouterSwitchConfig},
 };
+
+type ConfigCode = u64;
 
 #[derive(Debug, Clone, Copy)]
 pub enum ConfigField {
@@ -472,23 +474,59 @@ impl Configuration {
         }
     }
 }
+
+impl BinaryIO for Program {
+    fn to_binary_str(&self) -> String {
+        self.configurations
+            .iter()
+            .map(|c| c.to_binary().to_binary_str())
+            .collect::<Vec<String>>()
+            .join("\n")
+    }
+
+    fn from_binary_str(s: &str) -> Self {
+        // split by newline, remove spaces
+        let lines = s.lines().map(|l| l.trim()).collect::<Vec<&str>>();
+        // for each line, convert to binary
+        let binaries = lines
+            .iter()
+            .map(|l| ConfigCode::from_binary_str(l))
+            .collect::<Vec<u64>>();
+        // convert to program
+        Self {
+            configurations: binaries
+                .iter()
+                .map(|b| Configuration::from_binary(*b))
+                .collect(),
+        }
+    }
+
+    fn to_binary(&self) -> u64 {
+        todo!()
+    }
+
+    fn from_binary(_: u64) -> Self {
+        todo!()
+    }
+}
+
 pub trait BinaryIO {
-    fn dump_str(&self) -> String;
-    fn dump_binary(&self) -> u64;
-    fn from_str(&self, s: &str) -> Self;
-    fn from_binary(&self, code: u64) -> Self;
+    fn to_binary_str(&self) -> String;
+    fn to_binary(&self) -> u64;
+    fn from_binary_str(s: &str) -> Self;
+    fn from_binary(code: u64) -> Self;
 }
 
 impl BinaryIO for u64 {
-    fn dump_str(&self) -> String {
+    fn to_binary_str(&self) -> String {
         format!("0b{:b}", self)
     }
 
-    fn dump_binary(&self) -> u64 {
+    fn to_binary(&self) -> u64 {
         *self
     }
 
-    fn from_str(&self, s: &str) -> Self {
+    fn from_binary_str(s: &str) -> Self {
         let mut code: u64 = 0;
         for (i, c) in s.chars().enumerate() {
             if c == '1' {
@@ -498,7 +536,7 @@ impl BinaryIO for u64 {
         code
     }
 
-    fn from_binary(&self, code: u64) -> Self {
+    fn from_binary(code: u64) -> Self {
         code
     }
 }
@@ -512,12 +550,12 @@ mod tests {
     #[test]
     fn test_binary_io() {
         let code = 0b10101010101010101010101010101010;
-        let code_str = code.dump_str();
-        let code_binary = code.dump_binary();
+        let code_str = code.to_binary_str();
+        let code_binary = code.to_binary();
         assert_eq!(code_str, "0b10101010101010101010101010101010");
         assert_eq!(code_binary, 0b10101010101010101010101010101010);
-        let code_from_str = code.from_str(&code_str);
-        let code_from_binary = code.from_binary(code_binary);
+        let code_from_str = ConfigCode::from_binary_str(&code_str);
+        let code_from_binary = ConfigCode::from_binary(code_binary);
         assert_eq!(code_from_str, code);
         assert_eq!(code_from_binary, code);
     }
