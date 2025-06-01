@@ -1,12 +1,22 @@
-use crate::sim::dmem::DataMemory;
-
-use super::{state::PEState, value::ScalarValue};
+use super::{
+    pe::{DMemMode, MemPE, PE},
+    value::ScalarValue,
+};
 
 type Immediate = Option<u16>;
 type UpdateRes = bool;
 pub const UPDATE_RES: bool = true;
 pub const NO_UPDATE_RES: bool = false;
 pub const NO_IMMEDIATE: Immediate = None;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum OperationType {
+    ArithLogic,
+    SIMD,
+    Memory,
+    Control,
+    NOP,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Operation {
@@ -42,48 +52,85 @@ pub enum Operation {
 }
 
 impl Operation {
-    pub fn is_mem(&self) -> bool {
-        matches!(
-            self,
-            Operation::LOADB(_)
-                | Operation::LOAD(_)
-                | Operation::LOADD(_)
-                | Operation::STOREB(_)
-                | Operation::STORE(_)
-        )
+    pub fn get_type(&self) -> OperationType {
+        match self {
+            Operation::ADD(_, _)
+            | Operation::SUB(_, _)
+            | Operation::MULT
+            | Operation::DIV
+            | Operation::LS
+            | Operation::RS
+            | Operation::ASR
+            | Operation::AND
+            | Operation::OR
+            | Operation::XOR => OperationType::ArithLogic,
+            Operation::NOP => OperationType::NOP,
+            Operation::VADD | Operation::VMUL => OperationType::SIMD,
+            Operation::LOADD(_)
+            | Operation::STORED(_)
+            | Operation::LOAD(_)
+            | Operation::STORE(_)
+            | Operation::LOADB(_)
+            | Operation::STOREB(_) => OperationType::Memory,
+            Operation::BR | Operation::JUMP | Operation::MOVC | Operation::MOVCL => {
+                OperationType::Control
+            }
+            _ => todo!("Operation not implemented: {:?}", self),
+        }
     }
 
-    /// Execute the operation and update the wire signals
-    /// For the memory operations, only the address signals are updated at this stage
-    pub fn execute_combinatorial(&self, state: &mut PEState) {
-        match self {
+    pub fn is_mem(&self) -> bool {
+        self.get_type() == OperationType::Memory
+    }
+
+    pub fn is_control(&self) -> bool {
+        self.get_type() == OperationType::Control
+    }
+
+    pub fn is_arith_logic(&self) -> bool {
+        self.get_type() == OperationType::ArithLogic
+    }
+
+    pub fn is_simd(&self) -> bool {
+        self.get_type() == OperationType::SIMD
+    }
+}
+
+impl PE {
+    /// Execute the simple ALU operation and update the wire signals
+    pub fn execute_op_combinatorial(&mut self, op: &Operation) {
+        assert!(
+            !op.is_mem(),
+            "Memory operations cannot be executed in normal PE"
+        );
+        match op {
             Operation::ADD(immediate, _) => {
                 // converting the u64 to scalar value
-                let op1: i16 = ScalarValue::from(state.regs.reg_op1).into();
+                let op1: i16 = ScalarValue::from(self.regs.reg_op1).into();
                 let op2: i16 = immediate
                     .map(|i| i as i16)
-                    .unwrap_or(ScalarValue::from(state.regs.reg_op2).into());
+                    .unwrap_or(ScalarValue::from(self.regs.reg_op2).into());
                 // wrapping_add ignores overflows
-                state.signals.wire_alu_out = (op1.wrapping_add(op2) as u16) as u64;
+                self.signals.wire_alu_out = (op1.wrapping_add(op2) as u16) as u64;
             }
             Operation::SUB(immediate, _) => {
-                let op1: i16 = ScalarValue::from(state.regs.reg_op1).into();
+                let op1: i16 = ScalarValue::from(self.regs.reg_op1).into();
                 // op2 from immediate or from reg_op2, depending on the msb bit,
                 // this is represented by the immediate field
                 let op2: i16 = immediate
                     .map(|i| i as i16)
-                    .unwrap_or(ScalarValue::from(state.regs.reg_op2).into());
+                    .unwrap_or(ScalarValue::from(self.regs.reg_op2).into());
                 // wrapping_sub ignores overflows
-                state.signals.wire_alu_out = (op1.wrapping_sub(op2) as u16) as u64;
+                self.signals.wire_alu_out = (op1.wrapping_sub(op2) as u16) as u64;
             }
             Operation::MULT => {
                 // wrapping_mul ignores overflows
-                state.signals.wire_alu_out = state.regs.reg_op1.wrapping_mul(state.regs.reg_op2);
+                self.signals.wire_alu_out = self.regs.reg_op1.wrapping_mul(self.regs.reg_op2);
                 todo!() // TODO: this is not correct
             }
             Operation::DIV => {
                 // wrapping_div ignores overflows
-                state.signals.wire_alu_out = state.regs.reg_op1.wrapping_div(state.regs.reg_op2);
+                self.signals.wire_alu_out = self.regs.reg_op1.wrapping_div(self.regs.reg_op2);
             }
             Operation::VADD => {
                 todo!()
@@ -92,34 +139,34 @@ impl Operation {
                 todo!()
             }
             Operation::LS => {
-                let lhs = state.regs.reg_op1 as u64;
-                let rhs = state.regs.reg_op2 as u32;
-                state.signals.wire_alu_out = (lhs << rhs) as u64;
+                let lhs = self.regs.reg_op1 as u64;
+                let rhs = self.regs.reg_op2 as u32;
+                self.signals.wire_alu_out = (lhs << rhs) as u64;
                 todo!() // this is wrong, TODO
             }
             Operation::RS => {
-                let lhs = state.regs.reg_op1 as u64;
-                let rhs = state.regs.reg_op2 as u32;
-                state.signals.wire_alu_out = (lhs >> rhs) as u64;
+                let lhs = self.regs.reg_op1 as u64;
+                let rhs = self.regs.reg_op2 as u32;
+                self.signals.wire_alu_out = (lhs >> rhs) as u64;
                 todo!() // this is wrong, TODO
             }
             Operation::ASR => {
-                let lhs = state.regs.reg_op1 as u64;
-                let rhs = state.regs.reg_op2 as u32;
-                state.signals.wire_alu_out = (lhs >> rhs) as u64;
+                let lhs = self.regs.reg_op1 as u64;
+                let rhs = self.regs.reg_op2 as u32;
+                self.signals.wire_alu_out = (lhs >> rhs) as u64;
                 todo!() // this is wrong, TODO
             }
             Operation::AND => {
-                state.signals.wire_alu_out = state.regs.reg_op1 & state.regs.reg_op2;
+                self.signals.wire_alu_out = self.regs.reg_op1 & self.regs.reg_op2;
                 todo!() // this is wrong, TODO
             }
             Operation::OR => {
-                state.signals.wire_alu_out = state.regs.reg_op1 | state.regs.reg_op2;
+                self.signals.wire_alu_out = self.regs.reg_op1 | self.regs.reg_op2;
                 todo!() // this is wrong, TODO
             }
 
             Operation::XOR => {
-                state.signals.wire_alu_out = state.regs.reg_op1 ^ state.regs.reg_op2;
+                self.signals.wire_alu_out = self.regs.reg_op1 ^ self.regs.reg_op2;
                 todo!() // this is wrong, TODO
             }
 
@@ -155,117 +202,96 @@ impl Operation {
                 todo!()
             }
 
-            Operation::LOADD(immediate) => {
-                if immediate.is_some() {
-                    state.signals.wire_dmem_addr = Some(immediate.unwrap() as u64);
-                } else {
-                    state.signals.wire_dmem_addr = Some(state.regs.reg_op2);
-                }
-            }
-
-            Operation::STORED(immediate) => {
-                state.signals.wire_dmem_data = Some(state.regs.reg_op1);
-                if immediate.is_some() {
-                    state.signals.wire_dmem_addr = Some(immediate.unwrap() as u64);
-                } else {
-                    state.signals.wire_dmem_addr = Some(state.regs.reg_op2);
-                }
-            }
-
-            Operation::LOAD(immediate) => {
-                if immediate.is_some() {
-                    state.signals.wire_dmem_addr = Some(immediate.unwrap() as u64);
-                } else {
-                    state.signals.wire_dmem_addr = Some(state.regs.reg_op2);
-                }
-            }
-
-            Operation::STORE(immediate) => {
-                state.signals.wire_dmem_data = Some(state.regs.reg_op1);
-                if immediate.is_some() {
-                    state.signals.wire_dmem_addr = Some(immediate.unwrap() as u64);
-                } else {
-                    state.signals.wire_dmem_addr = Some(state.regs.reg_op2);
-                }
-            }
-
-            Operation::LOADB(immediate) => {
-                if immediate.is_some() {
-                    state.signals.wire_dmem_addr = Some(immediate.unwrap() as u64);
-                } else {
-                    state.signals.wire_dmem_addr = Some(state.regs.reg_op2);
-                }
-            }
-
-            Operation::STOREB(immediate) => {
-                state.signals.wire_dmem_data = Some(state.regs.reg_op1);
-                if immediate.is_some() {
-                    state.signals.wire_dmem_addr = Some(immediate.unwrap() as u64);
-                } else {
-                    state.signals.wire_dmem_addr = Some(state.regs.reg_op2);
-                }
-            }
-
             Operation::NOP => {}
-            _ => todo!(),
+            _ => unimplemented!("Operation not implemented: {:?}", op),
         }
     }
 
-    /// The address has been set in 'execute_combinatorial', here just need to take care of the data coming back
-    pub fn execute_memory(&self, state: &mut PEState, dmem: &mut DataMemory) {
-        match self {
-            Operation::LOADB(_) => {
-                let data = dmem.read8(state.signals.wire_dmem_addr.unwrap()) as u64;
-                state.signals.wire_dmem_data = Some(data);
-                state.signals.wire_alu_out = data;
-            }
-            Operation::LOAD(_) => {
-                let data = dmem.read16(state.signals.wire_dmem_addr.unwrap()) as u64;
-                state.signals.wire_dmem_data = Some(data);
-                state.signals.wire_alu_out = data;
-            }
-            Operation::LOADD(_) => {
-                let data = dmem.read64(state.signals.wire_dmem_addr.unwrap());
-                state.signals.wire_dmem_data = Some(data);
-                state.signals.wire_alu_out = data;
-            }
-            Operation::STOREB(_) => {
-                dmem.write8(
-                    state.signals.wire_dmem_addr.unwrap(),
-                    state.signals.wire_dmem_data.unwrap() as u8,
-                );
-            }
-            Operation::STORE(_) => {
-                dmem.write16(
-                    state.signals.wire_dmem_addr.unwrap(),
-                    state.signals.wire_dmem_data.unwrap() as u16,
-                );
-            }
-            Operation::STORED(_) => {
-                dmem.write64(
-                    state.signals.wire_dmem_addr.unwrap(),
-                    state.signals.wire_dmem_data.unwrap(),
-                );
-            }
-            _ => {}
-        }
-    }
-
-    pub fn update_res(&self, state: &PEState) -> PEState {
-        let mut new_state = state.clone();
-        match self {
+    /// Update the res register, this is the only register updated by ALU
+    /// You should call this function by very end if the cycle
+    pub fn update_res(&self, op: &Operation) -> PE {
+        let mut new_state = self.clone();
+        match op {
             Operation::ADD(_, update_res) => {
                 if *update_res {
-                    new_state.regs.reg_res = state.signals.wire_alu_out;
+                    new_state.regs.reg_res = self.signals.wire_alu_out;
                 }
             }
             Operation::SUB(_, update_res) => {
                 if *update_res {
-                    new_state.regs.reg_res = state.signals.wire_alu_out;
+                    new_state.regs.reg_res = self.signals.wire_alu_out;
                 }
             }
             _ => {}
         }
         new_state
+    }
+}
+
+impl MemPE {
+    /// Execute the memory operation, LOAD operation will have the data back by next cycle
+    /// The data is back to wire_alu_out by next cycle, compiler must make sure that next operation does not write to wire_alu_out
+    pub fn prepare_dmem_interface(&mut self, op: &Operation) {
+        match op {
+            Operation::LOADB(immediate) => {
+                self.dmem_interface.mode = DMemMode::Read8;
+                if immediate.is_some() {
+                    self.dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
+                } else {
+                    self.dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
+                }
+                self.dmem_interface.wire_dmem_data = None;
+            }
+            Operation::LOAD(immediate) => {
+                self.dmem_interface.mode = DMemMode::Read16;
+                if immediate.is_some() {
+                    self.dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
+                } else {
+                    self.dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
+                }
+                self.dmem_interface.wire_dmem_data = None;
+            }
+            Operation::LOADD(immediate) => {
+                self.dmem_interface.mode = DMemMode::Read64;
+                if immediate.is_some() {
+                    self.dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
+                } else {
+                    self.dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
+                }
+                self.dmem_interface.wire_dmem_data = None;
+            }
+            Operation::STOREB(immediate) => {
+                self.dmem_interface.mode = DMemMode::Write8;
+                if immediate.is_some() {
+                    self.dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
+                } else {
+                    self.dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
+                }
+                self.dmem_interface.wire_dmem_data = Some(self.pe.regs.reg_op1);
+            }
+            Operation::STORE(immediate) => {
+                self.dmem_interface.mode = DMemMode::Write16;
+                if immediate.is_some() {
+                    self.dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
+                } else {
+                    self.dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
+                }
+                self.dmem_interface.wire_dmem_data = Some(self.pe.regs.reg_op1);
+            }
+            Operation::STORED(immediate) => {
+                self.dmem_interface.mode = DMemMode::Write64;
+                if immediate.is_some() {
+                    self.dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
+                } else {
+                    self.dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
+                }
+                self.dmem_interface.wire_dmem_data = Some(self.pe.regs.reg_op1);
+            }
+            _ => {}
+        }
+    }
+
+    pub fn update_from_dmem_interface(&mut self) {
+        self.pe.signals.wire_alu_out = self.dmem_interface.reg_dmem_data.unwrap();
     }
 }

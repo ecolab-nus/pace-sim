@@ -157,14 +157,14 @@ pub mod mnemonics {
         let (input, (name, dirs2)) = parse_named_directions(input)?;
         match name.as_str() {
             "input_register_bypass" => {
-                if bypass.is_default() {
+                if bypass == DirectionsOpt::default() {
                     bypass = dirs2
                 } else {
                     panic!("Multiple input_register_bypass fields found");
                 }
             }
             "input_register_write" => {
-                if write.is_default() {
+                if write == DirectionsOpt::default() {
                     write = dirs2
                 } else {
                     panic!("Multiple input_register_write fields found");

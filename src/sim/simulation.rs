@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
 use crate::isa::parse::configuration::mnemonics::parse_configuration;
-use crate::sim::pe::PE;
+use crate::isa::pe::PE;
 
 #[derive(Debug, Clone)]
 pub struct Grid {

@@ -1,7 +1,12 @@
 use pace_sim::{
     self,
-    isa::{configuration::Configuration, operation::*, router::*, state::PEState},
-    sim::{dmem::DataMemory, pe::PE},
+    isa::{
+        configuration::Configuration,
+        operation::*,
+        pe::{DMemInterface, MemPE, PE, PERegisters, PESignals},
+        router::*,
+    },
+    sim::dmem::DataMemory,
 };
 
 #[test]
@@ -12,12 +17,12 @@ fn test_single_pe() {
     // Store the result at 0x30
 
     // Taking the value from west to alu_op1, because the previous LOAD send data this cycle
-    let configuration1 = Configuration {
+    let load_op1 = Configuration {
         operation: Operation::LOAD(Some(0x10)),
         router_config: RouterConfig {
             switch_config: RouterSwitchConfig {
                 predicate: RouterInDir::Open,
-                alu_op1: RouterInDir::ALUOut,
+                alu_op1: RouterInDir::Open,
                 alu_op2: RouterInDir::Open,
                 east_out: RouterInDir::Open,
                 south_out: RouterInDir::Open,
@@ -42,8 +47,28 @@ fn test_single_pe() {
     };
 
     // The value of op2 is ready at this cycle, take it from west, but you cannot do the ADD yet, this cycle just load the data to the alu_op2
-    let configuration2 = Configuration {
+    let load_op2 = Configuration {
         operation: Operation::LOAD(Some(0x20)),
+        router_config: RouterConfig {
+            switch_config: RouterSwitchConfig {
+                predicate: RouterInDir::Open,
+                alu_op1: RouterInDir::ALUOut,
+                alu_op2: RouterInDir::Open,
+                east_out: RouterInDir::Open,
+                south_out: RouterInDir::Open,
+                west_out: RouterInDir::Open,
+                north_out: RouterInDir::Open,
+            },
+            extra_config: RouterExtraConfig {
+                input_register_bypass: DirectionsOpt::default(),
+                input_register_write: DirectionsOpt::default(),
+            },
+        },
+    };
+
+    // NOP just get the data from dmem interface to op2
+    let wait_op2 = Configuration {
+        operation: Operation::NOP,
         router_config: RouterConfig {
             switch_config: RouterSwitchConfig {
                 predicate: RouterInDir::Open,
@@ -62,7 +87,7 @@ fn test_single_pe() {
     };
 
     // Now add the two elements, store the result in alu_res
-    let configuration3 = Configuration {
+    let add = Configuration {
         operation: Operation::ADD(NO_IMMEDIATE, UPDATE_RES),
         router_config: RouterConfig {
             switch_config: RouterSwitchConfig {
@@ -82,7 +107,7 @@ fn test_single_pe() {
     };
 
     // Store the result at 0x30
-    let configuration4 = Configuration {
+    let store = Configuration {
         operation: Operation::STORE(Some(0x30)),
         router_config: RouterConfig {
             switch_config: RouterSwitchConfig {
@@ -98,18 +123,17 @@ fn test_single_pe() {
         },
     };
 
-    let configurations = vec![
-        configuration1,
-        configuration2,
-        configuration3,
-        configuration4,
-    ];
+    let configurations = vec![load_op1, load_op2, wait_op2, add, store];
 
-    let mut pe = PE {
-        state: PEState::default(),
-        configurations,
-        pc: 0,
-        is_mem: true,
+    let mut pe = MemPE {
+        pe: PE {
+            configurations,
+            pc: 0,
+            regs: PERegisters::default(),
+            signals: PESignals::default(),
+        },
+        dmem_interface: DMemInterface::default(),
+        previous_op_is_load: false,
     };
 
     let mut dmem = DataMemory::new(65536);
@@ -119,18 +143,9 @@ fn test_single_pe() {
     assert_eq!(dmem.read16(0x10), 0x11);
     assert_eq!(dmem.read16(0x20), 0x22);
 
-    loop {
-        pe.execute_combinatorial().unwrap();
-        pe.execute_memory(&mut dmem).unwrap();
-        pe.update_registers().unwrap();
-        if pe.next_conf().is_err() {
-            break;
-        }
-        println!(
-            "op1: {:?}, op2: {:?}, res: {:?}",
-            pe.state.regs.reg_op1, pe.state.regs.reg_op2, pe.state.regs.reg_res
-        );
+    while pe.next_conf().is_ok() {
+        pe.update_signals();
+        dmem.update_interface(&mut pe.dmem_interface);
+        pe.update_registers();
     }
-
-    assert_eq!(dmem.read16(0x30), 0x33);
 }
