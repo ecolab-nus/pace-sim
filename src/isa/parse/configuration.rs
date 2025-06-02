@@ -1,40 +1,41 @@
 pub mod mnemonics {
-    use nom::{IResult, character::complete::multispace0};
+    use nom::{IResult, Parser, character::complete::multispace0, multi::separated_list0};
 
     use crate::isa::{
         configuration::{Configuration, Program},
         parse::{operation, router},
     };
 
-    pub fn parse_configuration(s: &str) -> IResult<&str, Configuration> {
-        let (input, operation) = operation::mnemonics::parse_operation(s)?;
-        let (input, _) = multispace0(input)?;
-        let (input, router_config) = router::mnemonics::parse_router_config(input)?;
-        let (input, _) = multispace0(input)?;
-        Ok((
-            input,
-            Configuration {
-                operation,
-                router_config,
-            },
-        ))
-    }
-
     impl Configuration {
-        pub fn from_str(s: &str) -> Result<Self, String> {
-            let (_, configuration) = parse_configuration(s).map_err(|e| e.to_string())?;
+        fn parse_configuration(s: &str) -> IResult<&str, Configuration> {
+            let (input, operation) = operation::mnemonics::parse_operation(s)?;
+            let (input, _) = multispace0(input)?;
+            let (input, router_config) = router::mnemonics::parse_router_config(input)?;
+            let (input, _) = multispace0(input)?;
+            Ok((
+                input,
+                Configuration {
+                    operation,
+                    router_config,
+                },
+            ))
+        }
+        pub fn from_mnemonics(s: &str) -> Result<Self, String> {
+            let (_, configuration) = Self::parse_configuration(s).map_err(|e| e.to_string())?;
             Ok(configuration)
         }
     }
 
     impl Program {
-        pub fn from_str(s: &str) -> Result<Self, String> {
-            let mut configurations = Vec::new();
-            for line in s.lines() {
-                let configuration = Configuration::from_str(line)?;
-                configurations.push(configuration);
-            }
-            Ok(Program { configurations })
+        fn parse_program(s: &str) -> IResult<&str, Program> {
+            let (input, configurations) =
+                separated_list0(multispace0, Configuration::parse_configuration).parse(s)?;
+            Ok((input, Program { configurations }))
+        }
+
+        pub fn from_mnemonics(s: &str) -> Result<Self, String> {
+            let (_, program) = Self::parse_program(s).map_err(|e| e.to_string())?;
+            Ok(program)
         }
     }
 
@@ -61,7 +62,7 @@ pub mod mnemonics {
         };
         input_register_bypass: {north, south};
         input_register_write: {east, west};";
-            let (_, configuration) = parse_configuration(input).unwrap();
+            let configuration = Configuration::from_mnemonics(input).unwrap();
             assert_eq!(configuration.operation, Operation::ADD(Some(15), true));
             let expected_switch_config = RouterSwitchConfig {
                 predicate: RouterInDir::Open,
@@ -96,6 +97,32 @@ pub mod mnemonics {
                 configuration.router_config.input_register_write,
                 expected_register_write
             );
+        }
+    }
+}
+
+pub mod binary {
+    use crate::isa::{
+        binary::{ConfigField, ConfigurationField},
+        configuration::Configuration,
+        operation::Operation,
+        router::RouterConfig,
+    };
+
+    impl Configuration {
+        pub fn to_binary(&self) -> u64 {
+            let router_config: u64 = self.router_config.to_binary();
+            let operation: u64 = self.operation.to_binary();
+            let code = router_config | operation;
+            code
+        }
+        pub fn from_binary(code: u64) -> Self {
+            let router_config = RouterConfig::from_binary(code);
+            let operation = Operation::from_binary(code);
+            Self {
+                router_config,
+                operation,
+            }
         }
     }
 }

@@ -1,7 +1,6 @@
 use serde::Deserialize;
 
-use crate::isa::parse::configuration::mnemonics::parse_configuration;
-use crate::isa::pe::PE;
+use crate::isa::{configuration::Configuration, pe::PE};
 
 #[derive(Debug, Clone)]
 pub struct Grid {
@@ -60,9 +59,9 @@ impl Grid {
 
             // now parse the instructions and initialize the PE instruction memory
             for configuration_str in pe_config.configuration {
-                let (input_str, configuration) = parse_configuration(&configuration_str).unwrap();
+                let configuration = Configuration::from_mnemonics(&configuration_str).unwrap();
                 assert!(
-                    input_str.is_empty(),
+                    configuration_str.is_empty(),
                     "Invalid instruction: {:?}",
                     configuration
                 );

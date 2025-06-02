@@ -398,3 +398,261 @@ pub mod mnemonics {
         }
     }
 }
+
+pub mod binary {
+    use crate::isa::{
+        binary::{ConfigField, ConfigurationField},
+        operation::Operation,
+    };
+
+    impl Operation {
+        pub fn to_binary(&self) -> u64 {
+            let mut code: u64 = 0;
+            match self {
+                Operation::NOP => {}
+                Operation::ADD(imm, update_res) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                }
+                Operation::SUB(imm, update_res) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                }
+                Operation::MULT(imm, update_res) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                }
+                Operation::SEXT => {
+                    todo!()
+                }
+                Operation::DIV => {
+                    todo!()
+                }
+                Operation::VADD => {
+                    todo!()
+                }
+                Operation::VMUL => {
+                    todo!()
+                }
+                Operation::LS(imm, update_res) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                }
+                Operation::RS(imm, update_res) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                }
+                Operation::ASR(imm, update_res) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                }
+                Operation::AND(imm, update_res) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                }
+                Operation::OR(imm, update_res) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                }
+                Operation::XOR(imm, update_res) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                }
+                Operation::SEL(imm, update_res) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                }
+                Operation::CMERGE(imm, update_res) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                }
+                Operation::CMP(imm, update_res) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                }
+                Operation::CLT(imm, update_res) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                }
+                Operation::BR => {
+                    todo!()
+                }
+                Operation::CGT(imm, update_res) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                }
+                Operation::MOVCL => {
+                    todo!()
+                }
+                Operation::JUMP => {
+                    todo!()
+                }
+                Operation::MOVC => {
+                    todo!()
+                }
+                Operation::LOADD(immediate) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, immediate.unwrap_or(0) as u32);
+                }
+                Operation::STORED(immediate) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, immediate.unwrap_or(0) as u32);
+                }
+                Operation::LOAD(immediate) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, immediate.unwrap_or(0) as u32);
+                }
+                Operation::STORE(immediate) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, immediate.unwrap_or(0) as u32);
+                }
+                Operation::LOADB(immediate) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, immediate.unwrap_or(0) as u32);
+                }
+                Operation::STOREB(immediate) => {
+                    code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                    code.set_field(ConfigField::Immediate, immediate.unwrap_or(0) as u32);
+                }
+            }
+            code
+        }
+
+        pub fn from_binary(code: u64) -> Self {
+            let op = Operation::op_from_binary(code.get_field(ConfigField::OpCode) as u8);
+            let immediate = code.get_field(ConfigField::Immediate) as u16;
+            let update_res = code.get_bool_field(ConfigField::AluUpdateResBit);
+            match op {
+                Operation::ADD(_, _) => Operation::ADD(Some(immediate), update_res),
+                Operation::SUB(_, _) => Operation::SUB(Some(immediate), update_res),
+                Operation::MULT(_, _) => Operation::MULT(Some(immediate), update_res),
+                Operation::SEXT => Operation::SEXT,
+                Operation::DIV => Operation::DIV,
+                Operation::VADD => Operation::VADD,
+                Operation::VMUL => Operation::VMUL,
+                Operation::LS(_, _) => Operation::LS(Some(immediate), update_res),
+                Operation::RS(_, _) => Operation::RS(Some(immediate), update_res),
+                Operation::ASR(_, _) => Operation::ASR(Some(immediate), update_res),
+                Operation::AND(_, _) => Operation::AND(Some(immediate), update_res),
+                Operation::OR(_, _) => Operation::OR(Some(immediate), update_res),
+                Operation::XOR(_, _) => Operation::XOR(Some(immediate), update_res),
+                Operation::SEL(_, _) => Operation::SEL(Some(immediate), update_res),
+                Operation::CMERGE(_, _) => Operation::CMERGE(Some(immediate), update_res),
+                Operation::CMP(_, _) => Operation::CMP(Some(immediate), update_res),
+                Operation::CLT(_, _) => Operation::CLT(Some(immediate), update_res),
+                Operation::BR => Operation::BR,
+                Operation::CGT(_, _) => Operation::CGT(Some(immediate), update_res),
+                Operation::MOVCL => Operation::MOVCL,
+                Operation::JUMP => Operation::JUMP,
+                Operation::MOVC => Operation::MOVC,
+                Operation::LOADD(_) => Operation::LOADD(Some(immediate)),
+                Operation::STORED(_) => Operation::STORED(Some(immediate)),
+                Operation::LOAD(_) => Operation::LOAD(Some(immediate)),
+                Operation::STORE(_) => Operation::STORE(Some(immediate)),
+                Operation::LOADB(_) => Operation::LOADB(Some(immediate)),
+                Operation::STOREB(_) => Operation::STOREB(Some(immediate)),
+                Operation::NOP => Operation::NOP,
+            }
+        }
+
+        fn op_to_binary(&self) -> u8 {
+            match self {
+                Operation::NOP => 0,
+                Operation::ADD(_, _) => 1,
+                Operation::SUB(_, _) => 2,
+                Operation::MULT(_, _) => 3,
+                Operation::SEXT => 4,
+                Operation::DIV => 5,
+                Operation::VADD => 6,
+                Operation::VMUL => 7,
+                Operation::LS(_, _) => 8,
+                Operation::RS(_, _) => 9,
+                Operation::ASR(_, _) => 10,
+                Operation::AND(_, _) => 11,
+                Operation::OR(_, _) => 12,
+                Operation::XOR(_, _) => 13,
+                Operation::SEL(_, _) => 16,
+                Operation::CMERGE(_, _) => 17,
+                Operation::CMP(_, _) => 18,
+                Operation::CLT(_, _) => 19,
+                Operation::BR => 20,
+                Operation::CGT(_, _) => 21,
+                Operation::MOVCL => 23,
+                Operation::JUMP => 30,
+                Operation::MOVC => 31,
+                Operation::LOADD(_) => 14,
+                Operation::STORED(_) => 15,
+                Operation::LOAD(_) => 24,
+                Operation::STORE(_) => 27,
+                Operation::LOADB(_) => 26,
+                Operation::STOREB(_) => 29,
+            }
+        }
+
+        fn op_from_binary(code: u8) -> Self {
+            match code {
+                0 => Operation::NOP,
+                1 => Operation::ADD(None, false),
+                2 => Operation::SUB(None, false),
+                3 => Operation::MULT(None, false),
+                4 => Operation::SEXT,
+                5 => Operation::DIV,
+                6 => Operation::VADD,
+                7 => Operation::VMUL,
+                8 => Operation::LS(None, false),
+                9 => Operation::RS(None, false),
+                10 => Operation::ASR(None, false),
+                11 => Operation::AND(None, false),
+                12 => Operation::OR(None, false),
+                13 => Operation::XOR(None, false),
+                16 => Operation::SEL(None, false),
+                17 => Operation::CMERGE(None, false),
+                18 => Operation::CMP(None, false),
+                19 => Operation::CLT(None, false),
+                20 => Operation::BR,
+                21 => Operation::CGT(None, false),
+                23 => Operation::MOVCL,
+                30 => Operation::JUMP,
+                31 => Operation::MOVC,
+                14 => Operation::LOADD(None),
+                15 => Operation::STORED(None),
+                24 => Operation::LOAD(None),
+                27 => Operation::STORE(None),
+                26 => Operation::LOADB(None),
+                29 => Operation::STOREB(None),
+                _ => panic!("Invalid operation code: {}", code),
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::isa::operation::Operation;
+
+    #[test]
+    fn test_add_sub_binary_conversions() {
+        let add = Operation::ADD(Some(15), true);
+        let binary = add.to_binary();
+        let add_from_binary = Operation::from_binary(binary);
+        assert_eq!(add, add_from_binary);
+        let sub = Operation::SUB(Some(13), false);
+        let binary = sub.to_binary();
+        let sub_from_binary = Operation::from_binary(binary);
+        assert_eq!(sub, sub_from_binary);
+    }
+}
