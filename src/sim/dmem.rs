@@ -5,12 +5,14 @@ use crate::isa::pe::{DMemInterface, DMemMode};
 #[derive(Default, Debug, Clone)]
 pub struct DataMemory {
     pub data: Vec<u8>,
+    pub interface: DMemInterface,
 }
 
 impl DataMemory {
     pub fn new(size: usize) -> Self {
         Self {
             data: vec![0; size],
+            interface: DMemInterface::default(),
         }
     }
 
@@ -61,35 +63,36 @@ impl DataMemory {
             | (self.data[addr as usize + 4] as u64) << 32
     }
 
-    pub fn update_interface(&mut self, interface: &mut DMemInterface) {
-        match interface.mode {
+    pub fn update_interface(&mut self) {
+        match self.interface.mode {
             DMemMode::Read8 => {
-                interface.reg_dmem_data =
-                    Some(self.read8(interface.wire_dmem_addr.unwrap()) as u64);
+                self.interface.reg_dmem_data =
+                    Some(self.read8(self.interface.wire_dmem_addr.unwrap()) as u64);
             }
             DMemMode::Read16 => {
-                interface.reg_dmem_data =
-                    Some(self.read16(interface.wire_dmem_addr.unwrap()) as u64);
+                self.interface.reg_dmem_data =
+                    Some(self.read16(self.interface.wire_dmem_addr.unwrap()) as u64);
             }
             DMemMode::Read64 => {
-                interface.reg_dmem_data = Some(self.read64(interface.wire_dmem_addr.unwrap()));
+                self.interface.reg_dmem_data =
+                    Some(self.read64(self.interface.wire_dmem_addr.unwrap()));
             }
             DMemMode::Write8 => {
                 self.write8(
-                    interface.wire_dmem_addr.unwrap(),
-                    interface.reg_dmem_data.unwrap() as u8,
+                    self.interface.wire_dmem_addr.unwrap(),
+                    self.interface.reg_dmem_data.unwrap() as u8,
                 );
             }
             DMemMode::Write16 => {
                 self.write16(
-                    interface.wire_dmem_addr.unwrap(),
-                    interface.reg_dmem_data.unwrap() as u16,
+                    self.interface.wire_dmem_addr.unwrap(),
+                    self.interface.reg_dmem_data.unwrap() as u16,
                 );
             }
             DMemMode::Write64 => {
                 self.write64(
-                    interface.wire_dmem_addr.unwrap(),
-                    interface.reg_dmem_data.unwrap() as u64,
+                    self.interface.wire_dmem_addr.unwrap(),
+                    self.interface.reg_dmem_data.unwrap() as u64,
                 );
             }
             DMemMode::NOP => {}

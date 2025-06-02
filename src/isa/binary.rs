@@ -1,5 +1,3 @@
-use crate::isa::configuration::{Configuration, Program};
-
 type ConfigCode = u64;
 
 #[derive(Debug, Clone, Copy)]
@@ -50,7 +48,7 @@ pub trait ConfigurationField {
     fn set_bool_field(&mut self, field: ConfigField, value: &bool);
 }
 
-impl ConfigurationField for u64 {
+impl ConfigurationField for ConfigCode {
     fn get_field(&self, field: ConfigField) -> u32 {
         let (start, end) = field.get_range();
         assert!(start < 64 && end <= 64 && start < end, "Invalid bit range");
@@ -89,65 +87,82 @@ impl ConfigurationField for u64 {
     }
 }
 
-impl BinaryIO for Program {
-    fn to_binary_str(&self) -> String {
-        self.configurations
-            .iter()
-            .map(|c| c.to_binary().to_binary_str())
-            .collect::<Vec<String>>()
-            .join("\n")
-    }
+// impl BinaryIO for Program {
+//     fn to_binary_str(&self) -> String {
+//         self.configurations
+//             .iter()
+//             .map(|c| c.to_binary().to_binary_str())
+//             .collect::<Vec<String>>()
+//             .join("\n")
+//     }
 
-    fn from_binary_str(s: &str) -> Self {
-        // split by newline, remove spaces
-        let lines = s.lines().map(|l| l.trim()).collect::<Vec<&str>>();
-        // for each line, convert to binary
-        let binaries = lines
-            .iter()
-            .map(|l| ConfigCode::from_binary_str(l))
-            .collect::<Vec<u64>>();
-        // convert to program
-        Self {
-            configurations: binaries
-                .iter()
-                .map(|b| Configuration::from_binary(*b))
-                .collect(),
-        }
-    }
+//     fn from_binary_str(s: &str) -> Result<Self, String> {
+//         // split by newline, remove spaces
+//         let lines = s.lines().map(|l| l.trim()).collect::<Vec<&str>>();
+//         // for each line, convert to binary
+//         let mut configurations = Vec::new();
+//         for (line_nb, line) in lines.iter().enumerate() {
+//             let code = ConfigCode::from_binary_str(line);
+//             if code.is_err() {
+//                 return Err(format!(
+//                     "Invalid binary string at line {}, {}",
+//                     line_nb, line
+//                 ));
+//             }
+//             let code = code.unwrap();
+//             let configuration = Configuration::from_binary(code);
+//             if configuration.is_err() {
+//                 return Err(format!(
+//                     "Invalid configuration at line {}, {}",
+//                     line_nb, line
+//                 ));
+//             }
+//             let configuration = configuration.unwrap();
+//             configurations.push(configuration);
+//         }
+//         // convert to program
+//         Ok(Self { configurations })
+//     }
 
-    fn to_binary(&self) -> u64 {
-        todo!()
-    }
+//     fn to_binary(&self) -> u64 {
+//         todo!()
+//     }
 
-    fn from_binary(_: u64) -> Self {
-        todo!()
-    }
-}
+//     fn from_binary(_: u64) -> Self {
+//         todo!()
+//     }
+// }
 
 pub trait BinaryIO {
     fn to_binary_str(&self) -> String;
-    fn to_binary(&self) -> u64;
-    fn from_binary_str(s: &str) -> Self;
+    fn to_binary(&self) -> ConfigCode;
+    fn from_binary_str(s: &str) -> Result<Self, String>
+    where
+        Self: Sized;
     fn from_binary(code: u64) -> Self;
 }
 
 impl BinaryIO for u64 {
     fn to_binary_str(&self) -> String {
-        format!("0b{:b}", self)
+        format!("{:064b}", self)
     }
 
     fn to_binary(&self) -> u64 {
         *self
     }
 
-    fn from_binary_str(s: &str) -> Self {
+    fn from_binary_str(s: &str) -> Result<Self, String> {
         let mut code: u64 = 0;
-        for (i, c) in s.chars().enumerate() {
+        let s = s.chars().enumerate().collect::<Vec<(usize, char)>>();
+        if s.len() != 64 {
+            return Err(format!("Invalid binary string length: {}", s.len()));
+        }
+        for (i, c) in s {
             if c == '1' {
-                code |= 1 << (s.len() - i - 1);
+                code |= 1 << (63 - i);
             }
         }
-        code
+        Ok(code)
     }
 
     fn from_binary(code: u64) -> Self {
@@ -163,14 +178,20 @@ mod tests {
 
     #[test]
     fn test_binary_io() {
-        let code = 0b10101010101010101010101010101010;
+        let code = 0b1010101010101010101010101010101010101010101010101010101010101010;
         let code_str = code.to_binary_str();
         let code_binary = code.to_binary();
-        assert_eq!(code_str, "0b10101010101010101010101010101010");
-        assert_eq!(code_binary, 0b10101010101010101010101010101010);
+        assert_eq!(
+            code_str,
+            "1010101010101010101010101010101010101010101010101010101010101010"
+        );
+        assert_eq!(
+            code_binary,
+            0b1010101010101010101010101010101010101010101010101010101010101010
+        );
         let code_from_str = ConfigCode::from_binary_str(&code_str);
         let code_from_binary = ConfigCode::from_binary(code_binary);
-        assert_eq!(code_from_str, code);
+        assert_eq!(code_from_str, Ok(code));
         assert_eq!(code_from_binary, code);
     }
 

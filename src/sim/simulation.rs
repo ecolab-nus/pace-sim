@@ -1,74 +1,114 @@
-use serde::Deserialize;
+use nom::{
+    IResult,
+    bytes::complete::tag,
+    character::complete::{digit1, multispace0},
+};
 
-use crate::isa::{configuration::Configuration, pe::PE};
+use crate::isa::{
+    configuration::Program,
+    pe::{MemPE, PE},
+};
 
-#[derive(Debug, Clone)]
+use super::dmem::DataMemory;
+
+// The mem PEs are at the left and right edges of the grid.
+// The shape is (x, y), x the number of columns
+#[derive(Debug)]
 pub struct Grid {
     pub shape: (usize, usize),
     pub pes: Vec<PE>,
-}
-
-/// When updating the wires, the updated Grid is given to the next updates
-/// When updating the regs, the updated Grid is not given to the next updates
-/// So, update wires are performed first,
-/// Update regs are performed by the end after all wires are updated,
-pub trait Update {
-    fn update_reg(&self, grid: &Grid) -> Grid;
-    fn update_wire(&self, grid: &Grid) -> Grid;
-}
-
-#[derive(Debug, Deserialize)]
-pub struct PEConfig {
-    pub coordinates: (usize, usize),
-    pub configuration: Vec<String>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct GridConfig {
-    pub shape: (usize, usize),
-    pub pes: Vec<PEConfig>,
-}
-
-impl GridConfig {
-    pub fn from_file(path: &str) -> Self {
-        // read from the file
-        let toml_str = std::fs::read_to_string(path).unwrap();
-        let grid: GridConfig = toml::from_str(&toml_str).unwrap();
-        // check if everything is OK
-        grid
-    }
+    pub mem_pes: Vec<MemPE>,
+    pub dmems: Vec<DataMemory>,
 }
 
 impl Grid {
-    pub fn from_file(path: &str) -> Self {
-        let grid_config = GridConfig::from_file(path);
-        let shape = grid_config.shape;
-        let mut pes = vec![PE::default(); shape.0 * shape.1];
-        for pe_config in grid_config.pes {
-            // check if the coordinates are valid
-            let (x, y) = pe_config.coordinates;
-            assert!(x < shape.0 && y < shape.1, "Invalid coordinates");
-            // check if this coordinates are already taken
-            let pe = &mut pes[y * shape.0 + x];
-            assert!(
-                !pe.is_initialized(),
-                "PE at coordinates {} {} is already initialized",
-                x,
-                y
-            );
+    /// Loading the grid from a folder.
+    /// The folder contains the program of each PE.
+    /// The filename of each PE is in the format of PE-YyXx, e.g. PE-Y1X0
+    /// The shape is automatically inferred from the max x and y in the filenames
+    /// You must provide the program for each (x, y), panic if some is missing
+    pub fn from_folder(path: &str) -> Self {
+        let mut entries = std::fs::read_dir(&path).unwrap();
+        let mut max_x = usize::MIN;
+        let mut max_y = usize::MIN;
+        while let Some(entry) = entries.next() {
+            let entry = entry.unwrap();
+            let filename = entry.file_name().into_string().unwrap();
+            let (_, (x, y)) = Self::parse_pe_filename(&filename).unwrap();
+            max_x = max_x.max(x);
+            max_y = max_y.max(y);
+        }
+        let shape = (max_x + 1, max_y + 1);
 
-            // now parse the instructions and initialize the PE instruction memory
-            for configuration_str in pe_config.configuration {
-                let configuration = Configuration::from_mnemonics(&configuration_str).unwrap();
-                assert!(
-                    configuration_str.is_empty(),
-                    "Invalid instruction: {:?}",
-                    configuration
-                );
-                pe.configurations.push(configuration);
+        // Check that no file is missing, i.e. each (x, y) is present
+        for x in 0..shape.0 {
+            for y in 0..shape.1 {
+                let filename = format!("PE-Y{}X{}", y, x);
+                let file_path = std::path::Path::new(&path).join(filename);
+                if !file_path.exists() {
+                    panic!("File {} is missing", file_path.display());
+                }
             }
         }
-        Grid { shape, pes }
+
+        let mut pes: Vec<PE> = Vec::new();
+        let mut mem_pes: Vec<MemPE> = Vec::new();
+        let mut dmems: Vec<DataMemory> = Vec::new();
+        // Load the programs
+        for y in 0..shape.1 {
+            // The first column and last column are mem PEs
+            let filename = format!("PE-Y{}X{}", y, 0);
+            let file_path = std::path::Path::new(&path).join(filename);
+            let program = std::fs::read_to_string(file_path).unwrap();
+            let program = Program::from_binary_str(&program).unwrap();
+            // create the data memory and the data memory interface
+            let dmem = DataMemory::new(1024);
+            dmems.push(dmem);
+            let pe = MemPE::new(program);
+            mem_pes.push(pe);
+
+            for x in 1..shape.0 - 1 {
+                let filename = format!("PE-Y{}X{}", y, x);
+                let file_path = std::path::Path::new(&path).join(filename);
+                let program = std::fs::read_to_string(file_path).unwrap();
+                let program = Program::from_binary_str(&program).unwrap();
+                let pe = PE::new(program);
+                pes.push(pe);
+            }
+
+            let filename = format!("PE-Y{}X{}", y, shape.0 - 1);
+            let file_path = std::path::Path::new(&path).join(filename);
+            let program = std::fs::read_to_string(file_path).unwrap();
+            let program = Program::from_binary_str(&program).unwrap();
+            let dmem = DataMemory::new(1024);
+            dmems.push(dmem);
+            let pe = MemPE::new(program);
+            mem_pes.push(pe);
+        }
+        Grid {
+            shape,
+            pes,
+            mem_pes,
+            dmems,
+        }
+    }
+
+    /// Parse the filename of a PE program file, returns the coordinates of the PE
+    /// Syntax: PE-YyXx
+    fn parse_pe_filename(filename: &str) -> IResult<&str, (usize, usize)> {
+        // use nom
+        let (input, _) = tag("PE-Y")(filename)?;
+        let (input, y) = digit1(input)?;
+        let (input, _) = tag("X")(input)?;
+        let (input, x) = digit1(input)?;
+        let (input, _) = multispace0(input)?;
+        if !input.is_empty() {
+            return Err(nom::Err::Error(nom::error::Error::new(
+                input,
+                nom::error::ErrorKind::Tag,
+            )));
+        }
+        Ok((input, (x.parse().unwrap(), y.parse().unwrap())))
     }
 
     pub fn pe_at(&self, x: usize, y: usize) -> &PE {

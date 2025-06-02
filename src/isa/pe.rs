@@ -1,4 +1,15 @@
-use super::{configuration::Configuration, operation::Operation};
+use super::{
+    configuration::{Configuration, Program},
+    operation::Operation,
+};
+
+#[derive(Debug, Clone, Default)]
+pub struct DMemInterface {
+    pub wire_dmem_addr: Option<u64>,
+    pub wire_dmem_data: Option<u64>, // This wire is used to send the data to the dmem
+    pub reg_dmem_data: Option<u64>, // This register is used to capture the loaded data from dmem (at the next cycle of LOAD)
+    pub mode: DMemMode,
+}
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct PERegisters {
@@ -23,14 +34,6 @@ pub struct PESignals {
     pub wire_south_out: Option<u64>,
     pub wire_west_out: Option<u64>,
     pub wire_east_out: Option<u64>,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct DMemInterface {
-    pub wire_dmem_addr: Option<u64>,
-    pub wire_dmem_data: Option<u64>, // This wire is used to send the data to the dmem
-    pub reg_dmem_data: Option<u64>, // This register is used to capture the loaded data from dmem (at the next cycle of LOAD)
-    pub mode: DMemMode,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -59,6 +62,15 @@ pub struct PE {
 }
 
 impl PE {
+    pub fn new(program: Program) -> Self {
+        Self {
+            regs: PERegisters::default(),
+            signals: PESignals::default(),
+            pc: 0,
+            configurations: program.configurations,
+        }
+    }
+
     pub fn is_initialized(&self) -> bool {
         self.configurations.len() > 0
     }
@@ -104,23 +116,29 @@ impl PE {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug)]
 pub struct MemPE {
     pub pe: PE,
-    pub dmem_interface: DMemInterface,
     pub previous_op_is_load: bool,
 }
 
 impl MemPE {
+    pub fn new(program: Program) -> Self {
+        Self {
+            pe: PE::new(program),
+            previous_op_is_load: false,
+        }
+    }
+
     /// If arithmetic logic operation, then update the PE as normal PE
     /// If memory operation, prepare the dmem interface, you need to call the DMem to update the interface and itself
     /// If the previous operation is a LOAD, then this operation cannot be an ALU operation
-    pub fn update_signals(&mut self) {
+    pub fn update_signals(&mut self, dmem_interface: &mut DMemInterface) {
         let configuration = self.pe.configurations[self.pe.pc].clone();
         let operation = configuration.operation.clone();
 
         if self.previous_op_is_load {
-            self.pe.signals.wire_alu_out = self.dmem_interface.reg_dmem_data.unwrap();
+            self.pe.signals.wire_alu_out = dmem_interface.reg_dmem_data.unwrap();
 
             // TODO: make this a warning
             if operation.is_arith_logic() {
@@ -131,7 +149,7 @@ impl MemPE {
         }
 
         if operation.is_mem() {
-            self.prepare_dmem_interface(&operation);
+            self.prepare_dmem_interface(&operation, dmem_interface);
         } else {
             // check the memory interface, if the data register is not empty, meaning previous operation was a LOAD
             // so you cannot execute any operation

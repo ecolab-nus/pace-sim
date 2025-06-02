@@ -1,5 +1,5 @@
 use super::{
-    pe::{DMemMode, MemPE, PE},
+    pe::{DMemInterface, DMemMode, MemPE, PE},
     value::ScalarValue,
 };
 
@@ -252,67 +252,67 @@ impl PE {
 impl MemPE {
     /// Execute the memory operation, LOAD operation will have the data back by next cycle
     /// The data is back to wire_alu_out by next cycle, compiler must make sure that next operation does not write to wire_alu_out
-    pub fn prepare_dmem_interface(&mut self, op: &Operation) {
+    pub fn prepare_dmem_interface(&mut self, op: &Operation, dmem_interface: &mut DMemInterface) {
         match op {
             Operation::LOADB(immediate) => {
-                self.dmem_interface.mode = DMemMode::Read8;
+                dmem_interface.mode = DMemMode::Read8;
                 if immediate.is_some() {
-                    self.dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
+                    dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
                 } else {
-                    self.dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
+                    dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
                 }
-                self.dmem_interface.wire_dmem_data = None;
+                dmem_interface.wire_dmem_data = None;
             }
             Operation::LOAD(immediate) => {
-                self.dmem_interface.mode = DMemMode::Read16;
+                dmem_interface.mode = DMemMode::Read16;
                 if immediate.is_some() {
-                    self.dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
+                    dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
                 } else {
-                    self.dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
+                    dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
                 }
-                self.dmem_interface.wire_dmem_data = None;
+                dmem_interface.wire_dmem_data = None;
             }
             Operation::LOADD(immediate) => {
-                self.dmem_interface.mode = DMemMode::Read64;
+                dmem_interface.mode = DMemMode::Read64;
                 if immediate.is_some() {
-                    self.dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
+                    dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
                 } else {
-                    self.dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
+                    dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
                 }
-                self.dmem_interface.wire_dmem_data = None;
+                dmem_interface.wire_dmem_data = None;
             }
             Operation::STOREB(immediate) => {
-                self.dmem_interface.mode = DMemMode::Write8;
+                dmem_interface.mode = DMemMode::Write8;
                 if immediate.is_some() {
-                    self.dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
+                    dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
                 } else {
-                    self.dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
+                    dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
                 }
-                self.dmem_interface.wire_dmem_data = Some(self.pe.regs.reg_op1);
+                dmem_interface.wire_dmem_data = Some(self.pe.regs.reg_op1);
             }
             Operation::STORE(immediate) => {
-                self.dmem_interface.mode = DMemMode::Write16;
+                dmem_interface.mode = DMemMode::Write16;
                 if immediate.is_some() {
-                    self.dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
+                    dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
                 } else {
-                    self.dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
+                    dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
                 }
-                self.dmem_interface.wire_dmem_data = Some(self.pe.regs.reg_op1);
+                dmem_interface.wire_dmem_data = Some(self.pe.regs.reg_op1);
             }
             Operation::STORED(immediate) => {
-                self.dmem_interface.mode = DMemMode::Write64;
+                dmem_interface.mode = DMemMode::Write64;
                 if immediate.is_some() {
-                    self.dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
+                    dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
                 } else {
-                    self.dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
+                    dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
                 }
-                self.dmem_interface.wire_dmem_data = Some(self.pe.regs.reg_op1);
+                dmem_interface.wire_dmem_data = Some(self.pe.regs.reg_op1);
             }
             _ => {}
         }
     }
 
-    pub fn update_from_dmem_interface(&mut self) {
-        self.pe.signals.wire_alu_out = self.dmem_interface.reg_dmem_data.unwrap();
+    pub fn update_from_dmem_interface(&mut self, dmem_interface: &mut DMemInterface) {
+        self.pe.signals.wire_alu_out = dmem_interface.reg_dmem_data.unwrap();
     }
 }

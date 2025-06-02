@@ -115,7 +115,6 @@ fn test_single_pe() {
             regs: PERegisters::default(),
             signals: PESignals::default(),
         },
-        dmem_interface: DMemInterface::default(),
         previous_op_is_load: false,
     };
 
@@ -127,8 +126,8 @@ fn test_single_pe() {
     assert_eq!(dmem.read16(0x20), 0x22);
 
     while pe.next_conf().is_ok() {
-        pe.update_signals();
-        dmem.update_interface(&mut pe.dmem_interface);
+        pe.update_signals(&mut dmem.interface);
+        dmem.update_interface();
         pe.update_registers();
     }
 }

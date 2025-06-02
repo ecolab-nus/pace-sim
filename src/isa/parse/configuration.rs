@@ -128,14 +128,14 @@ pub mod binary {
         router::RouterConfig,
     };
 
-    impl Configuration {
-        pub fn to_binary(&self) -> u64 {
+    impl BinaryIO for Configuration {
+        fn to_binary(&self) -> u64 {
             let router_config: u64 = self.router_config.to_binary();
             let operation: u64 = self.operation.to_binary();
             let code = router_config | operation;
             code
         }
-        pub fn from_binary(code: u64) -> Self {
+        fn from_binary(code: u64) -> Self {
             let router_config = RouterConfig::from_binary(code);
             let operation = Operation::from_binary(code);
             Self {
@@ -144,39 +144,51 @@ pub mod binary {
             }
         }
 
-        pub fn from_binary_str(s: &str) -> Self {
+        fn from_binary_str(s: &str) -> Result<Self, String> {
             let code = u64::from_binary_str(s);
-            Self::from_binary(code)
+            if code.is_err() {
+                return Err(format!("Invalid binary string: {}", s));
+            }
+            let code = code.unwrap();
+            Ok(Self::from_binary(code))
         }
 
-        pub fn to_binary_str(&self) -> String {
+        fn to_binary_str(&self) -> String {
             self.to_binary().to_binary_str()
         }
     }
 
     impl Program {
-        pub fn to_binary(&self) -> Vec<u64> {
+        fn to_binary(&self) -> Vec<u64> {
             self.configurations.iter().map(|c| c.to_binary()).collect()
         }
-        pub fn from_binary(code: Vec<u64>) -> Self {
+
+        fn from_binary(code: Vec<u64>) -> Result<Self, String> {
             let configurations = code
                 .iter()
                 .map(|c| Configuration::from_binary(*c))
                 .collect();
-            Self { configurations }
+            Ok(Self { configurations })
         }
 
-        pub fn from_binary_str(s: &str) -> Self {
+        pub fn from_binary_str(s: &str) -> Result<Self, String> {
             // Split the string into lines
             let lines = s.lines().collect::<Vec<&str>>();
             // for each line, remove the whitespace
             let lines = lines.iter().map(|l| l.trim()).collect::<Vec<&str>>();
             // for each line, convert to configuration
-            let configurations = lines
-                .iter()
-                .map(|l| Configuration::from_binary_str(l))
-                .collect();
-            Self { configurations }
+            let mut configurations = Vec::new();
+            for (line_nb, line) in lines.iter().enumerate() {
+                let configuration = Configuration::from_binary_str(line);
+                if configuration.is_err() {
+                    return Err(format!(
+                        "Invalid binary string at line {}: {}",
+                        line_nb, line
+                    ));
+                }
+                configurations.push(configuration.unwrap());
+            }
+            Ok(Self { configurations })
         }
 
         pub fn to_binary_str(&self) -> String {
@@ -221,13 +233,16 @@ pub mod binary {
             let root_path = std::env::var("CARGO_MANIFEST_DIR").unwrap();
             let test_file = Path::new(&root_path).join("tests/test1.binprog");
             let str_program = std::fs::read_to_string(test_file).unwrap();
-            let program = Program::from_binary_str(&str_program);
+            let program = Program::from_binary_str(&str_program).unwrap();
+
+            let new_str_program = program.to_binary_str();
+            println!("{}", new_str_program);
+            let new_program = Program::from_binary_str(&new_str_program).unwrap();
+            assert_eq!(program, new_program);
+
             // output a mnemonic version to a file
             let mnemonic_file = Path::new(&root_path).join("tests/test1.prog");
             std::fs::write(mnemonic_file, program.to_mnemonics()).unwrap();
-            let new_str_program = program.to_binary_str();
-            let new_program = Program::from_binary_str(&new_str_program);
-            assert_eq!(program, new_program);
         }
     }
 }
