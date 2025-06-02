@@ -102,12 +102,7 @@ pub mod mnemonics {
 }
 
 pub mod binary {
-    use crate::isa::{
-        binary::{ConfigField, ConfigurationField},
-        configuration::Configuration,
-        operation::Operation,
-        router::RouterConfig,
-    };
+    use crate::isa::{configuration::Configuration, operation::Operation, router::RouterConfig};
 
     impl Configuration {
         pub fn to_binary(&self) -> u64 {
