@@ -23,23 +23,23 @@ pub enum Operation {
     NOP,
     ADD(Immediate, UpdateRes),
     SUB(Immediate, UpdateRes),
-    MULT,
+    MULT(Immediate, UpdateRes),
     SEXT,
     DIV,
     VADD,
     VMUL,
-    LS,
-    RS,
-    ASR,
-    AND,
-    OR,
-    XOR,
-    SEL,
-    CMERGE,
-    CMP,
-    CLT,
+    LS(Immediate, UpdateRes),
+    RS(Immediate, UpdateRes),
+    ASR(Immediate, UpdateRes),
+    AND(Immediate, UpdateRes),
+    OR(Immediate, UpdateRes),
+    XOR(Immediate, UpdateRes),
+    SEL(Immediate, UpdateRes), // if (msb) wire_alu_res = immediate else {if the most significant bit of the op1/op2 is 1, then select it, op2 has priority, if none of them starts by 1, return 0}
+    CMERGE(Immediate, UpdateRes), // if msb, set to immediate, otherwise set to op1
+    CMP(Immediate, UpdateRes), // compare equal, one bit result
+    CLT(Immediate, UpdateRes), // signed LEQ comparison
     BR,
-    CGT,
+    CGT(Immediate, UpdateRes), // signed GEQ comparison
     MOVCL,
     JUMP,
     MOVC,
@@ -56,14 +56,19 @@ impl Operation {
         match self {
             Operation::ADD(_, _)
             | Operation::SUB(_, _)
-            | Operation::MULT
+            | Operation::MULT(_, _)
             | Operation::DIV
-            | Operation::LS
-            | Operation::RS
-            | Operation::ASR
-            | Operation::AND
-            | Operation::OR
-            | Operation::XOR => OperationType::ArithLogic,
+            | Operation::LS(_, _)
+            | Operation::RS(_, _)
+            | Operation::ASR(_, _)
+            | Operation::AND(_, _)
+            | Operation::OR(_, _)
+            | Operation::XOR(_, _)
+            | Operation::SEL(_, _)
+            | Operation::CMERGE(_, _)
+            | Operation::CMP(_, _)
+            | Operation::CLT(_, _)
+            | Operation::CGT(_, _) => OperationType::ArithLogic,
             Operation::NOP => OperationType::NOP,
             Operation::VADD | Operation::VMUL => OperationType::SIMD,
             Operation::LOADD(_)
@@ -106,31 +111,24 @@ impl PE {
         match op {
             Operation::ADD(immediate, _) => {
                 // converting the u64 to scalar value
-                let op1: i16 = ScalarValue::from(self.regs.reg_op1).into();
-                let op2: i16 = immediate
-                    .map(|i| i as i16)
-                    .unwrap_or(ScalarValue::from(self.regs.reg_op2).into());
+                let (op1, op2) = self.get_operands(immediate);
                 // wrapping_add ignores overflows
                 self.signals.wire_alu_out = (op1.wrapping_add(op2) as u16) as u64;
             }
             Operation::SUB(immediate, _) => {
-                let op1: i16 = ScalarValue::from(self.regs.reg_op1).into();
-                // op2 from immediate or from reg_op2, depending on the msb bit,
-                // this is represented by the immediate field
-                let op2: i16 = immediate
-                    .map(|i| i as i16)
-                    .unwrap_or(ScalarValue::from(self.regs.reg_op2).into());
+                let (op1, op2) = self.get_operands(immediate);
                 // wrapping_sub ignores overflows
                 self.signals.wire_alu_out = (op1.wrapping_sub(op2) as u16) as u64;
             }
-            Operation::MULT => {
+            Operation::MULT(immediate, _) => {
+                let (op1, op2) = self.get_operands(immediate);
                 // wrapping_mul ignores overflows
-                self.signals.wire_alu_out = self.regs.reg_op1.wrapping_mul(self.regs.reg_op2);
-                todo!() // TODO: this is not correct
+                self.signals.wire_alu_out = (op1.wrapping_mul(op2) as u16) as u64;
             }
             Operation::DIV => {
                 // wrapping_div ignores overflows
                 self.signals.wire_alu_out = self.regs.reg_op1.wrapping_div(self.regs.reg_op2);
+                todo!() // this is wrong, TODO
             }
             Operation::VADD => {
                 todo!()
@@ -138,56 +136,70 @@ impl PE {
             Operation::VMUL => {
                 todo!()
             }
-            Operation::LS => {
-                let lhs = self.regs.reg_op1 as u64;
-                let rhs = self.regs.reg_op2 as u32;
-                self.signals.wire_alu_out = (lhs << rhs) as u64;
+            Operation::LS(immediate, _) => {
+                let (op1, op2) = self.get_operands(immediate);
+                self.signals.wire_alu_out = (op1 as u64) << (op2 as u64);
                 todo!() // this is wrong, TODO
             }
-            Operation::RS => {
-                let lhs = self.regs.reg_op1 as u64;
-                let rhs = self.regs.reg_op2 as u32;
-                self.signals.wire_alu_out = (lhs >> rhs) as u64;
+            Operation::RS(immediate, _) => {
+                let (op1, op2) = self.get_operands(immediate);
+                self.signals.wire_alu_out = (op1 as u64) >> (op2 as u64);
                 todo!() // this is wrong, TODO
             }
-            Operation::ASR => {
-                let lhs = self.regs.reg_op1 as u64;
-                let rhs = self.regs.reg_op2 as u32;
-                self.signals.wire_alu_out = (lhs >> rhs) as u64;
+            Operation::ASR(immediate, _) => {
+                let (op1, op2) = self.get_operands(immediate);
+                self.signals.wire_alu_out = (op1 >> op2) as u64;
                 todo!() // this is wrong, TODO
             }
-            Operation::AND => {
-                self.signals.wire_alu_out = self.regs.reg_op1 & self.regs.reg_op2;
+            Operation::AND(immediate, _) => {
+                let (op1, op2) = self.get_operands(immediate);
+                self.signals.wire_alu_out = (op1 as u64) & (op2 as u64);
                 todo!() // this is wrong, TODO
             }
-            Operation::OR => {
-                self.signals.wire_alu_out = self.regs.reg_op1 | self.regs.reg_op2;
-                todo!() // this is wrong, TODO
+            Operation::OR(immediate, _) => {
+                let (op1, op2) = self.get_operands(immediate);
+                self.signals.wire_alu_out = (op1 as u64) | (op2 as u64);
             }
 
-            Operation::XOR => {
-                self.signals.wire_alu_out = self.regs.reg_op1 ^ self.regs.reg_op2;
-                todo!() // this is wrong, TODO
+            Operation::XOR(immediate, _) => {
+                let (op1, op2) = self.get_operands(immediate);
+                self.signals.wire_alu_out = (op1 as u64) ^ (op2 as u64);
             }
 
-            Operation::SEL => {
-                todo!()
+            Operation::SEL(immediate, _) => {
+                let (op1, op2) = self.get_operands(immediate);
+                let op1_msb = op1 < 0;
+                let op2_msb = op2 < 0;
+                if op1_msb {
+                    self.signals.wire_alu_out = op1 as u64;
+                } else if op2_msb {
+                    self.signals.wire_alu_out = op2 as u64;
+                } else {
+                    self.signals.wire_alu_out = 0;
+                }
             }
 
-            Operation::CMERGE => {
-                todo!()
+            Operation::CMERGE(immediate, _) => {
+                if immediate.is_some() {
+                    self.signals.wire_alu_out = immediate.unwrap() as u64;
+                } else {
+                    self.signals.wire_alu_out = self.regs.reg_op1;
+                }
             }
 
-            Operation::CMP => {
-                todo!()
+            Operation::CMP(immediate, _) => {
+                let (op1, op2) = self.get_operands(immediate);
+                self.signals.wire_alu_out = (op1 == op2) as u64;
             }
 
-            Operation::CLT => {
-                todo!()
+            Operation::CLT(immediate, _) => {
+                let (op1, op2) = self.get_operands(immediate);
+                self.signals.wire_alu_out = (op1 <= op2) as u64;
             }
 
-            Operation::CGT => {
-                todo!()
+            Operation::CGT(immediate, _) => {
+                let (op1, op2) = self.get_operands(immediate);
+                self.signals.wire_alu_out = (op1 >= op2) as u64;
             }
 
             Operation::MOVCL => {
@@ -205,6 +217,15 @@ impl PE {
             Operation::NOP => {}
             _ => unimplemented!("Operation not implemented: {:?}", op),
         }
+    }
+
+    /// Get the operands for the operation with immediate, if immediate is None, use reg_op2, otherwise use immediate
+    fn get_operands(&self, immediate: &Immediate) -> (i16, i16) {
+        let op1: i16 = ScalarValue::from(self.regs.reg_op1).into();
+        let op2: i16 = immediate
+            .map(|i| i as i16)
+            .unwrap_or(ScalarValue::from(self.regs.reg_op2).into());
+        (op1, op2)
     }
 
     /// Update the res register, this is the only register updated by ALU

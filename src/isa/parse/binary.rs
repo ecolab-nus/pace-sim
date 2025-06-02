@@ -263,8 +263,10 @@ impl Operation {
                 code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
                 code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
             }
-            Operation::MULT => {
-                todo!()
+            Operation::MULT(imm, update_res) => {
+                code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
             }
             Operation::SEXT => {
                 todo!()
@@ -278,41 +280,63 @@ impl Operation {
             Operation::VMUL => {
                 todo!()
             }
-            Operation::LS => {
-                todo!()
+            Operation::LS(imm, update_res) => {
+                code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
             }
-            Operation::RS => {
-                todo!()
+            Operation::RS(imm, update_res) => {
+                code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
             }
-            Operation::ASR => {
-                todo!()
+            Operation::ASR(imm, update_res) => {
+                code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
             }
-            Operation::AND => {
-                todo!()
+            Operation::AND(imm, update_res) => {
+                code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
             }
-            Operation::OR => {
-                todo!()
+            Operation::OR(imm, update_res) => {
+                code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
             }
-            Operation::XOR => {
-                todo!()
+            Operation::XOR(imm, update_res) => {
+                code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
             }
-            Operation::SEL => {
-                todo!()
+            Operation::SEL(imm, update_res) => {
+                code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
             }
-            Operation::CMERGE => {
-                todo!()
+            Operation::CMERGE(imm, update_res) => {
+                code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
             }
-            Operation::CMP => {
-                todo!()
+            Operation::CMP(imm, update_res) => {
+                code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
             }
-            Operation::CLT => {
-                todo!()
+            Operation::CLT(imm, update_res) => {
+                code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
             }
             Operation::BR => {
                 todo!()
             }
-            Operation::CGT => {
-                todo!()
+            Operation::CGT(imm, update_res) => {
+                code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
+                code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
+                code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
             }
             Operation::MOVCL => {
                 todo!()
@@ -358,23 +382,23 @@ impl Operation {
         match op {
             Operation::ADD(_, _) => Operation::ADD(Some(immediate), update_res),
             Operation::SUB(_, _) => Operation::SUB(Some(immediate), update_res),
-            Operation::MULT => Operation::MULT,
+            Operation::MULT(_, _) => Operation::MULT(Some(immediate), update_res),
             Operation::SEXT => Operation::SEXT,
             Operation::DIV => Operation::DIV,
             Operation::VADD => Operation::VADD,
             Operation::VMUL => Operation::VMUL,
-            Operation::LS => Operation::LS,
-            Operation::RS => Operation::RS,
-            Operation::ASR => Operation::ASR,
-            Operation::AND => Operation::AND,
-            Operation::OR => Operation::OR,
-            Operation::XOR => Operation::XOR,
-            Operation::SEL => Operation::SEL,
-            Operation::CMERGE => Operation::CMERGE,
-            Operation::CMP => Operation::CMP,
-            Operation::CLT => Operation::CLT,
+            Operation::LS(_, _) => Operation::LS(Some(immediate), update_res),
+            Operation::RS(_, _) => Operation::RS(Some(immediate), update_res),
+            Operation::ASR(_, _) => Operation::ASR(Some(immediate), update_res),
+            Operation::AND(_, _) => Operation::AND(Some(immediate), update_res),
+            Operation::OR(_, _) => Operation::OR(Some(immediate), update_res),
+            Operation::XOR(_, _) => Operation::XOR(Some(immediate), update_res),
+            Operation::SEL(_, _) => Operation::SEL(Some(immediate), update_res),
+            Operation::CMERGE(_, _) => Operation::CMERGE(Some(immediate), update_res),
+            Operation::CMP(_, _) => Operation::CMP(Some(immediate), update_res),
+            Operation::CLT(_, _) => Operation::CLT(Some(immediate), update_res),
             Operation::BR => Operation::BR,
-            Operation::CGT => Operation::CGT,
+            Operation::CGT(_, _) => Operation::CGT(Some(immediate), update_res),
             Operation::MOVCL => Operation::MOVCL,
             Operation::JUMP => Operation::JUMP,
             Operation::MOVC => Operation::MOVC,
@@ -393,23 +417,23 @@ impl Operation {
             Operation::NOP => 0,
             Operation::ADD(_, _) => 1,
             Operation::SUB(_, _) => 2,
-            Operation::MULT => 3,
+            Operation::MULT(_, _) => 3,
             Operation::SEXT => 4,
             Operation::DIV => 5,
             Operation::VADD => 6,
             Operation::VMUL => 7,
-            Operation::LS => 8,
-            Operation::RS => 9,
-            Operation::ASR => 10,
-            Operation::AND => 11,
-            Operation::OR => 12,
-            Operation::XOR => 13,
-            Operation::SEL => 16,
-            Operation::CMERGE => 17,
-            Operation::CMP => 18,
-            Operation::CLT => 19,
+            Operation::LS(_, _) => 8,
+            Operation::RS(_, _) => 9,
+            Operation::ASR(_, _) => 10,
+            Operation::AND(_, _) => 11,
+            Operation::OR(_, _) => 12,
+            Operation::XOR(_, _) => 13,
+            Operation::SEL(_, _) => 16,
+            Operation::CMERGE(_, _) => 17,
+            Operation::CMP(_, _) => 18,
+            Operation::CLT(_, _) => 19,
             Operation::BR => 20,
-            Operation::CGT => 21,
+            Operation::CGT(_, _) => 21,
             Operation::MOVCL => 23,
             Operation::JUMP => 30,
             Operation::MOVC => 31,
@@ -425,25 +449,25 @@ impl Operation {
     fn op_from_binary(code: u8) -> Self {
         match code {
             0 => Operation::NOP,
-            1 => Operation::ADD(None, true),
-            2 => Operation::SUB(None, true),
-            3 => Operation::MULT,
+            1 => Operation::ADD(None, false),
+            2 => Operation::SUB(None, false),
+            3 => Operation::MULT(None, false),
             4 => Operation::SEXT,
             5 => Operation::DIV,
             6 => Operation::VADD,
             7 => Operation::VMUL,
-            8 => Operation::LS,
-            9 => Operation::RS,
-            10 => Operation::ASR,
-            11 => Operation::AND,
-            12 => Operation::OR,
-            13 => Operation::XOR,
-            16 => Operation::SEL,
-            17 => Operation::CMERGE,
-            18 => Operation::CMP,
-            19 => Operation::CLT,
+            8 => Operation::LS(None, false),
+            9 => Operation::RS(None, false),
+            10 => Operation::ASR(None, false),
+            11 => Operation::AND(None, false),
+            12 => Operation::OR(None, false),
+            13 => Operation::XOR(None, false),
+            16 => Operation::SEL(None, false),
+            17 => Operation::CMERGE(None, false),
+            18 => Operation::CMP(None, false),
+            19 => Operation::CLT(None, false),
             20 => Operation::BR,
-            21 => Operation::CGT,
+            21 => Operation::CGT(None, false),
             23 => Operation::MOVCL,
             30 => Operation::JUMP,
             31 => Operation::MOVC,

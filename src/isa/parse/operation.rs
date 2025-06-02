@@ -3,7 +3,7 @@ pub mod mnemonics {
         IResult, Parser,
         branch::alt,
         bytes::complete::tag,
-        character::complete::{digit1, multispace0},
+        character::complete::{digit1, multispace0, space0},
     };
 
     use crate::isa::operation::Operation;
@@ -13,17 +13,26 @@ pub mod mnemonics {
         Ok((input, Operation::NOP))
     }
 
+    fn parse_immediate(input: &str) -> IResult<&str, u16> {
+        let (input, _) = multispace0(input)?;
+        match digit1::<_, nom::error::Error<&str>>(input) {
+            Ok((input, immediate)) => Ok((input, immediate.parse::<u16>().unwrap())),
+            Err(e) => Err(e),
+        }
+    }
+
     fn parse_add(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("ADD")(input)?;
         let (input, update_res) = alt((tag("!"), tag(""))).parse(input)?;
         let update_res = update_res == "!";
-        let (input, _) = multispace0(input)?;
-        match digit1::<_, nom::error::Error<&str>>(input) {
-            Ok((input, immediate)) => {
-                let immediate = immediate.parse::<u16>().unwrap();
-                Ok((input, Operation::ADD(Some(immediate), update_res)))
-            }
-            Err(_) => Ok((input, Operation::ADD(None, update_res))),
+        let (input, _) = space0(input)?;
+        // try to find immediate, if no immediate, use ADD(None, update_res)
+        let r = parse_immediate(input);
+        if r.is_ok() {
+            let (input, immediate) = r.unwrap();
+            Ok((input, Operation::ADD(Some(immediate), update_res)))
+        } else {
+            Ok((input, Operation::ADD(None, update_res)))
         }
     }
 
@@ -31,19 +40,28 @@ pub mod mnemonics {
         let (input, _) = tag("SUB")(input)?;
         let (input, update_res) = alt((tag("!"), tag(""))).parse(input)?;
         let update_res = update_res == "!";
-        let (input, _) = multispace0(input)?;
-        match digit1::<_, nom::error::Error<&str>>(input) {
-            Ok((input, immediate)) => {
-                let immediate = immediate.parse::<u16>().unwrap();
-                Ok((input, Operation::SUB(Some(immediate), update_res)))
-            }
-            Err(_) => Ok((input, Operation::SUB(None, update_res))),
+        let (input, _) = space0(input)?;
+        let r = parse_immediate(input);
+        if r.is_ok() {
+            let (input, immediate) = r.unwrap();
+            Ok((input, Operation::SUB(Some(immediate), update_res)))
+        } else {
+            Ok((input, Operation::SUB(None, update_res)))
         }
     }
 
     fn parse_mult(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("MULT")(input)?;
-        Ok((input, Operation::MULT))
+        let (input, update_res) = alt((tag("!"), tag(""))).parse(input)?;
+        let update_res = update_res == "!";
+        let (input, _) = space0(input)?;
+        let r = parse_immediate(input);
+        if r.is_ok() {
+            let (input, immediate) = r.unwrap();
+            Ok((input, Operation::MULT(Some(immediate), update_res)))
+        } else {
+            Ok((input, Operation::MULT(None, update_res)))
+        }
     }
 
     fn parse_sext(input: &str) -> IResult<&str, Operation> {
@@ -68,57 +86,143 @@ pub mod mnemonics {
 
     fn parse_ls(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("LS")(input)?;
-        Ok((input, Operation::LS))
+        let (input, update_res) = alt((tag("!"), tag(""))).parse(input)?;
+        let update_res = update_res == "!";
+        let (input, _) = space0(input)?;
+        let r = parse_immediate(input);
+        if r.is_ok() {
+            let (input, immediate) = r.unwrap();
+            Ok((input, Operation::LS(Some(immediate), update_res)))
+        } else {
+            Ok((input, Operation::LS(None, update_res)))
+        }
     }
 
     fn parse_rs(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("RS")(input)?;
-        Ok((input, Operation::RS))
+        let (input, update_res) = alt((tag("!"), tag(""))).parse(input)?;
+        let update_res = update_res == "!";
+        let (input, _) = space0(input)?;
+        let r = parse_immediate(input);
+        if r.is_ok() {
+            let (input, immediate) = r.unwrap();
+            Ok((input, Operation::RS(Some(immediate), update_res)))
+        } else {
+            Ok((input, Operation::RS(None, update_res)))
+        }
     }
 
     fn parse_asr(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("ASR")(input)?;
-        Ok((input, Operation::ASR))
+        let (input, update_res) = alt((tag("!"), tag(""))).parse(input)?;
+        let update_res = update_res == "!";
+        let (input, _) = space0(input)?;
+        let r = parse_immediate(input);
+        if r.is_ok() {
+            let (input, immediate) = r.unwrap();
+            Ok((input, Operation::ASR(Some(immediate), update_res)))
+        } else {
+            Ok((input, Operation::ASR(None, update_res)))
+        }
     }
 
     fn parse_and(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("AND")(input)?;
-        Ok((input, Operation::AND))
+        let (input, update_res) = alt((tag("!"), tag(""))).parse(input)?;
+        let update_res = update_res == "!";
+        let (input, _) = space0(input)?;
+        let r = parse_immediate(input);
+        if r.is_ok() {
+            let (input, immediate) = r.unwrap();
+            Ok((input, Operation::AND(Some(immediate), update_res)))
+        } else {
+            Ok((input, Operation::AND(None, update_res)))
+        }
     }
 
     fn parse_or(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("OR")(input)?;
-        Ok((input, Operation::OR))
+        let (input, update_res) = alt((tag("!"), tag(""))).parse(input)?;
+        let update_res = update_res == "!";
+        let (input, _) = space0(input)?;
+        let r = parse_immediate(input);
+        if r.is_ok() {
+            let (input, immediate) = r.unwrap();
+            Ok((input, Operation::OR(Some(immediate), update_res)))
+        } else {
+            Ok((input, Operation::OR(None, update_res)))
+        }
     }
 
     fn parse_xor(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("XOR")(input)?;
-        Ok((input, Operation::XOR))
+        let (input, update_res) = alt((tag("!"), tag(""))).parse(input)?;
+        let update_res = update_res == "!";
+        let (input, _) = space0(input)?;
+        let r = parse_immediate(input);
+        if r.is_ok() {
+            let (input, immediate) = r.unwrap();
+            Ok((input, Operation::XOR(Some(immediate), update_res)))
+        } else {
+            Ok((input, Operation::XOR(None, update_res)))
+        }
     }
 
-    // // TODO
-    // fn parse_sel(input: &str) -> IResult<&str, Operation> {
-    //     let (input, _) = tag("SEL")(input)?;
-    //     Ok((input, Operation::SEL))
-    // }
+    fn parse_sel(input: &str) -> IResult<&str, Operation> {
+        let (input, _) = tag("SEL")(input)?;
+        let (input, update_res) = alt((tag("!"), tag(""))).parse(input)?;
+        let update_res = update_res == "!";
+        let (input, _) = space0(input)?;
+        let r = parse_immediate(input);
+        if r.is_ok() {
+            let (input, immediate) = r.unwrap();
+            Ok((input, Operation::SEL(Some(immediate), update_res)))
+        } else {
+            Ok((input, Operation::SEL(None, update_res)))
+        }
+    }
 
-    // // TODO
-    // fn parse_cmerge(input: &str) -> IResult<&str, Operation> {
-    //     let (input, _) = tag("CMERGE")(input)?;
-    //     Ok((input, Operation::CMERGE))
-    // }
+    fn parse_cmerge(input: &str) -> IResult<&str, Operation> {
+        let (input, _) = tag("CMERGE")(input)?;
+        let (input, update_res) = alt((tag("!"), tag(""))).parse(input)?;
+        let update_res = update_res == "!";
+        let (input, _) = space0(input)?;
+        let r = parse_immediate(input);
+        if r.is_ok() {
+            let (input, immediate) = r.unwrap();
+            Ok((input, Operation::CMERGE(Some(immediate), update_res)))
+        } else {
+            Ok((input, Operation::CMERGE(None, update_res)))
+        }
+    }
 
-    // // TODO
-    // fn parse_cmp(input: &str) -> IResult<&str, Operation> {
-    //     let (input, _) = tag("CMP")(input)?;
-    //     Ok((input, Operation::CMP))
-    // }
+    fn parse_cmp(input: &str) -> IResult<&str, Operation> {
+        let (input, _) = tag("CMP")(input)?;
+        let (input, update_res) = alt((tag("!"), tag(""))).parse(input)?;
+        let update_res = update_res == "!";
+        let (input, _) = space0(input)?;
+        let r = parse_immediate(input);
+        if r.is_ok() {
+            let (input, immediate) = r.unwrap();
+            Ok((input, Operation::CMP(Some(immediate), update_res)))
+        } else {
+            Ok((input, Operation::CMP(None, update_res)))
+        }
+    }
 
-    // // TODO
-    // fn parse_clt(input: &str) -> IResult<&str, Operation> {
-    //     let (input, _) = tag("CLT")(input)?;
-    //     Ok((input, Operation::CLT))
-    // }
+    fn parse_clt(input: &str) -> IResult<&str, Operation> {
+        let (input, _) = tag("CLT")(input)?;
+        let (input, update_res) = alt((tag("!"), tag(""))).parse(input)?;
+        let update_res = update_res == "!";
+        let (input, _) = space0(input)?;
+        let r = parse_immediate(input);
+        if r.is_ok() {
+            let (input, immediate) = r.unwrap();
+            Ok((input, Operation::CLT(Some(immediate), update_res)))
+        } else {
+            Ok((input, Operation::CLT(None, update_res)))
+        }
+    }
 
     fn parse_br(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("BR")(input)?;
@@ -127,7 +231,16 @@ pub mod mnemonics {
 
     fn parse_cgt(input: &str) -> IResult<&str, Operation> {
         let (input, _) = tag("CGT")(input)?;
-        Ok((input, Operation::CGT))
+        let (input, update_res) = alt((tag("!"), tag(""))).parse(input)?;
+        let update_res = update_res == "!";
+        let (input, _) = space0(input)?;
+        let r = parse_immediate(input);
+        if r.is_ok() {
+            let (input, immediate) = r.unwrap();
+            Ok((input, Operation::CGT(Some(immediate), update_res)))
+        } else {
+            Ok((input, Operation::CGT(None, update_res)))
+        }
     }
 
     fn parse_movcl(input: &str) -> IResult<&str, Operation> {
@@ -212,8 +325,22 @@ pub mod mnemonics {
 
     fn parse_arithmetic(input: &str) -> IResult<&str, Operation> {
         alt((
-            parse_add, parse_sub, parse_mult, parse_sext, parse_div, parse_ls, parse_rs, parse_asr,
-            parse_and, parse_xor, parse_or,
+            parse_add,
+            parse_sub,
+            parse_mult,
+            parse_sext,
+            parse_div,
+            parse_ls,
+            parse_rs,
+            parse_asr,
+            parse_and,
+            parse_xor,
+            parse_or,
+            parse_sel,
+            parse_cmerge,
+            parse_cmp,
+            parse_clt,
+            parse_cgt,
         ))
         .parse(input)
     }
@@ -271,6 +398,3 @@ pub mod mnemonics {
         }
     }
 }
-
-/// This part is to provide the conversion from and to binary
-pub mod binary {}
