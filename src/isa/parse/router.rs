@@ -1,5 +1,5 @@
 pub mod mnemonics {
-    use std::collections::HashMap;
+    use std::{collections::HashMap, fmt::Display};
 
     use nom::{
         IResult, Parser,
@@ -188,6 +188,68 @@ pub mod mnemonics {
                 input_register_write: extra_config.1,
             },
         ))
+    }
+
+    impl Display for RouterInDir {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                RouterInDir::EastIn => write!(f, "EastIn"),
+                RouterInDir::SouthIn => write!(f, "SouthIn"),
+                RouterInDir::WestIn => write!(f, "WestIn"),
+                RouterInDir::NorthIn => write!(f, "NorthIn"),
+                RouterInDir::ALUOut => write!(f, "ALUOut"),
+                RouterInDir::ALURes => write!(f, "ALURes"),
+                RouterInDir::Invalid => write!(f, "Invalid"),
+                RouterInDir::Open => write!(f, "Open"),
+            }
+        }
+    }
+
+    impl RouterSwitchConfig {
+        pub fn to_mnemonics(&self) -> String {
+            // Syntax:
+            // switch_config: {
+            //     Open -> predicate,
+            //     SouthIn -> south_out,
+            //     WestIn -> west_out,
+            //     NorthIn -> north_out,
+            //     EastIn -> east_out,
+            //     ALURes -> alu_op2,
+            //     ALUOut -> alu_op1,
+            // };
+            let mut result = String::new();
+            result.push_str("switch_config: {\n");
+            result.push_str(&format!("    {} -> predicate,\n", self.predicate));
+            result.push_str(&format!("    {} -> south_out,\n", self.south_out));
+            result.push_str(&format!("    {} -> west_out,\n", self.west_out));
+            result.push_str(&format!("    {} -> north_out,\n", self.north_out));
+            result.push_str(&format!("    {} -> east_out,\n", self.east_out));
+            result.push_str(&format!("    {} -> alu_op2,\n", self.alu_op2));
+            result.push_str(&format!("    {} -> alu_op1,\n", self.alu_op1));
+            result.push_str("};\n");
+            result
+        }
+    }
+
+    impl DirectionsOpt {
+        pub fn to_mnemonics(&self) -> String {
+            let mut result = String::new();
+            result.push_str("{");
+            if self.north {
+                result.push_str("north");
+            }
+            if self.south {
+                result.push_str("south");
+            }
+            if self.west {
+                result.push_str("west");
+            }
+            if self.east {
+                result.push_str("east");
+            }
+            result.push_str("}");
+            result
+        }
     }
 
     #[cfg(test)]

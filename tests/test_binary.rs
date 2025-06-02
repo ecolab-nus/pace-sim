@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use pace_sim::isa::{binary::BinaryIO, configuration::Program};
+use pace_sim::isa::configuration::Program;
 
 #[test]
 fn test_simple_program() {

@@ -378,6 +378,142 @@ pub mod mnemonics {
         .parse(input)
     }
 
+    impl Operation {
+        pub fn to_mnemonics(&self) -> String {
+            // Format:
+            // operation: OP_NAME[!][imm]
+            // where imm is the immediate value, and ! means update_res
+            fn format_imm_and_update_res(imm: &Option<u16>, update_res: &bool) -> String {
+                let mut result = String::new();
+                if *update_res {
+                    result.push_str("!");
+                }
+                result.push_str(&format_imm(imm));
+                result
+            }
+
+            fn format_imm(imm: &Option<u16>) -> String {
+                // add a space before the imm
+                let mut result = String::from(" ");
+                if let Some(imm) = imm {
+                    result.push_str(&imm.to_string());
+                }
+                result
+            }
+
+            let mut result = String::new();
+            result.push_str("operation: ");
+            match self {
+                Operation::NOP => result.push_str("NOP"),
+                Operation::ADD(imm, update_res) => {
+                    result.push_str("ADD");
+                    result.push_str(&format_imm_and_update_res(imm, update_res));
+                }
+                Operation::SUB(imm, update_res) => {
+                    result.push_str("SUB");
+                    result.push_str(&format_imm_and_update_res(imm, update_res));
+                }
+                Operation::MULT(imm, update_res) => {
+                    result.push_str("MULT");
+                    result.push_str(&format_imm_and_update_res(imm, update_res));
+                }
+                Operation::SEXT => {
+                    todo!()
+                }
+                Operation::DIV => {
+                    todo!()
+                }
+                Operation::VADD => {
+                    todo!()
+                }
+                Operation::VMUL => {
+                    todo!()
+                }
+                Operation::LS(imm, update_res) => {
+                    result.push_str("LS");
+                    result.push_str(&format_imm_and_update_res(imm, update_res));
+                }
+                Operation::RS(imm, update_res) => {
+                    result.push_str("RS");
+                    result.push_str(&format_imm_and_update_res(imm, update_res));
+                }
+                Operation::ASR(imm, update_res) => {
+                    result.push_str("ASR");
+                    result.push_str(&format_imm_and_update_res(imm, update_res));
+                }
+                Operation::AND(imm, update_res) => {
+                    result.push_str("AND");
+                    result.push_str(&format_imm_and_update_res(imm, update_res));
+                }
+                Operation::OR(imm, update_res) => {
+                    result.push_str("OR");
+                    result.push_str(&format_imm_and_update_res(imm, update_res));
+                }
+                Operation::XOR(imm, update_res) => {
+                    result.push_str("XOR");
+                    result.push_str(&format_imm_and_update_res(imm, update_res));
+                }
+                Operation::SEL(imm, update_res) => {
+                    result.push_str("SEL");
+                    result.push_str(&format_imm_and_update_res(imm, update_res));
+                }
+                Operation::CMERGE(imm, update_res) => {
+                    result.push_str("CMERGE");
+                    result.push_str(&format_imm_and_update_res(imm, update_res));
+                }
+                Operation::CMP(imm, update_res) => {
+                    result.push_str("CMP");
+                    result.push_str(&format_imm_and_update_res(imm, update_res));
+                }
+                Operation::CLT(imm, update_res) => {
+                    result.push_str("CLT");
+                    result.push_str(&format_imm_and_update_res(imm, update_res));
+                }
+                Operation::BR => {
+                    todo!()
+                }
+                Operation::CGT(imm, update_res) => {
+                    result.push_str("CGT");
+                    result.push_str(&format_imm_and_update_res(imm, update_res));
+                }
+                Operation::MOVCL => {
+                    todo!()
+                }
+                Operation::JUMP => {
+                    todo!()
+                }
+                Operation::MOVC => {
+                    todo!()
+                }
+                Operation::LOADD(imm) => {
+                    result.push_str("LOADD");
+                    result.push_str(&format_imm(imm));
+                }
+                Operation::STORED(imm) => {
+                    result.push_str("STORED");
+                    result.push_str(&format_imm(imm));
+                }
+                Operation::LOAD(imm) => {
+                    result.push_str("LOAD");
+                    result.push_str(&format_imm(imm));
+                }
+                Operation::STORE(imm) => {
+                    result.push_str("STORE");
+                    result.push_str(&format_imm(imm));
+                }
+                Operation::LOADB(imm) => {
+                    result.push_str("LOADB");
+                    result.push_str(&format_imm(imm));
+                }
+                Operation::STOREB(imm) => {
+                    result.push_str("STOREB");
+                    result.push_str(&format_imm(imm));
+                }
+            }
+            result
+        }
+    }
+
     #[cfg(test)]
     mod tests {
         use super::*;
@@ -413,17 +549,17 @@ pub mod binary {
                 Operation::ADD(imm, update_res) => {
                     code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
                     code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
-                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, update_res);
                 }
                 Operation::SUB(imm, update_res) => {
                     code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
                     code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
-                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, update_res);
                 }
                 Operation::MULT(imm, update_res) => {
                     code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
                     code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
-                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, update_res);
                 }
                 Operation::SEXT => {
                     todo!()
@@ -440,52 +576,52 @@ pub mod binary {
                 Operation::LS(imm, update_res) => {
                     code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
                     code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
-                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, update_res);
                 }
                 Operation::RS(imm, update_res) => {
                     code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
                     code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
-                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, update_res);
                 }
                 Operation::ASR(imm, update_res) => {
                     code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
                     code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
-                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, update_res);
                 }
                 Operation::AND(imm, update_res) => {
                     code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
                     code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
-                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, update_res);
                 }
                 Operation::OR(imm, update_res) => {
                     code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
                     code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
-                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, update_res);
                 }
                 Operation::XOR(imm, update_res) => {
                     code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
                     code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
-                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, update_res);
                 }
                 Operation::SEL(imm, update_res) => {
                     code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
                     code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
-                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, update_res);
                 }
                 Operation::CMERGE(imm, update_res) => {
                     code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
                     code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
-                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, update_res);
                 }
                 Operation::CMP(imm, update_res) => {
                     code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
                     code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
-                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, update_res);
                 }
                 Operation::CLT(imm, update_res) => {
                     code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
                     code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
-                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, update_res);
                 }
                 Operation::BR => {
                     todo!()
@@ -493,7 +629,7 @@ pub mod binary {
                 Operation::CGT(imm, update_res) => {
                     code.set_field(ConfigField::OpCode, self.op_to_binary() as u32);
                     code.set_field(ConfigField::Immediate, imm.unwrap_or(0) as u32);
-                    code.set_bool_field(ConfigField::AluUpdateResBit, *update_res);
+                    code.set_bool_field(ConfigField::AluUpdateResBit, update_res);
                 }
                 Operation::MOVCL => {
                     todo!()

@@ -47,7 +47,7 @@ pub trait ConfigurationField {
     fn get_field(&self, field: ConfigField) -> u32;
     fn set_field(&mut self, field: ConfigField, value: u32);
     fn get_bool_field(&self, field: ConfigField) -> bool;
-    fn set_bool_field(&mut self, field: ConfigField, value: bool);
+    fn set_bool_field(&mut self, field: ConfigField, value: &bool);
 }
 
 impl ConfigurationField for u64 {
@@ -79,13 +79,13 @@ impl ConfigurationField for u64 {
         self.get_field(field) == 1
     }
 
-    fn set_bool_field(&mut self, field: ConfigField, value: bool) {
+    fn set_bool_field(&mut self, field: ConfigField, value: &bool) {
         assert_eq!(
             field.get_range().1 - field.get_range().0,
             1,
             "Field is not a single bit"
         );
-        self.set_field(field, value as u32);
+        self.set_field(field, *value as u32);
     }
 }
 
