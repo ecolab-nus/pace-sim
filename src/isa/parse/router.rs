@@ -226,7 +226,7 @@ pub mod mnemonics {
             result.push_str(&format!("    {} -> east_out,\n", self.east_out));
             result.push_str(&format!("    {} -> alu_op2,\n", self.alu_op2));
             result.push_str(&format!("    {} -> alu_op1,\n", self.alu_op1));
-            result.push_str("};\n");
+            result.push_str("};");
             result
         }
     }
