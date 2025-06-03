@@ -16,6 +16,35 @@ impl DataMemory {
         }
     }
 
+    /// Load the data memory content from binary string
+    /// The file format is :
+    /// 64 bits per line, one bit per character
+    /// From left to right is from most significant bit to least significant bit
+    pub fn from_binary_str(s: &str) -> Self {
+        let mut data = Vec::new();
+        for line in s.lines() {
+            let mut byte = 0;
+            for (i, c) in line.chars().enumerate() {
+                if c == '1' {
+                    byte |= 1 << (63 - i);
+                }
+            }
+            data.push(byte);
+        }
+        Self {
+            data,
+            interface: DMemInterface::default(),
+        }
+    }
+
+    pub fn to_binary_str(&self) -> String {
+        let mut result = String::new();
+        for byte in self.data.iter() {
+            result.push_str(&format!("{:064b}\n", byte));
+        }
+        result
+    }
+
     pub fn write8(&mut self, addr: u64, data: u8) {
         self.data[addr as usize] = data;
     }
@@ -126,13 +155,15 @@ mod tests {
     #[test]
     fn test_dmem_dump() {
         use super::*;
-        let mut dmem = DataMemory::new(1024);
-        dmem.write64(0, 0x1234567890abcdef);
-        dmem.write64(8, 0xabcdef1234567890);
-        let dump = dmem.dump();
-        // write to file
-        let project_root = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-        let path = std::path::Path::new(&project_root).join("src/sim/tests/dmem.dump");
-        std::fs::write(path, dump).unwrap();
+        // create a 8KB data memory
+        let mut dmem = DataMemory::new(8192);
+        for i in 0..8192 {
+            dmem.write8(i as u64, i as u8);
+        }
+
+        let dump = dmem.to_binary_str();
+        // load from the file and compare
+        let dmem_loaded = DataMemory::from_binary_str(&dump);
+        assert_eq!(dmem.data, dmem_loaded.data);
     }
 }
