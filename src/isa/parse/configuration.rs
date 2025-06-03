@@ -230,6 +230,7 @@ pub mod binary {
 
         #[test]
         fn test_program_binary_conversions() {
+            // Converting from binprog to prog, then back to binprog
             let root_path = std::env::var("CARGO_MANIFEST_DIR").unwrap();
             let test_file = Path::new(&root_path).join("tests/test1.binprog");
             let str_program = std::fs::read_to_string(test_file).unwrap();
@@ -240,9 +241,13 @@ pub mod binary {
             let new_program = Program::from_binary_str(&new_str_program).unwrap();
             assert_eq!(program, new_program);
 
-            // output a mnemonic version to a file
+            // Converting from prog to binprog, then back to prog
             let mnemonic_file = Path::new(&root_path).join("tests/test1.prog");
-            std::fs::write(mnemonic_file, program.to_mnemonics()).unwrap();
+            let str_program = std::fs::read_to_string(mnemonic_file).unwrap();
+            let program = Program::from_mnemonics(&str_program).unwrap();
+            let new_str_program = program.to_binary_str();
+            let new_program = Program::from_binary_str(&new_str_program).unwrap();
+            assert_eq!(program, new_program);
         }
     }
 }

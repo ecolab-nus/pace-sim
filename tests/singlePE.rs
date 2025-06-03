@@ -3,7 +3,7 @@ use pace_sim::{
     isa::{
         configuration::Configuration,
         operation::*,
-        pe::{DMemInterface, MemPE, PE, PERegisters, PESignals},
+        pe::{MemPE, PE, PERegisters, PESignals},
         router::*,
     },
     sim::dmem::DataMemory,
