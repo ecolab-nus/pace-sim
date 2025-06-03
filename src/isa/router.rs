@@ -152,7 +152,7 @@ impl PE {
     }
 
     /// Update the outputs (wires) for the router
-    pub fn update_router_output_signals(&mut self, router_config: &RouterConfig) {
+    pub fn execute_router_output(&mut self, router_config: &RouterConfig) {
         match router_config.switch_config.east_out {
             RouterInDir::EastIn => {
                 if router_config.input_register_bypass.east {

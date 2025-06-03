@@ -1,5 +1,5 @@
 use super::{
-    pe::{DMemInterface, DMemMode, MemPE, PE},
+    pe::{DMemInterface, DMemMode, PE},
     value::ScalarValue,
 };
 
@@ -100,10 +100,9 @@ impl Operation {
         self.get_type() == OperationType::SIMD
     }
 }
-
 impl PE {
-    /// Execute the simple ALU operation and update the wire signals
-    pub fn execute_op_combinatorial(&mut self, op: &Operation) {
+    /// Execute the simple ALU operation and update the alu_out signal
+    pub fn execute_alu(&mut self, op: &Operation) {
         assert!(
             !op.is_mem(),
             "Memory operations cannot be executed in normal PE"
@@ -247,9 +246,7 @@ impl PE {
         }
         new_state
     }
-}
 
-impl MemPE {
     /// Execute the memory operation, LOAD operation will have the data back by next cycle
     /// The data is back to wire_alu_out by next cycle, compiler must make sure that next operation does not write to wire_alu_out
     pub fn prepare_dmem_interface(&mut self, op: &Operation, dmem_interface: &mut DMemInterface) {
@@ -259,7 +256,7 @@ impl MemPE {
                 if immediate.is_some() {
                     dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
                 } else {
-                    dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
+                    dmem_interface.wire_dmem_addr = Some(self.regs.reg_op2);
                 }
                 dmem_interface.wire_dmem_data = None;
             }
@@ -268,7 +265,7 @@ impl MemPE {
                 if immediate.is_some() {
                     dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
                 } else {
-                    dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
+                    dmem_interface.wire_dmem_addr = Some(self.regs.reg_op2);
                 }
                 dmem_interface.wire_dmem_data = None;
             }
@@ -277,7 +274,7 @@ impl MemPE {
                 if immediate.is_some() {
                     dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
                 } else {
-                    dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
+                    dmem_interface.wire_dmem_addr = Some(self.regs.reg_op2);
                 }
                 dmem_interface.wire_dmem_data = None;
             }
@@ -286,33 +283,29 @@ impl MemPE {
                 if immediate.is_some() {
                     dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
                 } else {
-                    dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
+                    dmem_interface.wire_dmem_addr = Some(self.regs.reg_op2);
                 }
-                dmem_interface.wire_dmem_data = Some(self.pe.regs.reg_op1);
+                dmem_interface.wire_dmem_data = Some(self.regs.reg_op1);
             }
             Operation::STORE(immediate) => {
                 dmem_interface.mode = DMemMode::Write16;
                 if immediate.is_some() {
                     dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
                 } else {
-                    dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
+                    dmem_interface.wire_dmem_addr = Some(self.regs.reg_op2);
                 }
-                dmem_interface.wire_dmem_data = Some(self.pe.regs.reg_op1);
+                dmem_interface.wire_dmem_data = Some(self.regs.reg_op1);
             }
             Operation::STORED(immediate) => {
                 dmem_interface.mode = DMemMode::Write64;
                 if immediate.is_some() {
                     dmem_interface.wire_dmem_addr = Some(immediate.unwrap() as u64);
                 } else {
-                    dmem_interface.wire_dmem_addr = Some(self.pe.regs.reg_op2);
+                    dmem_interface.wire_dmem_addr = Some(self.regs.reg_op2);
                 }
-                dmem_interface.wire_dmem_data = Some(self.pe.regs.reg_op1);
+                dmem_interface.wire_dmem_data = Some(self.regs.reg_op1);
             }
             _ => {}
         }
-    }
-
-    pub fn update_from_dmem_interface(&mut self, dmem_interface: &mut DMemInterface) {
-        self.pe.signals.wire_alu_out = dmem_interface.reg_dmem_data.unwrap();
     }
 }

@@ -148,6 +148,10 @@ impl DataMemory {
         }
         result
     }
+
+    pub fn capacity(&self) -> usize {
+        self.data.len()
+    }
 }
 
 mod tests {

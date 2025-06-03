@@ -59,6 +59,7 @@ pub struct PE {
     pub signals: PESignals,
     pub pc: usize,
     pub configurations: Vec<Configuration>,
+    pub previous_op_is_load: Option<bool>,
 }
 
 impl PE {
@@ -68,43 +69,85 @@ impl PE {
             signals: PESignals::default(),
             pc: 0,
             configurations: program.configurations,
+            previous_op_is_load: None,
         }
+    }
+
+    pub fn new_mem_pe(program: Program) -> Self {
+        Self {
+            regs: PERegisters::default(),
+            signals: PESignals::default(),
+            pc: 0,
+            configurations: program.configurations,
+            previous_op_is_load: Some(false),
+        }
+    }
+
+    pub fn is_mem_pe(&self) -> bool {
+        self.previous_op_is_load.is_some()
     }
 
     pub fn is_initialized(&self) -> bool {
         self.configurations.len() > 0
     }
 
-    pub fn update_signals(&mut self) {
+    /// Update the alu_out signal for ALU instructions, other instructions will not trigger the update
+    pub fn update_alu_out(&mut self) {
         let configuration = self.configurations[self.pc].clone();
         let operation = configuration.operation.clone();
 
-        assert!(
-            !operation.is_mem(),
-            "Normal PE cannot execute memory operations"
-        );
+        if operation.is_arith_logic() {
+            self.execute_alu(&operation);
+        }
+    }
 
-        // Execute combinatorial operations
-        self.execute_op_combinatorial(&operation);
-        // Update router output signals
-        self.update_router_output_signals(&configuration.router_config);
+    /// Update the dmem_interface for memory operations
+    /// Also update the alu_out signal for previous LOAD operation
+    /// For the memory PEs, if previous cycle was a load, the current cycle should not be an ALU operation because its output is overridden by the data from dmem
+    pub fn update_mem(&mut self, dmem_interface: &mut DMemInterface) {
+        let operation = self.configurations[self.pc].operation.clone();
+        // prepare the dmem_interface for memory operations
+        if operation.is_mem() {
+            assert!(self.is_mem_pe());
+            self.prepare_dmem_interface(&operation, dmem_interface);
+        }
+        // update the alu_out signal for previous LOAD operation
+        if self.is_mem_pe() {
+            if self.previous_op_is_load.unwrap() {
+                // TODO: make this a warning
+                assert!(
+                    !operation.is_arith_logic(),
+                    "Cannot execute arithmetic logic operation after LOAD because the conflict on alu_out"
+                );
+                self.signals.wire_alu_out = dmem_interface.reg_dmem_data.unwrap();
+            }
+        }
+    }
+
+    pub fn update_router_output(&mut self) {
+        let configuration = self.configurations[self.pc].clone();
+        let router_config = configuration.router_config.clone();
+        self.execute_router_output(&router_config);
     }
 
     pub fn update_registers(&mut self) {
         let configuration = self.configurations[self.pc].clone();
         let operation = configuration.operation.clone();
 
-        assert!(
-            !operation.is_mem(),
-            "Normal PE cannot execute memory operations"
-        );
-
-        // Update res register
+        // Update res register considering the update_res flag in the operation
         self.update_res(&operation);
         // Update router input registers
         self.update_router_input_registers(&configuration.router_config);
         // Update operands registers
         self.update_operands_registers(&configuration.router_config);
+        // Update previous_op_is_load
+        if self.is_mem_pe() {
+            if let Operation::LOAD(_) = operation {
+                self.previous_op_is_load = Some(true);
+            } else {
+                self.previous_op_is_load = Some(false);
+            }
+        }
     }
 
     pub fn next_conf(&mut self) -> Result<(), String> {
@@ -113,63 +156,5 @@ impl PE {
         }
         self.pc += 1;
         Ok(())
-    }
-}
-
-#[derive(Debug)]
-pub struct MemPE {
-    pub pe: PE,
-    pub previous_op_is_load: bool,
-}
-
-impl MemPE {
-    pub fn new(program: Program) -> Self {
-        Self {
-            pe: PE::new(program),
-            previous_op_is_load: false,
-        }
-    }
-
-    /// If arithmetic logic operation, then update the PE as normal PE
-    /// If memory operation, prepare the dmem interface, you need to call the DMem to update the interface and itself
-    /// If the previous operation is a LOAD, then this operation cannot be an ALU operation
-    pub fn update_signals(&mut self, dmem_interface: &mut DMemInterface) {
-        let configuration = self.pe.configurations[self.pe.pc].clone();
-        let operation = configuration.operation.clone();
-
-        if self.previous_op_is_load {
-            self.pe.signals.wire_alu_out = dmem_interface.reg_dmem_data.unwrap();
-
-            // TODO: make this a warning
-            if operation.is_arith_logic() {
-                panic!(
-                    "Cannot execute arithmetic logic operation after LOAD because the conflict on alu_out"
-                );
-            }
-        }
-
-        if operation.is_mem() {
-            self.prepare_dmem_interface(&operation, dmem_interface);
-        } else {
-            // check the memory interface, if the data register is not empty, meaning previous operation was a LOAD
-            // so you cannot execute any operation
-            self.pe.update_signals();
-        }
-    }
-
-    pub fn update_registers(&mut self) {
-        let operation = self.pe.configurations[self.pe.pc].operation.clone();
-        if !operation.is_mem() {
-            self.pe.update_registers();
-        }
-        if let Operation::LOAD(_) = operation {
-            self.previous_op_is_load = true;
-        } else {
-            self.previous_op_is_load = false;
-        }
-    }
-
-    pub fn next_conf(&mut self) -> Result<(), String> {
-        self.pe.next_conf()
     }
 }

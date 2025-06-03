@@ -3,7 +3,7 @@ use pace_sim::{
     isa::{
         configuration::Configuration,
         operation::*,
-        pe::{MemPE, PE, PERegisters, PESignals},
+        pe::{PE, PERegisters, PESignals},
         router::*,
     },
     sim::dmem::DataMemory,
@@ -108,14 +108,12 @@ fn test_single_pe() {
 
     let configurations = vec![load_op1, load_op2, wait_op2, add, store];
 
-    let mut pe = MemPE {
-        pe: PE {
-            configurations,
-            pc: 0,
-            regs: PERegisters::default(),
-            signals: PESignals::default(),
-        },
-        previous_op_is_load: false,
+    let mut pe = PE {
+        configurations,
+        pc: 0,
+        regs: PERegisters::default(),
+        signals: PESignals::default(),
+        previous_op_is_load: Some(false),
     };
 
     let mut dmem = DataMemory::new(65536);
@@ -126,7 +124,8 @@ fn test_single_pe() {
     assert_eq!(dmem.read16(0x20), 0x22);
 
     while pe.next_conf().is_ok() {
-        pe.update_signals(&mut dmem.interface);
+        pe.update_alu_out();
+        pe.update_mem(&mut dmem.interface);
         dmem.update_interface();
         pe.update_registers();
     }
