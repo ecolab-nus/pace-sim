@@ -6,4 +6,6 @@ edition = "2024"
 [dependencies]
 nom = "8.0.0"
 serde = { version = "1.0.219", features = ["derive"] }
+strum = "0.27.1"
+strum_macros = "0.27.1"
 toml = "0.8.22"

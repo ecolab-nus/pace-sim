@@ -8,7 +8,8 @@ pub mod mnemonics {
 
     impl Configuration {
         fn parse_configuration(s: &str) -> IResult<&str, Configuration> {
-            let (input, operation) = operation::mnemonics::parse_operation(s)?;
+            let (input, _) = multispace0(s)?;
+            let (input, operation) = operation::mnemonics::parse_operation(input)?;
             let (input, _) = multispace0(input)?;
             let (input, router_config) = router::mnemonics::parse_router_config(input)?;
             let (input, _) = multispace0(input)?;
@@ -22,30 +23,31 @@ pub mod mnemonics {
         }
 
         pub fn from_mnemonics(s: &str) -> Result<Self, String> {
-            let (_, configuration) = Self::parse_configuration(s).map_err(|e| e.to_string())?;
+            let (input, configuration) = Self::parse_configuration(s).map_err(|e| e.to_string())?;
+            assert!(input.is_empty(), "Invalid configuration: {}", input);
             Ok(configuration)
         }
 
         pub fn to_mnemonics(&self) -> String {
             format!(
-                "operation: {:?}\nswitch_config: {}\ninput_register_bypass: {}\ninput_register_write: {}",
+                "{}\n{}",
                 self.operation.to_mnemonics(),
-                self.router_config.switch_config.to_mnemonics(),
-                self.router_config.input_register_bypass.to_mnemonics(),
-                self.router_config.input_register_write.to_mnemonics()
+                self.router_config.to_mnemonics()
             )
         }
     }
 
     impl Program {
         fn parse_program(s: &str) -> IResult<&str, Program> {
+            let (input, _) = multispace0(s)?;
             let (input, configurations) =
-                separated_list0(multispace0, Configuration::parse_configuration).parse(s)?;
+                separated_list0(multispace0, Configuration::parse_configuration).parse(input)?;
             Ok((input, Program { configurations }))
         }
 
         pub fn from_mnemonics(s: &str) -> Result<Self, String> {
-            let (_, program) = Self::parse_program(s).map_err(|e| e.to_string())?;
+            let (input, program) = Self::parse_program(s).map_err(|e| e.to_string())?;
+            assert!(input.is_empty(), "Invalid program: \n{}", input);
             Ok(program)
         }
 
@@ -116,6 +118,22 @@ pub mod mnemonics {
                 configuration.router_config.input_register_write,
                 expected_register_write
             );
+
+            let test_str = r"operation: NOP
+                                           switch_config: {
+                                               Open -> predicate,
+                                               Open -> south_out,
+                                               Open -> west_out,
+                                               Open -> north_out,
+                                               ALUOut -> east_out,
+                                               EastIn -> alu_op2,
+                                               SouthIn -> alu_op1,
+                                           };
+                                           input_register_bypass: {};
+                                           input_register_write: {};
+                                           ";
+            let configuration = Configuration::from_mnemonics(test_str).unwrap();
+            println!("{}", configuration.to_mnemonics());
         }
     }
 }
@@ -249,5 +267,27 @@ pub mod binary {
             let new_program = Program::from_binary_str(&new_str_program).unwrap();
             assert_eq!(program, new_program);
         }
+    }
+}
+
+mod tests {
+
+    #[test]
+    fn test_file_conversion() {
+        use crate::isa::configuration::Program;
+        use std::path::Path;
+        let root_path = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+        let original_binprog = Path::new(&root_path).join("tests/test1.binprog");
+        let original_mnemonic = Path::new(&root_path).join("tests/test1.prog");
+        let original_binprog = std::fs::read_to_string(original_binprog).unwrap();
+        let original_mnemonic = std::fs::read_to_string(original_mnemonic).unwrap();
+        // converting from binprog to mnemonic, compare with original mnemonic
+        let program = Program::from_binary_str(&original_binprog).unwrap();
+        let mnemonic = program.to_mnemonics();
+        assert_eq!(mnemonic, original_mnemonic);
+        // converting from mnemonic to binprog, compare with original binprog
+        let program = Program::from_mnemonics(&original_mnemonic).unwrap();
+        let binprog = program.to_binary_str();
+        assert_eq!(binprog, original_binprog);
     }
 }

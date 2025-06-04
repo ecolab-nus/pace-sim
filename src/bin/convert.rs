@@ -21,19 +21,30 @@ fn main() {
     if input_file_ext == "binprog" {
         let binprog_program = Program::from_binary_str(&input_file_str).unwrap();
         let prog_program = binprog_program.to_mnemonics();
-        // remove the extension from the input file and add .prog
-        let output_file = input_file.to_string();
-        let output_file = output_file.split(".").collect::<Vec<&str>>()[0];
-        let output_file = format!("{}.prog", output_file);
+        // if no output file is provided, use the same file name but with .prog extension
+        let output_file = if args.len() == 2 {
+            // remove the extension from the input file and add .prog
+            let input_file_str = input_file.to_string();
+            let input_file_str = input_file_str.split(".").collect::<Vec<&str>>()[0];
+            format!("{}.prog", input_file_str)
+        } else {
+            args[2].clone()
+        };
         std::fs::write(&output_file, prog_program).unwrap();
         println!("Conversion complete, written to: {}", &output_file);
     } else if input_file_ext == "prog" {
         let prog_program = Program::from_mnemonics(&input_file_str).unwrap();
+        println!("{:?}", prog_program);
         let binprog_program = prog_program.to_binary_str();
-        // remove the extension from the input file and add .binprog
-        let output_file = input_file.to_string();
-        let output_file = output_file.split(".").collect::<Vec<&str>>()[0];
-        let output_file = format!("{}.binprog", output_file);
+        // if no output file is provided, use the same file name but with .binprog extension
+        let output_file = if args.len() == 2 {
+            // remove the extension from the input file and add .binprog
+            let input_file_str = input_file.to_string();
+            let input_file_str = input_file_str.split(".").collect::<Vec<&str>>()[0];
+            format!("{}.binprog", input_file_str)
+        } else {
+            args[2].clone()
+        };
         std::fs::write(&output_file, binprog_program).unwrap();
         println!("Conversion complete, written to: {}", &output_file);
     } else {

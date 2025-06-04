@@ -205,6 +205,17 @@ pub mod mnemonics {
         }
     }
 
+    impl RouterConfig {
+        pub fn to_mnemonics(&self) -> String {
+            format!(
+                "switch_config: {};\ninput_register_bypass: {};\ninput_register_write: {};",
+                self.switch_config.to_mnemonics(),
+                self.input_register_bypass.to_mnemonics(),
+                self.input_register_write.to_mnemonics()
+            )
+        }
+    }
+
     impl RouterSwitchConfig {
         pub fn to_mnemonics(&self) -> String {
             // Syntax:
@@ -218,7 +229,7 @@ pub mod mnemonics {
             //     ALUOut -> alu_op1,
             // };
             let mut result = String::new();
-            result.push_str("switch_config: {\n");
+            result.push_str("{\n");
             result.push_str(&format!("    {} -> predicate,\n", self.predicate));
             result.push_str(&format!("    {} -> south_out,\n", self.south_out));
             result.push_str(&format!("    {} -> west_out,\n", self.west_out));
@@ -226,7 +237,7 @@ pub mod mnemonics {
             result.push_str(&format!("    {} -> east_out,\n", self.east_out));
             result.push_str(&format!("    {} -> alu_op2,\n", self.alu_op2));
             result.push_str(&format!("    {} -> alu_op1,\n", self.alu_op1));
-            result.push_str("};");
+            result.push_str("}");
             result
         }
     }
