@@ -16,7 +16,6 @@ fn main() {
 
     let input_file_ext = Path::new(input_file).extension().unwrap();
     let input_file_str = std::fs::read_to_string(input_file).unwrap();
-    println!("Input file: {}", input_file);
 
     if input_file_ext == "binprog" {
         let binprog_program = Program::from_binary_str(&input_file_str).unwrap();
@@ -34,7 +33,6 @@ fn main() {
         println!("Conversion complete, written to: {}", &output_file);
     } else if input_file_ext == "prog" {
         let prog_program = Program::from_mnemonics(&input_file_str).unwrap();
-        println!("{:?}", prog_program);
         let binprog_program = prog_program.to_binary_str();
         // if no output file is provided, use the same file name but with .binprog extension
         let output_file = if args.len() == 2 {

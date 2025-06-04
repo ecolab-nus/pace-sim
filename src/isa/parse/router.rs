@@ -151,7 +151,7 @@ pub mod mnemonics {
             "input_register_bypass" => bypass = dirs1,
             "input_register_write" => write = dirs1,
             _ => {
-                println!("Unknown field for router extra config: {}", name);
+                panic!("Unknown field for router extra config: {}", name);
             }
         }
         let (input, (name, dirs2)) = parse_named_directions(input)?;

@@ -132,8 +132,7 @@ pub mod mnemonics {
                                            input_register_bypass: {};
                                            input_register_write: {};
                                            ";
-            let configuration = Configuration::from_mnemonics(test_str).unwrap();
-            println!("{}", configuration.to_mnemonics());
+            let _configuration = Configuration::from_mnemonics(test_str).unwrap();
         }
     }
 }
@@ -255,7 +254,6 @@ pub mod binary {
             let program = Program::from_binary_str(&str_program).unwrap();
 
             let new_str_program = program.to_binary_str();
-            println!("{}", new_str_program);
             let new_program = Program::from_binary_str(&new_str_program).unwrap();
             assert_eq!(program, new_program);
 
