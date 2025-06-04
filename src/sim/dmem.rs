@@ -18,18 +18,30 @@ impl DataMemory {
 
     /// Load the data memory content from binary string
     /// The file format is :
-    /// 64 bits per line, one bit per character
-    /// From left to right is from most significant bit to least significant bit
+    /// Big-endian, 64 bits per line, one bit per character
+    /// For each chunk of 8 bits, the most significant bit is the leftmost bit
     pub fn from_binary_str(s: &str) -> Self {
         let mut data = Vec::new();
-        for line in s.lines() {
-            let mut byte = 0;
-            for (i, c) in line.chars().enumerate() {
-                if c == '1' {
-                    byte |= 1 << (63 - i);
-                }
+        let lines = s.lines();
+        for line in lines {
+            // Check that the input is exactly 64 characters
+            if line.len() != 64 {
+                panic!(
+                    "Expected a 64-character string, but got length {}",
+                    line.len()
+                );
             }
-            data.push(byte);
+
+            // Process each 8-character chunk
+            for chunk_idx in 0..8 {
+                let start = chunk_idx * 8;
+                let end = start + 8;
+                let chunk = &line[start..end];
+
+                // Convert that 8-char binary string into one u8
+                let byte_val: u8 = u8::from_str_radix(chunk, 2).unwrap();
+                data.push(byte_val);
+            }
         }
         Self {
             data,
@@ -37,10 +49,28 @@ impl DataMemory {
         }
     }
 
+    /// Convert the data memory to a binary string
+    /// The file format is :
+    /// 64 bits per line, one bit per character
+    /// From left to right is from most significant bit to least significant bit
     pub fn to_binary_str(&self) -> String {
+        assert_eq!(
+            self.data.len() % 8,
+            0,
+            "Data memory must be a multiple of 8 bytes"
+        );
+
         let mut result = String::new();
-        for byte in self.data.iter() {
-            result.push_str(&format!("{:064b}\n", byte));
+        for chunk in self.data.chunks(8) {
+            // For each 8-byte chunk, build a 64-character binary string.
+            let mut line = String::with_capacity(64);
+
+            for &byte in chunk {
+                // For each byte, iterate from bit 7 down to bit 0.
+                line.push_str(&format!("{:08b}", byte));
+            }
+            result.push_str(&line);
+            result.push('\n');
         }
         result
     }
@@ -97,34 +127,42 @@ impl DataMemory {
             DMemMode::Read8 => {
                 self.interface.reg_dmem_data =
                     Some(self.read8(self.interface.wire_dmem_addr.unwrap()) as u64);
+                println!("Read8");
             }
             DMemMode::Read16 => {
                 self.interface.reg_dmem_data =
                     Some(self.read16(self.interface.wire_dmem_addr.unwrap()) as u64);
+                println!("Read16");
             }
             DMemMode::Read64 => {
                 self.interface.reg_dmem_data =
                     Some(self.read64(self.interface.wire_dmem_addr.unwrap()));
+                println!("Read64");
             }
             DMemMode::Write8 => {
                 self.write8(
                     self.interface.wire_dmem_addr.unwrap(),
-                    self.interface.reg_dmem_data.unwrap() as u8,
+                    self.interface.wire_dmem_data.unwrap() as u8,
                 );
+                println!("Write8");
             }
             DMemMode::Write16 => {
                 self.write16(
                     self.interface.wire_dmem_addr.unwrap(),
-                    self.interface.reg_dmem_data.unwrap() as u16,
+                    self.interface.wire_dmem_data.unwrap() as u16,
                 );
+                println!("Write16");
             }
             DMemMode::Write64 => {
                 self.write64(
                     self.interface.wire_dmem_addr.unwrap(),
-                    self.interface.reg_dmem_data.unwrap() as u64,
+                    self.interface.wire_dmem_data.unwrap() as u64,
                 );
+                println!("Write64");
             }
-            DMemMode::NOP => {}
+            DMemMode::NOP => {
+                println!("NOP");
+            }
         }
     }
 
@@ -159,15 +197,26 @@ mod tests {
     #[test]
     fn test_dmem_dump() {
         use super::*;
-        // create a 8KB data memory
-        let mut dmem = DataMemory::new(8192);
-        for i in 0..8192 {
-            dmem.write8(i as u64, i as u8);
-        }
-
+        let dmem = DataMemory::from_binary_str(
+            "0000000000000000000000000000000000000000000000000000000000000011",
+        );
+        println!("{:?}", dmem.data);
+        assert_eq!(dmem.data[0], 0b0000000 as u8);
+        assert_eq!(dmem.data[7], 0b0000011 as u8);
         let dump = dmem.to_binary_str();
-        // load from the file and compare
-        let dmem_loaded = DataMemory::from_binary_str(&dump);
-        assert_eq!(dmem.data, dmem_loaded.data);
+        assert_eq!(
+            dump,
+            "0000000000000000000000000000000000000000000000000000000000000011\n"
+        );
+
+        let dmem = DataMemory::from_binary_str(
+            "0000000000000000000000000000000000000000000000000000000000001111\n",
+        );
+        assert_eq!(*dmem.data.last().unwrap(), 0b1111 as u8);
+        let dump = dmem.to_binary_str();
+        assert_eq!(
+            dump,
+            "0000000000000000000000000000000000000000000000000000000000001111\n"
+        );
     }
 }

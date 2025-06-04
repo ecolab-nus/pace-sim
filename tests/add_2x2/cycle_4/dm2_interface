@@ -1,0 +1,4 @@
+wire_dmem_addr: None,
+ wire_dmem_data: None,
+ reg_dmem_data: Some(0),
+ mode: NOP

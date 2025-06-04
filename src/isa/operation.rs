@@ -305,7 +305,11 @@ impl PE {
                 }
                 dmem_interface.wire_dmem_data = Some(self.regs.reg_op1);
             }
-            _ => {}
+            _ => {
+                dmem_interface.mode = DMemMode::NOP;
+                dmem_interface.wire_dmem_addr = None;
+                dmem_interface.wire_dmem_data = None;
+            }
         }
     }
 }

@@ -2,6 +2,7 @@ use super::{
     configuration::{Configuration, Program},
     operation::Operation,
 };
+use strum_macros::Display;
 
 #[derive(Debug, Clone, Default)]
 pub struct DMemInterface {
@@ -9,6 +10,15 @@ pub struct DMemInterface {
     pub wire_dmem_data: Option<u64>, // This wire is used to send the data to the dmem
     pub reg_dmem_data: Option<u64>, // This register is used to capture the loaded data from dmem (at the next cycle of LOAD)
     pub mode: DMemMode,
+}
+
+impl std::fmt::Display for DMemInterface {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&format!(
+            "wire_dmem_addr: {:?},\n wire_dmem_data: {:?},\n reg_dmem_data: {:?},\n mode: {}",
+            self.wire_dmem_addr, self.wire_dmem_data, self.reg_dmem_data, self.mode
+        ))
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -36,7 +46,7 @@ pub struct PESignals {
     pub wire_east_out: Option<u64>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Display)]
 pub enum DMemMode {
     Read8,
     Read16,
@@ -107,10 +117,8 @@ impl PE {
     pub fn update_mem(&mut self, dmem_interface: &mut DMemInterface) {
         let operation = self.configurations[self.pc].operation.clone();
         // prepare the dmem_interface for memory operations
-        if operation.is_mem() {
-            assert!(self.is_mem_pe());
-            self.prepare_dmem_interface(&operation, dmem_interface);
-        }
+        self.prepare_dmem_interface(&operation, dmem_interface);
+
         // update the alu_out signal for previous LOAD operation
         if self.is_mem_pe() {
             if self.previous_op_is_load.unwrap() {
@@ -124,6 +132,7 @@ impl PE {
         }
     }
 
+    /// Update the router output signals according to the router config
     pub fn update_router_output(&mut self) {
         let configuration = self.configurations[self.pc].clone();
         let router_config = configuration.router_config.clone();
@@ -156,5 +165,23 @@ impl PE {
         }
         self.pc += 1;
         Ok(())
+    }
+
+    /// Snapshot of the PE state after a cycle of execution
+    /// Displayed current conf is the configuration that has just been executed
+    pub fn snapshot(&self) -> String {
+        let mut result = String::new();
+        result.push_str(&format!("PC: {}\n", self.pc));
+        result.push_str(&format!("Registers: {:?}\n", self.regs));
+        result.push_str(&format!("Signals: {:?}\n", self.signals));
+        result.push_str(&format!(
+            "current_conf: {:?}\n",
+            self.configurations[self.pc - 1]
+        ));
+        result.push_str(&format!(
+            "Previous op is load: {:?}\n",
+            self.previous_op_is_load
+        ));
+        result
     }
 }

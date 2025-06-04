@@ -243,6 +243,27 @@ pub mod binary {
             let binary = configuration.to_binary();
             let configuration_from_binary = Configuration::from_binary(binary);
             assert_eq!(configuration, configuration_from_binary);
+
+            let configuration = Configuration::from_mnemonics(
+                r"operation: ADD
+switch_config: {
+    Open -> predicate,
+    ALUOut -> south_out,
+    Open -> west_out,
+    Open -> north_out,
+    Open -> east_out,
+    Open -> alu_op2,
+    Open -> alu_op1,
+};
+input_register_bypass: {};
+input_register_write: {};
+",
+            )
+            .unwrap();
+            assert_eq!(configuration.operation, Operation::ADD(None, false));
+            let binary = configuration.to_binary();
+            let configuration_from_binary = Configuration::from_binary(binary);
+            assert_eq!(configuration, configuration_from_binary);
         }
 
         #[test]
@@ -287,5 +308,41 @@ mod tests {
         let program = Program::from_mnemonics(&original_mnemonic).unwrap();
         let binprog = program.to_binary_str();
         assert_eq!(binprog, original_binprog);
+
+        let original_binprog = Path::new(&root_path).join("tests/array_add_2x2/PE-Y0X0");
+        let original_mnemonic = Path::new(&root_path).join("tests/array_add_2x2/PE-Y0X0.prog");
+        let original_binprog = std::fs::read_to_string(original_binprog).unwrap();
+        let original_mnemonic = std::fs::read_to_string(original_mnemonic).unwrap();
+        // converting from binprog to mnemonic, compare with original mnemonic
+        let program_from_binprog = Program::from_binary_str(&original_binprog).unwrap();
+        let program_from_mnemonic = Program::from_mnemonics(&original_mnemonic).unwrap();
+        assert_eq!(program_from_binprog, program_from_mnemonic);
+
+        let original_binprog = Path::new(&root_path).join("tests/array_add_2x2/PE-Y0X1");
+        let original_mnemonic = Path::new(&root_path).join("tests/array_add_2x2/PE-Y0X1.prog");
+        let original_binprog = std::fs::read_to_string(original_binprog).unwrap();
+        let original_mnemonic = std::fs::read_to_string(original_mnemonic).unwrap();
+        // converting from binprog to mnemonic, compare with original mnemonic
+        let program_from_binprog = Program::from_binary_str(&original_binprog).unwrap();
+        let program_from_mnemonic = Program::from_mnemonics(&original_mnemonic).unwrap();
+        assert_eq!(program_from_binprog, program_from_mnemonic);
+
+        let original_binprog = Path::new(&root_path).join("tests/array_add_2x2/PE-Y1X0");
+        let original_mnemonic = Path::new(&root_path).join("tests/array_add_2x2/PE-Y1X0.prog");
+        let original_binprog = std::fs::read_to_string(original_binprog).unwrap();
+        let original_mnemonic = std::fs::read_to_string(original_mnemonic).unwrap();
+        // converting from binprog to mnemonic, compare with original mnemonic
+        let program_from_binprog = Program::from_binary_str(&original_binprog).unwrap();
+        let program_from_mnemonic = Program::from_mnemonics(&original_mnemonic).unwrap();
+        assert_eq!(program_from_binprog, program_from_mnemonic);
+
+        let original_binprog = Path::new(&root_path).join("tests/array_add_2x2/PE-Y1X1");
+        let original_mnemonic = Path::new(&root_path).join("tests/array_add_2x2/PE-Y1X1.prog");
+        let original_binprog = std::fs::read_to_string(original_binprog).unwrap();
+        let original_mnemonic = std::fs::read_to_string(original_mnemonic).unwrap();
+        // converting from binprog to mnemonic, compare with original mnemonic
+        let program_from_binprog = Program::from_binary_str(&original_binprog).unwrap();
+        let program_from_mnemonic = Program::from_mnemonics(&original_mnemonic).unwrap();
+        assert_eq!(program_from_binprog, program_from_mnemonic);
     }
 }

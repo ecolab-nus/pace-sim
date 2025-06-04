@@ -11,7 +11,7 @@ switch_config: {
 input_register_bypass: {};
 input_register_write: {};
 
-operation: ADD 0
+operation: ADD 
 switch_config: {
     Open -> predicate,
     ALUOut -> south_out,
@@ -24,7 +24,7 @@ switch_config: {
 input_register_bypass: {};
 input_register_write: {};
 
-operation: SUB 0
+operation: SUB 
 switch_config: {
     Open -> predicate,
     Open -> south_out,
@@ -37,7 +37,7 @@ switch_config: {
 input_register_bypass: {};
 input_register_write: {};
 
-operation: MULT 0
+operation: MULT 
 switch_config: {
     Open -> predicate,
     Open -> south_out,
@@ -50,7 +50,7 @@ switch_config: {
 input_register_bypass: {};
 input_register_write: {};
 
-operation: MULT 0
+operation: MULT 
 switch_config: {
     Open -> predicate,
     Open -> south_out,
@@ -63,7 +63,7 @@ switch_config: {
 input_register_bypass: {};
 input_register_write: {};
 
-operation: ADD 0
+operation: ADD 
 switch_config: {
     Open -> predicate,
     ALUOut -> south_out,

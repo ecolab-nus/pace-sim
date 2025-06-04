@@ -1,0 +1,5 @@
+PC: 1
+Registers: PERegisters { reg_north_in: 0, reg_south_in: 0, reg_west_in: 0, reg_east_in: 0, reg_op1: 0, reg_op2: 0, reg_res: 0, reg_predicate: false }
+Signals: PESignals { wire_alu_out: 0, wire_north_in: None, wire_south_in: None, wire_west_in: None, wire_east_in: None, wire_north_out: None, wire_south_out: None, wire_west_out: None, wire_east_out: None }
+current_conf: Configuration { operation: LOAD(Some(0)), router_config: RouterConfig { switch_config: RouterSwitchConfig { predicate: Open, alu_op2: Open, alu_op1: Open, north_out: Open, west_out: Open, south_out: Open, east_out: Open }, input_register_bypass: DirectionsOpt { north: true, south: true, west: true, east: true }, input_register_write: DirectionsOpt { north: false, south: false, west: false, east: false } } }
+Previous op is load: Some(true)
