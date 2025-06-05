@@ -3,12 +3,12 @@
 # Basic Usage
 Get the usage of the simulate binary with
 ```
-simulate --help
+cargo run --bin simulation --help
 ```
 
 You can convert between format with
 ```
-convert <file> <file>
+cargo run --bin convert <file> <file>
 ```
 The file type recognization relies on the file extension:
 .binprog for binary string
