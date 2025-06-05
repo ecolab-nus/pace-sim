@@ -12,7 +12,7 @@ pub struct DMemInterface {
 impl std::fmt::Display for DMemInterface {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&format!(
-            "wire_dmem_addr: {:?},\n wire_dmem_data: {:?},\n reg_dmem_data: {:?},\n mode: {}",
+            "wire_dmem_addr: {:?},\nwire_dmem_data: {:?},\nreg_dmem_data: {:?},\nmode: {}",
             self.wire_dmem_addr, self.wire_dmem_data, self.reg_dmem_data, self.mode
         ))
     }

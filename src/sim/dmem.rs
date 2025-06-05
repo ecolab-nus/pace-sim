@@ -127,42 +127,34 @@ impl DataMemory {
             DMemMode::Read8 => {
                 self.interface.reg_dmem_data =
                     Some(self.read8(self.interface.wire_dmem_addr.unwrap()) as u64);
-                println!("Read8");
             }
             DMemMode::Read16 => {
                 self.interface.reg_dmem_data =
                     Some(self.read16(self.interface.wire_dmem_addr.unwrap()) as u64);
-                println!("Read16");
             }
             DMemMode::Read64 => {
                 self.interface.reg_dmem_data =
                     Some(self.read64(self.interface.wire_dmem_addr.unwrap()));
-                println!("Read64");
             }
             DMemMode::Write8 => {
                 self.write8(
                     self.interface.wire_dmem_addr.unwrap(),
                     self.interface.wire_dmem_data.unwrap() as u8,
                 );
-                println!("Write8");
             }
             DMemMode::Write16 => {
                 self.write16(
                     self.interface.wire_dmem_addr.unwrap(),
                     self.interface.wire_dmem_data.unwrap() as u16,
                 );
-                println!("Write16");
             }
             DMemMode::Write64 => {
                 self.write64(
                     self.interface.wire_dmem_addr.unwrap(),
                     self.interface.wire_dmem_data.unwrap() as u64,
                 );
-                println!("Write64");
             }
-            DMemMode::NOP => {
-                println!("NOP");
-            }
+            DMemMode::NOP => {}
         }
     }
 
