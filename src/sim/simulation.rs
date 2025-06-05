@@ -193,6 +193,8 @@ impl Grid {
     /// The index starts from 0, ordered as top left -> bottom left -> top right -> bottom right
     /// Each left edge and right edge PE is connected to its own data memory.
     /// So for a X x Y grid, you need to provide 2X memory files from dm0 to dm2X-1
+    /// The order of the memory files is top left -> bottom left -> top right -> bottom right
+    /// The memory files are named as dm0, dm1, dm2, dm3, ...
     pub fn from_folder(path: &str) -> Self {
         let mut entries = std::fs::read_dir(&path).unwrap();
         let mut max_x = usize::MIN;

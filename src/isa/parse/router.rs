@@ -1,3 +1,9 @@
+//! Parser for the router configuration.
+//! Conversions between configuration and mnemonics in [mnemonics], i.e. human readable and writeable format
+//! Conversions between configuration and binary in [binary]
+//! The Display trait for these types is implemented for output in mnemonics format
+
+/// conversion to and from mnemonics
 pub mod mnemonics {
     use std::{collections::HashMap, fmt::Display};
 
@@ -15,7 +21,35 @@ pub mod mnemonics {
         Direction, DirectionsOpt, RouterConfig, RouterInDir, RouterSwitchConfig,
     };
 
-    // Parser for the enum variants
+    impl Display for RouterConfig {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}", self.to_mnemonics())
+        }
+    }
+
+    impl RouterConfig {
+        pub fn to_mnemonics(&self) -> String {
+            format!(
+                "switch_config: {};\ninput_register_bypass: {};\ninput_register_write: {};",
+                self.switch_config, self.input_register_bypass, self.input_register_write
+            )
+        }
+
+        /// Parse the router configuration
+        pub fn parse_router_config(input: &str) -> IResult<&str, RouterConfig> {
+            let (input, switch_config) = parse_switching_config(input)?;
+            let (input, extra_config) = parse_extra_config(input)?;
+            Ok((
+                input,
+                RouterConfig {
+                    switch_config,
+                    input_register_bypass: extra_config.0,
+                    input_register_write: extra_config.1,
+                },
+            ))
+        }
+    }
+    /// Parser the the RouterInDir enum variants
     fn parse_router_in(input: &str) -> IResult<&str, RouterInDir> {
         let (input, var) = alt((
             map(tag("EastIn"), |_| RouterInDir::EastIn),
@@ -43,6 +77,7 @@ pub mod mnemonics {
         .parse(input)
     }
 
+    /// Parse a single assignment of a RouterInDir to a RouterOutDir
     fn parse_assignment(input: &str) -> IResult<&str, (String, RouterInDir)> {
         let (input, (_, dir, _, field, _, _, _)) = (
             multispace0,
@@ -57,6 +92,10 @@ pub mod mnemonics {
         Ok((input, (field, dir)))
     }
 
+    /// Parse the switching configuration of the router
+    /// The switching configuration is a map of RouterInDir to RouterOutDir
+    /// The order of the assignments is important, as it determines the order of the outputs
+    /// The default output is Open
     pub fn parse_switching_config(input: &str) -> IResult<&str, RouterSwitchConfig> {
         let (input, _) = multispace0(input)?;
         let (input, _) = tag("switch_config")(input)?;
@@ -94,6 +133,7 @@ pub mod mnemonics {
         Ok((input, config))
     }
 
+    /// Parse a single direction
     fn parse_direction(input: &str) -> IResult<&str, Direction> {
         let (input, dir) = alt((
             map(tag("east"), |_| Direction::East),
@@ -105,13 +145,26 @@ pub mod mnemonics {
         Ok((input, dir))
     }
 
+    /// Parse a set of directions, e.g. {north, south, west, east} or {all}
     fn parse_directions_opt(input: &str) -> IResult<&str, DirectionsOpt> {
         let (input, dirs) = delimited(
             preceded(multispace0, tag("{")),
-            separated_list0(
-                delimited(multispace0, tag(","), multispace0),
-                parse_direction,
-            ),
+            alt((
+                // Parse "all" as a special case
+                map(tag("all"), |_| {
+                    vec![
+                        Direction::North,
+                        Direction::South,
+                        Direction::West,
+                        Direction::East,
+                    ]
+                }),
+                // Parse individual directions
+                separated_list0(
+                    delimited(multispace0, tag(","), multispace0),
+                    parse_direction,
+                ),
+            )),
             preceded(multispace0, tag("}")),
         )
         .parse(input)?;
@@ -143,6 +196,8 @@ pub mod mnemonics {
         Ok((input, (name.to_string(), dirs)))
     }
 
+    /// Parse the extra configuration of the router, i.e. input_register_bypass and input_register_write
+    /// Each is a set of directions, e.g. {north, south, west, east} or {all}
     pub fn parse_extra_config(input: &str) -> IResult<&str, (DirectionsOpt, DirectionsOpt)> {
         let mut bypass = DirectionsOpt::default();
         let mut write = DirectionsOpt::default();
@@ -177,42 +232,32 @@ pub mod mnemonics {
         Ok((input, (bypass, write)))
     }
 
-    pub fn parse_router_config(input: &str) -> IResult<&str, RouterConfig> {
-        let (input, switch_config) = parse_switching_config(input)?;
-        let (input, extra_config) = parse_extra_config(input)?;
-        Ok((
-            input,
-            RouterConfig {
-                switch_config,
-                input_register_bypass: extra_config.0,
-                input_register_write: extra_config.1,
-            },
-        ))
-    }
-
     impl Display for RouterInDir {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            match self {
-                RouterInDir::EastIn => write!(f, "EastIn"),
-                RouterInDir::SouthIn => write!(f, "SouthIn"),
-                RouterInDir::WestIn => write!(f, "WestIn"),
-                RouterInDir::NorthIn => write!(f, "NorthIn"),
-                RouterInDir::ALUOut => write!(f, "ALUOut"),
-                RouterInDir::ALURes => write!(f, "ALURes"),
-                RouterInDir::Invalid => write!(f, "Invalid"),
-                RouterInDir::Open => write!(f, "Open"),
-            }
+            write!(f, "{}", self.to_mnemonics())
         }
     }
 
-    impl RouterConfig {
+    impl RouterInDir {
         pub fn to_mnemonics(&self) -> String {
-            format!(
-                "switch_config: {};\ninput_register_bypass: {};\ninput_register_write: {};",
-                self.switch_config.to_mnemonics(),
-                self.input_register_bypass.to_mnemonics(),
-                self.input_register_write.to_mnemonics()
-            )
+            let mut result = String::new();
+            match self {
+                RouterInDir::EastIn => result.push_str("EastIn"),
+                RouterInDir::SouthIn => result.push_str("SouthIn"),
+                RouterInDir::WestIn => result.push_str("WestIn"),
+                RouterInDir::NorthIn => result.push_str("NorthIn"),
+                RouterInDir::ALUOut => result.push_str("ALUOut"),
+                RouterInDir::ALURes => result.push_str("ALURes"),
+                RouterInDir::Invalid => result.push_str("Invalid"),
+                RouterInDir::Open => result.push_str("Open"),
+            }
+            result
+        }
+    }
+
+    impl Display for RouterSwitchConfig {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}", self.to_mnemonics())
         }
     }
 
@@ -242,22 +287,37 @@ pub mod mnemonics {
         }
     }
 
+    impl Display for DirectionsOpt {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}", self.to_mnemonics())
+        }
+    }
+
     impl DirectionsOpt {
         pub fn to_mnemonics(&self) -> String {
+            // If all directions are selected, use the "all" shortcut
+            if self.north && self.south && self.west && self.east {
+                return String::from("{all}");
+            }
+
             let mut result = String::new();
             result.push_str("{");
+
+            let mut directions = Vec::new();
             if self.north {
-                result.push_str("north");
+                directions.push("north");
             }
             if self.south {
-                result.push_str("south");
+                directions.push("south");
             }
             if self.west {
-                result.push_str("west");
+                directions.push("west");
             }
             if self.east {
-                result.push_str("east");
+                directions.push("east");
             }
+
+            result.push_str(&directions.join(","));
             result.push_str("}");
             result
         }
@@ -337,6 +397,56 @@ pub mod mnemonics {
         }
 
         #[test]
+        fn test_parse_directions_opt_all() {
+            let (_, dirs) = parse_directions_opt("{all}").unwrap();
+            assert_eq!(
+                dirs,
+                DirectionsOpt {
+                    east: true,
+                    south: true,
+                    west: true,
+                    north: true
+                }
+            );
+        }
+
+        #[test]
+        fn test_directions_opt_to_mnemonics() {
+            // Test individual directions
+            let dirs = DirectionsOpt {
+                north: true,
+                south: false,
+                west: true,
+                east: false,
+            };
+            assert_eq!(dirs.to_mnemonics(), "{north,west}");
+
+            // Test all directions should use "all" shortcut
+            let dirs_all = DirectionsOpt {
+                north: true,
+                south: true,
+                west: true,
+                east: true,
+            };
+            assert_eq!(dirs_all.to_mnemonics(), "{all}");
+
+            // Test empty directions
+            let dirs_empty = DirectionsOpt::default();
+            assert_eq!(dirs_empty.to_mnemonics(), "{}");
+        }
+
+        #[test]
+        fn test_directions_opt_roundtrip() {
+            // Test that parsing "{all}" and converting back gives "{all}"
+            let (_, dirs) = parse_directions_opt("{all}").unwrap();
+            assert_eq!(dirs.to_mnemonics(), "{all}");
+
+            // Test that parsing individual directions maintains them
+            let (_, dirs) = parse_directions_opt("{north,west}").unwrap();
+            assert_eq!(dirs.to_mnemonics(), "{north,west}");
+        }
+
+        #[test]
         fn test_parse_router_config() {
             let input = r"switch_config: {
             Open -> predicate,
@@ -349,7 +459,7 @@ pub mod mnemonics {
         };
         input_register_bypass: {north, south};
         input_register_write: {east, west};";
-            let (_, cfg) = parse_router_config(input).unwrap();
+            let (_, cfg) = RouterConfig::parse_router_config(input).unwrap();
             let expected = RouterConfig {
                 switch_config: RouterSwitchConfig {
                     predicate: RouterInDir::Open,

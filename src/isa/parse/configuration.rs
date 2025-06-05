@@ -3,7 +3,8 @@ pub mod mnemonics {
 
     use crate::isa::{
         configuration::{Configuration, Program},
-        parse::{operation, router},
+        parse::operation,
+        router::RouterConfig,
     };
 
     impl Configuration {
@@ -11,7 +12,7 @@ pub mod mnemonics {
             let (input, _) = multispace0(s)?;
             let (input, operation) = operation::mnemonics::parse_operation(input)?;
             let (input, _) = multispace0(input)?;
-            let (input, router_config) = router::mnemonics::parse_router_config(input)?;
+            let (input, router_config) = RouterConfig::parse_router_config(input)?;
             let (input, _) = multispace0(input)?;
             Ok((
                 input,
@@ -180,13 +181,13 @@ pub mod binary {
             self.configurations.iter().map(|c| c.to_binary()).collect()
         }
 
-        fn from_binary(code: Vec<u64>) -> Result<Self, String> {
-            let configurations = code
-                .iter()
-                .map(|c| Configuration::from_binary(*c))
-                .collect();
-            Ok(Self { configurations })
-        }
+        // fn from_binary(code: Vec<u64>) -> Result<Self, String> {
+        //     let configurations = code
+        //         .iter()
+        //         .map(|c| Configuration::from_binary(*c))
+        //         .collect();
+        //     Ok(Self { configurations })
+        // }
 
         pub fn from_binary_str(s: &str) -> Result<Self, String> {
             // Split the string into lines
@@ -309,8 +310,10 @@ mod tests {
         let binprog = program.to_binary_str();
         assert_eq!(binprog, original_binprog);
 
-        let original_binprog = Path::new(&root_path).join("tests/array_add_2x2/PE-Y0X0");
-        let original_mnemonic = Path::new(&root_path).join("tests/array_add_2x2/PE-Y0X0.prog");
+        // This binprog (PE-Y0X0) was converted from the mnemonic file PE-Y0X0.prog using the convert binary
+        // So here we just need to validate the structure loaded from both formats match
+        let original_binprog = Path::new(&root_path).join("tests/add_2x2/PE-Y0X0");
+        let original_mnemonic = Path::new(&root_path).join("tests/add_2x2/PE-Y0X0.prog");
         let original_binprog = std::fs::read_to_string(original_binprog).unwrap();
         let original_mnemonic = std::fs::read_to_string(original_mnemonic).unwrap();
         // converting from binprog to mnemonic, compare with original mnemonic
@@ -318,8 +321,8 @@ mod tests {
         let program_from_mnemonic = Program::from_mnemonics(&original_mnemonic).unwrap();
         assert_eq!(program_from_binprog, program_from_mnemonic);
 
-        let original_binprog = Path::new(&root_path).join("tests/array_add_2x2/PE-Y0X1");
-        let original_mnemonic = Path::new(&root_path).join("tests/array_add_2x2/PE-Y0X1.prog");
+        let original_binprog = Path::new(&root_path).join("tests/add_2x2/PE-Y0X1");
+        let original_mnemonic = Path::new(&root_path).join("tests/add_2x2/PE-Y0X1.prog");
         let original_binprog = std::fs::read_to_string(original_binprog).unwrap();
         let original_mnemonic = std::fs::read_to_string(original_mnemonic).unwrap();
         // converting from binprog to mnemonic, compare with original mnemonic
@@ -327,8 +330,8 @@ mod tests {
         let program_from_mnemonic = Program::from_mnemonics(&original_mnemonic).unwrap();
         assert_eq!(program_from_binprog, program_from_mnemonic);
 
-        let original_binprog = Path::new(&root_path).join("tests/array_add_2x2/PE-Y1X0");
-        let original_mnemonic = Path::new(&root_path).join("tests/array_add_2x2/PE-Y1X0.prog");
+        let original_binprog = Path::new(&root_path).join("tests/add_2x2/PE-Y1X0");
+        let original_mnemonic = Path::new(&root_path).join("tests/add_2x2/PE-Y1X0.prog");
         let original_binprog = std::fs::read_to_string(original_binprog).unwrap();
         let original_mnemonic = std::fs::read_to_string(original_mnemonic).unwrap();
         // converting from binprog to mnemonic, compare with original mnemonic
@@ -336,8 +339,8 @@ mod tests {
         let program_from_mnemonic = Program::from_mnemonics(&original_mnemonic).unwrap();
         assert_eq!(program_from_binprog, program_from_mnemonic);
 
-        let original_binprog = Path::new(&root_path).join("tests/array_add_2x2/PE-Y1X1");
-        let original_mnemonic = Path::new(&root_path).join("tests/array_add_2x2/PE-Y1X1.prog");
+        let original_binprog = Path::new(&root_path).join("tests/add_2x2/PE-Y1X1");
+        let original_mnemonic = Path::new(&root_path).join("tests/add_2x2/PE-Y1X1.prog");
         let original_binprog = std::fs::read_to_string(original_binprog).unwrap();
         let original_mnemonic = std::fs::read_to_string(original_mnemonic).unwrap();
         // converting from binprog to mnemonic, compare with original mnemonic
