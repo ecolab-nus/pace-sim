@@ -18,7 +18,11 @@ fn test_single_pe() {
 
     // Taking the value from west to alu_op1, because the previous LOAD send data this cycle
     let load_op1 = Configuration {
-        operation: Operation::LOAD(Some(0x10)),
+        operation: Operation {
+            op_code: OpCode::LOAD,
+            immediate: Some(0x10),
+            update_res: NO_UPDATE_RES,
+        },
         router_config: RouterConfig {
             switch_config: RouterSwitchConfig {
                 predicate: RouterInDir::Open,
@@ -36,7 +40,11 @@ fn test_single_pe() {
 
     // The value of op2 is ready at this cycle, take it from west, but you cannot do the ADD yet, this cycle just load the data to the alu_op2
     let load_op2 = Configuration {
-        operation: Operation::LOAD(Some(0x20)),
+        operation: Operation {
+            op_code: OpCode::LOAD,
+            immediate: Some(0x20),
+            update_res: NO_UPDATE_RES,
+        },
         router_config: RouterConfig {
             switch_config: RouterSwitchConfig {
                 predicate: RouterInDir::Open,
@@ -54,7 +62,11 @@ fn test_single_pe() {
 
     // NOP just get the data from dmem interface to op2
     let wait_op2 = Configuration {
-        operation: Operation::NOP,
+        operation: Operation {
+            op_code: OpCode::NOP,
+            immediate: NO_IMMEDIATE,
+            update_res: NO_UPDATE_RES,
+        },
         router_config: RouterConfig {
             switch_config: RouterSwitchConfig {
                 predicate: RouterInDir::Open,
@@ -72,7 +84,11 @@ fn test_single_pe() {
 
     // Now add the two elements, store the result in alu_res
     let add = Configuration {
-        operation: Operation::ADD(NO_IMMEDIATE, UPDATE_RES),
+        operation: Operation {
+            op_code: OpCode::ADD,
+            immediate: NO_IMMEDIATE,
+            update_res: NO_UPDATE_RES,
+        },
         router_config: RouterConfig {
             switch_config: RouterSwitchConfig {
                 predicate: RouterInDir::Open,
@@ -90,7 +106,11 @@ fn test_single_pe() {
 
     // Store the result at 0x30
     let store = Configuration {
-        operation: Operation::STORE(Some(0x30)),
+        operation: Operation {
+            op_code: OpCode::STORE,
+            immediate: Some(0x30),
+            update_res: false,
+        },
         router_config: RouterConfig {
             switch_config: RouterSwitchConfig {
                 predicate: RouterInDir::Open,

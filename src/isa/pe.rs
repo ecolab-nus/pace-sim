@@ -1,7 +1,4 @@
-use super::{
-    configuration::{Configuration, Program},
-    operation::Operation,
-};
+use super::configuration::{Configuration, Program};
 use strum_macros::Display;
 
 #[derive(Debug, Clone, Default)]
@@ -151,7 +148,7 @@ impl PE {
         self.update_operands_registers(&configuration.router_config);
         // Update previous_op_is_load
         if self.is_mem_pe() {
-            if let Operation::LOAD(_) = operation {
+            if operation.is_load() {
                 self.previous_op_is_load = Some(true);
             } else {
                 self.previous_op_is_load = Some(false);
@@ -175,8 +172,8 @@ impl PE {
         result.push_str(&format!("Registers: {:?}\n", self.regs));
         result.push_str(&format!("Signals: {:?}\n", self.signals));
         result.push_str(&format!(
-            "current_conf: {:?}\n",
-            self.configurations[self.pc - 1]
+            "current_conf: {}\n",
+            self.configurations[self.pc - 1].to_mnemonics()
         ));
         result.push_str(&format!(
             "Previous op is load: {:?}\n",

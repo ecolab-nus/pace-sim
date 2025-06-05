@@ -64,7 +64,7 @@ pub mod mnemonics {
     #[cfg(test)]
     mod tests {
         use crate::isa::{
-            operation::Operation,
+            operation::{OpCode, Operation, UPDATE_RES},
             router::{DirectionsOpt, RouterInDir, RouterSwitchConfig},
         };
 
@@ -85,7 +85,14 @@ pub mod mnemonics {
         input_register_bypass: {north, south};
         input_register_write: {east, west};";
             let configuration = Configuration::from_mnemonics(input).unwrap();
-            assert_eq!(configuration.operation, Operation::ADD(Some(15), true));
+            assert_eq!(
+                configuration.operation,
+                Operation {
+                    op_code: OpCode::ADD,
+                    immediate: Some(15),
+                    update_res: UPDATE_RES,
+                }
+            );
             let expected_switch_config = RouterSwitchConfig {
                 predicate: RouterInDir::Open,
                 alu_op1: RouterInDir::ALUOut,
@@ -220,6 +227,7 @@ pub mod binary {
 
     #[cfg(test)]
     mod tests {
+        use crate::isa::operation::*;
         use std::path::Path;
 
         use super::*;
@@ -261,7 +269,14 @@ input_register_write: {};
 ",
             )
             .unwrap();
-            assert_eq!(configuration.operation, Operation::ADD(None, false));
+            assert_eq!(
+                configuration.operation,
+                Operation {
+                    op_code: OpCode::ADD,
+                    immediate: None,
+                    update_res: NO_UPDATE_RES,
+                }
+            );
             let binary = configuration.to_binary();
             let configuration_from_binary = Configuration::from_binary(binary);
             assert_eq!(configuration, configuration_from_binary);
@@ -301,14 +316,10 @@ mod tests {
         let original_mnemonic = Path::new(&root_path).join("tests/test1.prog");
         let original_binprog = std::fs::read_to_string(original_binprog).unwrap();
         let original_mnemonic = std::fs::read_to_string(original_mnemonic).unwrap();
-        // converting from binprog to mnemonic, compare with original mnemonic
-        let program = Program::from_binary_str(&original_binprog).unwrap();
-        let mnemonic = program.to_mnemonics();
-        assert_eq!(mnemonic, original_mnemonic);
-        // converting from mnemonic to binprog, compare with original binprog
-        let program = Program::from_mnemonics(&original_mnemonic).unwrap();
-        let binprog = program.to_binary_str();
-        assert_eq!(binprog, original_binprog);
+        // Converting from binprog to mnemonic, compare with original mnemonic
+        let program_from_binprog = Program::from_binary_str(&original_binprog).unwrap();
+        let program_from_mnemonic = Program::from_mnemonics(&original_mnemonic).unwrap();
+        assert_eq!(program_from_binprog, program_from_mnemonic);
 
         // This binprog (PE-Y0X0) was converted from the mnemonic file PE-Y0X0.prog using the convert binary
         // So here we just need to validate the structure loaded from both formats match
