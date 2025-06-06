@@ -1,4 +1,4 @@
-operation: NOP
+operation: NOP 
 switch_config: {
     Open -> predicate,
     Open -> south_out,

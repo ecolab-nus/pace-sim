@@ -1,19 +1,25 @@
 # PACE-Sim
 
 # Basic Usage
-Get the usage of the simulate binary with
+Build:
 ```
-cargo run --bin simulation --help
+cargo build
 ```
+
+You can simulate with snapshot and memory dump.
+Refer to
+```
+target/debug/simulation --help
+```
+for the details.
 
 You can convert between format with
 ```
-cargo run --bin convert <file> <file>
+target/debug/convert <file> <file>
 ```
 The file type recognization relies on the file extension:
 .binprog for binary string
-.prof for mnemonic (human readable and writeable)
-.bin for actual binary
+.prog for mnemonic (human readable and writeable)
 
 ### Next TODOs:
 - AGU
