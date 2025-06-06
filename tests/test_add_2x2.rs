@@ -1,4 +1,4 @@
-use pace_sim::sim::simulation::Grid;
+use pace_sim::sim::grid::Grid;
 
 #[test]
 fn test_add_2x2() {

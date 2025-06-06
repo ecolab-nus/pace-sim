@@ -1,6 +1,23 @@
 //! Model the data memory
 
-use crate::isa::pe::{DMemInterface, DMemMode};
+use crate::isa::pe::DMemMode;
+
+#[derive(Debug, Clone, Default)]
+pub struct DMemInterface {
+    pub wire_dmem_addr: Option<u64>,
+    pub wire_dmem_data: Option<u64>, // This wire is used to send the data to the dmem
+    pub reg_dmem_data: Option<u64>, // This register is used to capture the loaded data from dmem (at the next cycle of LOAD)
+    pub mode: DMemMode,
+}
+
+impl std::fmt::Display for DMemInterface {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&format!(
+            "wire_dmem_addr: {:?},\nwire_dmem_data: {:?},\nreg_dmem_data: {:?},\nmode: {}",
+            self.wire_dmem_addr, self.wire_dmem_data, self.reg_dmem_data, self.mode
+        ))
+    }
+}
 
 #[derive(Default, Debug, Clone)]
 pub struct DataMemory {

@@ -29,6 +29,11 @@ The file type recognization relies on the file extension:
 TODOs:
 - Complete ISA
 
+# Simulation Framework
+## PE-Memory connectivity
+PE-YyX0 (the left edge PEs) are connected to the datamemory y%2. 
+PE-YyXX (the right edge PEs) are connected to the datamemory y%2+Y.
+This means every to PEs are connected to the same data memory.
 
 # ISA
 Configuration (or the instruction) can be divided into the opration and the routing configuration :**Configuration** = **Operation** + **RoutingConfig**

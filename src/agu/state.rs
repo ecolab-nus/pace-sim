@@ -1,4 +1,4 @@
-use crate::isa::pe::DMemInterface;
+use crate::sim::dmem::DMemInterface;
 
 use super::instruction::{InstMode, Instruction};
 

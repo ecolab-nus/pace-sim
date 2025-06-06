@@ -1,5 +1,5 @@
 use clap::Parser;
-use pace_sim::sim::simulation::Grid;
+use pace_sim::sim::grid::Grid;
 
 /// Simulate a grid of PEs
 #[derive(Parser, Debug)]

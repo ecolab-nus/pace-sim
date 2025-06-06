@@ -90,15 +90,17 @@ impl Grid {
         // for the first column, update the memory interface
         for y in 0..self.shape.y {
             let pe = &mut self.pes[0][y];
-            pe.update_mem(&mut self.dmems[LEFT][y].interface);
-            self.dmems[LEFT][y].update_interface();
+            // the left edge PEs are connected to the data memory y%2
+            pe.update_mem(&mut self.dmems[LEFT][y % 2].interface);
+            self.dmems[LEFT][y % 2].update_interface();
         }
 
         // for the last column, update the memory interface
         for y in 0..self.shape.y {
             let pe = &mut self.pes[self.shape.x - 1][y];
-            pe.update_mem(&mut self.dmems[RIGHT][y].interface);
-            self.dmems[RIGHT][y].update_interface();
+            // the right edge PEs are connected to the data memory y%2 + Y
+            pe.update_mem(&mut self.dmems[RIGHT][y % 2 + self.shape.y].interface);
+            self.dmems[RIGHT][y % 2 + self.shape.y].update_interface();
         }
 
         // For each PE, if it is a source of a multi-hop path, update the router outputs all along
@@ -190,11 +192,12 @@ impl Grid {
     /// You must provide the program for each (x, y), panic if some is missing
     /// The data memory content is also automatically loaded.
     /// The file for the data memories is dmx, where x is the index of the data memory
-    /// The index starts from 0, ordered as top left -> bottom left -> top right -> bottom right
-    /// Each left edge and right edge PE is connected to its own data memory.
-    /// So for a X x Y grid, you need to provide 2X memory files from dm0 to dm2X-1
-    /// The order of the memory files is top left -> bottom left -> top right -> bottom right
-    /// The memory files are named as dm0, dm1, dm2, dm3, ...
+    /// PE-YyX0 (the left edge PEs) are connected to the datamemory y%2.
+    /// PE-YyXX (the right edge PEs) are connected to the datamemory y%2+Y.
+    /// This means that the order of the memory files is top left -> bottom left -> top right -> bottom right
+    /// This means every two PEs are connected to the same data memory.
+    /// The data memory files are named as dm0, dm1, dm2, dm3, ...
+    /// So for a X x Y grid, you need to provide X memory files from dm0 to dmX-1
     pub fn from_folder(path: &str) -> Self {
         let mut entries = std::fs::read_dir(&path).unwrap();
         let mut max_x = usize::MIN;
@@ -279,13 +282,13 @@ impl Grid {
         let mut dmems_left: Vec<DataMemory> = Vec::new();
         let mut dmems_right: Vec<DataMemory> = Vec::new();
         for y in 0..shape.y {
-            let filename = format!("dm{}", y);
+            let filename = format!("dm{}", y % 2);
             let file_path = std::path::Path::new(&path).join(&filename);
             let dmem = DataMemory::from_binary_str(&std::fs::read_to_string(file_path).unwrap());
             dmems_left.push(dmem);
         }
         for y in 0..shape.y {
-            let filename = format!("dm{}", y + shape.y);
+            let filename = format!("dm{}", y % 2 + shape.y);
             let file_path = std::path::Path::new(&path).join(&filename);
             let dmem = DataMemory::from_binary_str(&std::fs::read_to_string(file_path).unwrap());
             dmems_right.push(dmem);

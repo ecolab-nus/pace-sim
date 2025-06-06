@@ -1,2 +1,2 @@
 pub mod dmem;
-pub mod simulation;
+pub mod grid;
