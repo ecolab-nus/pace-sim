@@ -1,7 +1,7 @@
-use crate::sim::dmem::DMemInterface;
+use crate::sim::dmem::{DMemInterface, DMemMode};
 use strum_macros::{Display, EnumString};
 
-use super::pe::{DMemMode, PE};
+use super::pe::PE;
 
 type Immediate = Option<u16>;
 type UpdateRes = bool;
@@ -298,10 +298,6 @@ impl PE {
             } else {
                 dmem_interface.wire_dmem_addr = Some(self.regs.reg_op2);
             }
-            assert!(
-                dmem_interface.wire_dmem_data.is_none(),
-                "The data wire of the interface is not empty, meaning multiple PEs are writing to the same DM, undefined behavior"
-            );
             dmem_interface.wire_dmem_data = Some(self.regs.reg_op1);
         } else {
             dmem_interface.wire_dmem_addr = None;

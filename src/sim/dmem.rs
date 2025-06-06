@@ -1,6 +1,35 @@
 //! Model the data memory
 
-use crate::isa::pe::DMemMode;
+use strum_macros::Display;
+
+#[derive(Debug, Clone, Copy, Display)]
+pub enum DMemMode {
+    Read8,
+    Read16,
+    Read64,
+    Write8,
+    Write16,
+    Write64,
+    NOP,
+}
+
+impl DMemMode {
+    pub fn is_load(&self) -> bool {
+        matches!(self, DMemMode::Read8 | DMemMode::Read16 | DMemMode::Read64)
+    }
+    pub fn is_store(&self) -> bool {
+        matches!(
+            self,
+            DMemMode::Write8 | DMemMode::Write16 | DMemMode::Write64
+        )
+    }
+}
+
+impl Default for DMemMode {
+    fn default() -> Self {
+        DMemMode::NOP
+    }
+}
 
 #[derive(Debug, Clone, Default)]
 pub struct DMemInterface {
@@ -22,14 +51,16 @@ impl std::fmt::Display for DMemInterface {
 #[derive(Default, Debug, Clone)]
 pub struct DataMemory {
     pub data: Vec<u8>,
-    pub interface: DMemInterface,
+    pub port1: DMemInterface,
+    pub port2: DMemInterface,
 }
 
 impl DataMemory {
     pub fn new(size: usize) -> Self {
         Self {
             data: vec![0; size],
-            interface: DMemInterface::default(),
+            port1: DMemInterface::default(),
+            port2: DMemInterface::default(),
         }
     }
 
@@ -62,7 +93,8 @@ impl DataMemory {
         }
         Self {
             data,
-            interface: DMemInterface::default(),
+            port1: DMemInterface::default(),
+            port2: DMemInterface::default(),
         }
     }
 
@@ -139,40 +171,52 @@ impl DataMemory {
             | (self.data[addr as usize + 4] as u64) << 32
     }
 
-    pub fn update_interface(&mut self) {
-        match self.interface.mode {
+    fn update_port(&mut self, port: &mut DMemInterface) {
+        match port.mode {
             DMemMode::Read8 => {
-                self.interface.reg_dmem_data =
-                    Some(self.read8(self.interface.wire_dmem_addr.unwrap()) as u64);
+                port.reg_dmem_data = Some(self.read8(port.wire_dmem_addr.unwrap()) as u64);
             }
             DMemMode::Read16 => {
-                self.interface.reg_dmem_data =
-                    Some(self.read16(self.interface.wire_dmem_addr.unwrap()) as u64);
+                port.reg_dmem_data = Some(self.read16(port.wire_dmem_addr.unwrap()) as u64);
             }
             DMemMode::Read64 => {
-                self.interface.reg_dmem_data =
-                    Some(self.read64(self.interface.wire_dmem_addr.unwrap()));
+                port.reg_dmem_data = Some(self.read64(port.wire_dmem_addr.unwrap()));
             }
             DMemMode::Write8 => {
                 self.write8(
-                    self.interface.wire_dmem_addr.unwrap(),
-                    self.interface.wire_dmem_data.unwrap() as u8,
+                    port.wire_dmem_addr.unwrap(),
+                    port.wire_dmem_data.unwrap() as u8,
                 );
             }
             DMemMode::Write16 => {
                 self.write16(
-                    self.interface.wire_dmem_addr.unwrap(),
-                    self.interface.wire_dmem_data.unwrap() as u16,
+                    port.wire_dmem_addr.unwrap(),
+                    port.wire_dmem_data.unwrap() as u16,
                 );
             }
             DMemMode::Write64 => {
                 self.write64(
-                    self.interface.wire_dmem_addr.unwrap(),
-                    self.interface.wire_dmem_data.unwrap() as u64,
+                    port.wire_dmem_addr.unwrap(),
+                    port.wire_dmem_data.unwrap() as u64,
                 );
             }
             DMemMode::NOP => {}
         }
+    }
+
+    pub fn update_interface(&mut self) {
+        assert!(
+            !(self.port1.mode.is_store()
+                && self.port2.mode.is_store()
+                && self.port1.wire_dmem_addr == self.port2.wire_dmem_addr),
+            "Two ports of the data memory cannot be in store mode and have the same address"
+        );
+        let mut port1 = std::mem::take(&mut self.port1);
+        let mut port2 = std::mem::take(&mut self.port2);
+        self.update_port(&mut port1);
+        self.update_port(&mut port2);
+        self.port1 = port1;
+        self.port2 = port2;
     }
 
     pub fn dump(&self) -> String {

@@ -89,18 +89,26 @@ impl Grid {
         }
         // for the first column, update the memory interface
         for y in 0..self.shape.y {
-            let pe = &mut self.pes[0][y];
+            let pe = &mut self.pes[y][0];
             // the left edge PEs are connected to the data memory y%2
-            pe.update_mem(&mut self.dmems[LEFT][y % 2].interface);
-            self.dmems[LEFT][y % 2].update_interface();
+            if y % 2 == 0 {
+                pe.update_mem(&mut self.dmems[LEFT][y / 2].port1);
+            } else {
+                pe.update_mem(&mut self.dmems[LEFT][y / 2].port2);
+            }
+            self.dmems[LEFT][y / 2].update_interface();
         }
 
         // for the last column, update the memory interface
         for y in 0..self.shape.y {
-            let pe = &mut self.pes[self.shape.x - 1][y];
+            let pe = &mut self.pes[y][self.shape.x - 1];
             // the right edge PEs are connected to the data memory y%2 + Y
-            pe.update_mem(&mut self.dmems[RIGHT][y % 2 + self.shape.y].interface);
-            self.dmems[RIGHT][y % 2 + self.shape.y].update_interface();
+            if y % 2 == 0 {
+                pe.update_mem(&mut self.dmems[RIGHT][y / 2].port1);
+            } else {
+                pe.update_mem(&mut self.dmems[RIGHT][y / 2].port2);
+            }
+            self.dmems[RIGHT][y / 2].update_interface();
         }
 
         // For each PE, if it is a source of a multi-hop path, update the router outputs all along
@@ -146,13 +154,13 @@ impl Grid {
 
     pub fn dump_mem(&self, folder_path: &str) {
         std::fs::create_dir_all(folder_path).unwrap();
-        for y in 0..self.shape.y {
+        for y in 0..self.shape.y / 2 {
             let filename = format!("dm{}", y);
             let file_path = std::path::Path::new(&folder_path).join(filename);
             std::fs::write(file_path, self.dmems[LEFT][y].to_binary_str()).unwrap();
         }
-        for y in 0..self.shape.y {
-            let filename = format!("dm{}", y + self.shape.y);
+        for y in 0..self.shape.y / 2 {
+            let filename = format!("dm{}", y + self.shape.y / 2);
             let file_path = std::path::Path::new(&folder_path).join(filename);
             std::fs::write(file_path, self.dmems[RIGHT][y].to_binary_str()).unwrap();
         }
@@ -160,21 +168,27 @@ impl Grid {
 
     pub fn snapshot(&self, folder_path: &str) {
         std::fs::create_dir_all(folder_path).unwrap();
-        for y in 0..self.shape.y {
+        for y in 0..self.shape.y / 2 {
             let filename = format!("dm{}", y);
             let file_path = std::path::Path::new(&folder_path).join(filename);
             std::fs::write(file_path, self.dmems[LEFT][y].to_binary_str()).unwrap();
-            let filename = format!("dm{}_interface", y);
+            let filename = format!("dm{}_port1", y);
             let file_path = std::path::Path::new(&folder_path).join(filename);
-            std::fs::write(file_path, self.dmems[LEFT][y].interface.to_string()).unwrap();
+            std::fs::write(file_path, self.dmems[LEFT][y].port1.to_string()).unwrap();
+            let filename = format!("dm{}_port2", y);
+            let file_path = std::path::Path::new(&folder_path).join(filename);
+            std::fs::write(file_path, self.dmems[LEFT][y].port2.to_string()).unwrap();
         }
-        for y in 0..self.shape.y {
-            let filename = format!("dm{}", y + self.shape.y);
+        for y in 0..self.shape.y / 2 {
+            let filename = format!("dm{}", y + self.shape.y / 2);
             let file_path = std::path::Path::new(&folder_path).join(filename);
             std::fs::write(file_path, self.dmems[RIGHT][y].to_binary_str()).unwrap();
-            let filename = format!("dm{}_interface", y + self.shape.y);
+            let filename = format!("dm{}_port1", y + self.shape.y / 2);
             let file_path = std::path::Path::new(&folder_path).join(filename);
-            std::fs::write(file_path, self.dmems[RIGHT][y].interface.to_string()).unwrap();
+            std::fs::write(file_path, self.dmems[RIGHT][y].port1.to_string()).unwrap();
+            let filename = format!("dm{}_port2", y + self.shape.y / 2);
+            let file_path = std::path::Path::new(&folder_path).join(filename);
+            std::fs::write(file_path, self.dmems[RIGHT][y].port2.to_string()).unwrap();
         }
         for y in 0..self.shape.y {
             for x in 0..self.shape.x {
@@ -228,12 +242,12 @@ impl Grid {
 
         // Check the memory content files are present
         for y in 0..shape.y {
-            let filename = format!("dm{}", y);
+            let filename = format!("dm{}", y / 2);
             let file_path = std::path::Path::new(&path).join(filename);
             if !file_path.exists() {
                 panic!("File {} is missing", file_path.display());
             }
-            let filename = format!("dm{}", y + shape.y);
+            let filename = format!("dm{}", y / 2 + shape.y / 2);
             let file_path = std::path::Path::new(&path).join(filename);
             if !file_path.exists() {
                 panic!("File {} is missing", file_path.display());
@@ -281,14 +295,14 @@ impl Grid {
         let mut dmems: Vec<Vec<DataMemory>> = Vec::new();
         let mut dmems_left: Vec<DataMemory> = Vec::new();
         let mut dmems_right: Vec<DataMemory> = Vec::new();
-        for y in 0..shape.y {
-            let filename = format!("dm{}", y % 2);
+        for y in 0..shape.y / 2 {
+            let filename = format!("dm{}", y);
             let file_path = std::path::Path::new(&path).join(&filename);
             let dmem = DataMemory::from_binary_str(&std::fs::read_to_string(file_path).unwrap());
             dmems_left.push(dmem);
         }
-        for y in 0..shape.y {
-            let filename = format!("dm{}", y % 2 + shape.y);
+        for y in 0..shape.y / 2 {
+            let filename = format!("dm{}", y + shape.y / 2);
             let file_path = std::path::Path::new(&path).join(&filename);
             let dmem = DataMemory::from_binary_str(&std::fs::read_to_string(file_path).unwrap());
             dmems_right.push(dmem);

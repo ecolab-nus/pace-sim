@@ -145,7 +145,7 @@ fn test_single_pe() {
 
     while pe.next_conf().is_ok() {
         pe.update_alu_out();
-        pe.update_mem(&mut dmem.interface);
+        pe.update_mem(&mut dmem.port1);
         dmem.update_interface();
         pe.update_registers();
     }

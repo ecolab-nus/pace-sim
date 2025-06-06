@@ -1,6 +1,6 @@
 PC: 3
-Registers: PERegisters { reg_north_in: 0, reg_south_in: 0, reg_west_in: 0, reg_east_in: 0, reg_op1: 3, reg_op2: 0, reg_res: 0, reg_predicate: false }
-Signals: PESignals { wire_alu_out: 0, wire_north_in: Some(3), wire_south_in: None, wire_west_in: Some(0), wire_east_in: None, wire_north_out: None, wire_south_out: None, wire_west_out: None, wire_east_out: None }
+Registers: PERegisters { reg_north_in: 0, reg_south_in: 0, reg_west_in: 0, reg_east_in: 0, reg_op1: 6192, reg_op2: 0, reg_res: 0, reg_predicate: false }
+Signals: PESignals { wire_alu_out: 0, wire_north_in: Some(6192), wire_south_in: None, wire_west_in: Some(3096), wire_east_in: None, wire_north_out: None, wire_south_out: None, wire_west_out: None, wire_east_out: None }
 current_conf: operation: NOP 
 switch_config: {
     Open -> predicate,

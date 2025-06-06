@@ -1,7 +1,6 @@
 use crate::sim::dmem::DMemInterface;
 
 use super::configuration::{Configuration, Program};
-use strum_macros::Display;
 #[derive(Debug, Clone, Copy, Default)]
 pub struct PERegisters {
     pub reg_north_in: u64,
@@ -25,23 +24,6 @@ pub struct PESignals {
     pub wire_south_out: Option<u64>,
     pub wire_west_out: Option<u64>,
     pub wire_east_out: Option<u64>,
-}
-
-#[derive(Debug, Clone, Copy, Display)]
-pub enum DMemMode {
-    Read8,
-    Read16,
-    Read64,
-    Write8,
-    Write16,
-    Write64,
-    NOP,
-}
-
-impl Default for DMemMode {
-    fn default() -> Self {
-        DMemMode::NOP
-    }
 }
 
 #[derive(Debug, Clone, Default)]
