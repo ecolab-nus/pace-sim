@@ -1,7 +1,7 @@
 use crate::sim::dmem::{DMemInterface, DMemMode};
 use strum_macros::{Display, EnumString};
 
-use super::pe::PE;
+use super::{pe::PE, value::SIMDValue};
 
 type Immediate = Option<u16>;
 type UpdateRes = bool;
@@ -131,6 +131,15 @@ impl PE {
             (self.regs.reg_op1 as u16, self.regs.reg_op2 as u16)
         }
     }
+
+    fn get_simd_operands(&self, op: &Operation) -> (SIMDValue, SIMDValue) {
+        assert!(op.is_simd(), "Operation is not a SIMD operation");
+        (
+            SIMDValue::from(self.regs.reg_op1),
+            SIMDValue::from(self.regs.reg_op2),
+        )
+    }
+
     /// Execute the simple ALU operation and update the alu_out signal
     pub fn execute_alu(&mut self, op: &Operation) {
         assert!(
@@ -159,10 +168,14 @@ impl PE {
                 self.signals.wire_alu_out = (op1.wrapping_div(op2)) as u64;
             }
             OpCode::VADD => {
-                todo!()
+                let (op1, op2) = self.get_simd_operands(op);
+                let result: SIMDValue = op1 + op2;
+                self.signals.wire_alu_out = result.into();
             }
             OpCode::VMUL => {
-                todo!()
+                let (op1, op2) = self.get_simd_operands(op);
+                let result: SIMDValue = op1 * op2;
+                self.signals.wire_alu_out = result.into();
             }
             OpCode::LS => {
                 let (op1, op2) = self.get_scalar_operands(op);

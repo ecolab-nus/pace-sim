@@ -1,5 +1,6 @@
-use crate::isa::fp8::FP8;
+use std::ops::{Add, Mul};
 
+use crate::isa::fp8::FP8;
 pub struct SIMDValue(pub [FP8; 8]);
 
 impl From<u64> for SIMDValue {
@@ -10,7 +11,12 @@ impl From<u64> for SIMDValue {
 
 impl From<SIMDValue> for u64 {
     fn from(_value: SIMDValue) -> Self {
-        todo!();
+        let mut result = 0;
+        for i in 0..8 {
+            let u8_value: u8 = _value.0[i].into();
+            result |= u64::from(u8_value) << (i * 8);
+        }
+        result
     }
 }
 
@@ -41,6 +47,20 @@ impl SIMDValue {
             result[i] = self.0[i] * other.0[i];
         }
         SIMDValue(result)
+    }
+}
+
+impl Add for SIMDValue {
+    type Output = SIMDValue;
+    fn add(self, other: SIMDValue) -> SIMDValue {
+        self.vadd(&other)
+    }
+}
+
+impl Mul for SIMDValue {
+    type Output = SIMDValue;
+    fn mul(self, other: SIMDValue) -> SIMDValue {
+        self.vmul(&other)
     }
 }
 
