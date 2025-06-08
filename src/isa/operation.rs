@@ -141,7 +141,7 @@ impl PE {
     }
 
     /// Execute the simple ALU operation and update the alu_out signal
-    pub fn execute_alu(&mut self, op: &Operation) {
+    pub fn execute_alu_simd(&mut self, op: &Operation) {
         assert!(
             !op.is_mem(),
             "Memory operations cannot be executed in normal PE"
@@ -150,58 +150,58 @@ impl PE {
             OpCode::ADD => {
                 let (op1, op2) = self.get_scalar_operands(op);
                 // wrapping_add ignores overflows
-                self.signals.wire_alu_out = (op1.wrapping_add(op2)) as u64;
+                self.signals.wire_alu_out = Some((op1.wrapping_add(op2)) as u64);
             }
             OpCode::SUB => {
                 let (op1, op2) = self.get_scalar_operands(op);
                 // wrapping_sub ignores overflows
-                self.signals.wire_alu_out = (op1.wrapping_sub(op2)) as u64;
+                self.signals.wire_alu_out = Some((op1.wrapping_sub(op2)) as u64);
             }
             OpCode::MULT => {
                 let (op1, op2) = self.get_scalar_operands(op);
                 // wrapping_mul ignores overflows
-                self.signals.wire_alu_out = (op1.wrapping_mul(op2)) as u64;
+                self.signals.wire_alu_out = Some((op1.wrapping_mul(op2)) as u64);
             }
             OpCode::DIV => {
                 let (op1, op2) = self.get_scalar_operands(op);
                 // wrapping_div ignores overflows
-                self.signals.wire_alu_out = (op1.wrapping_div(op2)) as u64;
+                self.signals.wire_alu_out = Some((op1.wrapping_div(op2)) as u64);
             }
             OpCode::VADD => {
                 let (op1, op2) = self.get_simd_operands(op);
                 let result: SIMDValue = op1 + op2;
-                self.signals.wire_alu_out = result.into();
+                self.signals.wire_alu_out = Some(result.into());
             }
             OpCode::VMUL => {
                 let (op1, op2) = self.get_simd_operands(op);
                 let result: SIMDValue = op1 * op2;
-                self.signals.wire_alu_out = result.into();
+                self.signals.wire_alu_out = Some(result.into());
             }
             OpCode::LS => {
                 let (op1, op2) = self.get_scalar_operands(op);
-                self.signals.wire_alu_out = (op1 << op2) as u64;
+                self.signals.wire_alu_out = Some((op1 << op2) as u64);
             }
             OpCode::RS => {
                 let (op1, op2) = self.get_scalar_operands(op);
-                self.signals.wire_alu_out = (op1 >> op2) as u64;
+                self.signals.wire_alu_out = Some((op1 >> op2) as u64);
             }
             OpCode::ASR => {
                 let (op1, op2) = self.get_scalar_operands(op);
                 // arithmetic shift, so convert to i16
-                self.signals.wire_alu_out = (op1 as i16).wrapping_shr(op2 as u32) as u64;
+                self.signals.wire_alu_out = Some((op1 as i16).wrapping_shr(op2 as u32) as u64);
             }
             OpCode::AND => {
                 let (op1, op2) = self.get_scalar_operands(op);
-                self.signals.wire_alu_out = (op1 & op2) as u64;
+                self.signals.wire_alu_out = Some((op1 & op2) as u64);
             }
             OpCode::OR => {
                 let (op1, op2) = self.get_scalar_operands(op);
-                self.signals.wire_alu_out = (op1 as u64) | (op2 as u64);
+                self.signals.wire_alu_out = Some((op1 as u64) | (op2 as u64));
             }
 
             OpCode::XOR => {
                 let (op1, op2) = self.get_scalar_operands(op);
-                self.signals.wire_alu_out = (op1 as u64) ^ (op2 as u64);
+                self.signals.wire_alu_out = Some((op1 as u64) ^ (op2 as u64));
             }
 
             OpCode::SEL => {
@@ -209,35 +209,35 @@ impl PE {
                 let op1_msb: bool = (op1 as i16) < 0;
                 let op2_msb: bool = (op2 as i16) < 0;
                 if op1_msb {
-                    self.signals.wire_alu_out = op1 as u64;
+                    self.signals.wire_alu_out = Some(op1 as u64);
                 } else if op2_msb {
-                    self.signals.wire_alu_out = op2 as u64;
+                    self.signals.wire_alu_out = Some(op2 as u64);
                 } else {
-                    self.signals.wire_alu_out = 0;
+                    self.signals.wire_alu_out = Some(0);
                 }
             }
 
             OpCode::CMERGE => {
                 if let Some(immediate) = op.immediate {
-                    self.signals.wire_alu_out = immediate as u64;
+                    self.signals.wire_alu_out = Some(immediate as u64);
                 } else {
-                    self.signals.wire_alu_out = self.regs.reg_op1;
+                    self.signals.wire_alu_out = Some(self.regs.reg_op1);
                 }
             }
 
             OpCode::CMP => {
                 let (op1, op2) = self.get_scalar_operands(op);
-                self.signals.wire_alu_out = (op1 == op2) as u64;
+                self.signals.wire_alu_out = Some((op1 == op2) as u64);
             }
 
             OpCode::CLT => {
                 let (op1, op2) = self.get_scalar_operands(op);
-                self.signals.wire_alu_out = (op1 <= op2) as u64;
+                self.signals.wire_alu_out = Some((op1 <= op2) as u64);
             }
 
             OpCode::CGT => {
                 let (op1, op2) = self.get_scalar_operands(op);
-                self.signals.wire_alu_out = (op1 >= op2) as u64;
+                self.signals.wire_alu_out = Some((op1 >= op2) as u64);
             }
 
             OpCode::MOVCL => {
@@ -253,7 +253,7 @@ impl PE {
             }
 
             OpCode::NOP => {
-                self.signals.wire_alu_out = 0;
+                self.signals.wire_alu_out = Some(0);
             }
             _ => unimplemented!("Operation not implemented: {:?}", op.op_code),
         }
@@ -263,7 +263,10 @@ impl PE {
     /// You should call this function by very end if the cycle
     pub fn update_res(&mut self, op: &Operation) {
         if op.update_res {
-            self.regs.reg_res = self.signals.wire_alu_out;
+            self.regs.reg_res = self
+                .signals
+                .wire_alu_out
+                .expect("Updating ALU Res register but the wire signal is not updated");
         }
     }
 

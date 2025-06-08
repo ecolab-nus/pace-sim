@@ -1,0 +1,64 @@
+operation: LOADD 0
+switch_config: {
+    Open -> predicate,
+    Open -> south_out,
+    Open -> west_out,
+    Open -> north_out,
+    Open -> east_out,
+    Open -> alu_op2,
+    Open -> alu_op1,
+};
+input_register_bypass: {all};
+input_register_write: {};
+
+operation: NOP
+switch_config: {
+    Open -> predicate,
+    Open -> south_out,
+    Open -> west_out,
+    Open -> north_out,
+    Open -> east_out,
+    ALUOut -> alu_op2,
+    WestIn -> alu_op1,
+};
+input_register_bypass: {all};
+input_register_write: {};
+
+operation: VMUL
+switch_config: {
+    Open -> predicate,
+    ALUOut -> south_out,
+    Open -> west_out,
+    Open -> north_out,
+    Open -> east_out,
+    Open -> alu_op2,
+    Open -> alu_op1,
+};
+input_register_bypass: {all};
+input_register_write: {};
+
+operation: NOP
+switch_config: {
+    Open -> predicate,
+    Open -> south_out,
+    Open -> west_out,
+    Open -> north_out,
+    Open -> east_out,
+    Open -> alu_op2,
+    Open -> alu_op1,
+};
+input_register_bypass: {all};
+input_register_write: {};
+
+operation: NOP
+switch_config: {
+    Open -> predicate,
+    Open -> south_out,
+    Open -> west_out,
+    Open -> north_out,
+    Open -> east_out,
+    Open -> alu_op2,
+    Open -> alu_op1,
+};
+input_register_bypass: {all};
+input_register_write: {};

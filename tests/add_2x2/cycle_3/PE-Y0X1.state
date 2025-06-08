@@ -1,10 +1,27 @@
 PC: 3
-Registers: PERegisters { reg_north_in: 0, reg_south_in: 0, reg_west_in: 0, reg_east_in: 0, reg_op1: 3096, reg_op2: 3096, reg_res: 0, reg_predicate: false }
-Signals: PESignals { wire_alu_out: 6192, wire_north_in: None, wire_south_in: Some(3096), wire_west_in: Some(3096), wire_east_in: None, wire_north_out: None, wire_south_out: Some(6192), wire_west_out: None, wire_east_out: None }
-current_conf: operation: ADD 
+Reg:
+reg_op1: SIMD[00011000/0.001953125 00001100/0.00024414063 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+reg_op2: SIMD[00011000/0.001953125 00001100/0.00024414063 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+reg_res: SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+reg_north_in: SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+reg_south_in: SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+reg_west_in: SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+reg_east_in: SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+reg_predicate: false
+Sig:
+wire_alu_out: None
+wire_north_in: None
+wire_south_in: None
+wire_west_in: None
+wire_east_in: None
+wire_north_out: None
+wire_south_out: None
+wire_west_out: None
+wire_east_out: None
+Conf: operation: NOP 
 switch_config: {
     Open -> predicate,
-    ALUOut -> south_out,
+    Open -> south_out,
     Open -> west_out,
     Open -> north_out,
     Open -> east_out,

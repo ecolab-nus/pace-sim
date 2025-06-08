@@ -1,7 +1,24 @@
-use std::ops::{Add, Mul};
+use std::{
+    fmt::Debug,
+    ops::{Add, Mul},
+};
 
 use crate::isa::fp8::FP8;
+
 pub struct SIMDValue(pub [FP8; 8]);
+
+impl Debug for SIMDValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let val_f32: [f32; 8] = self.0.map(|v| v.into());
+        let val_u8: [u8; 8] = self.0.map(|v| v.into());
+        write!(f, "SIMD[")?;
+        for i in 0..8 {
+            write!(f, "{:08b}/{} ", val_u8[i], val_f32[i])?;
+        }
+        write!(f, "]")?;
+        Ok(())
+    }
+}
 
 impl From<u64> for SIMDValue {
     fn from(value: u64) -> Self {

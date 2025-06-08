@@ -74,12 +74,13 @@ const RIGHT: usize = 1;
 impl Grid {
     pub fn simulate(&mut self, cycles: usize) -> Result<(), String> {
         for _ in 0..cycles {
-            self.simulate_cycle()?;
+            self.simulate_cycle();
+            self.next_conf()?;
         }
         Ok(())
     }
 
-    pub fn simulate_cycle(&mut self) -> Result<(), String> {
+    pub fn simulate_cycle(&mut self) {
         // First, update the ALU outputs of all PEs
         for y in 0..self.shape.y {
             for x in 0..self.shape.x {
@@ -145,8 +146,15 @@ impl Grid {
             for x in 0..self.shape.x {
                 let pe = &mut self.pes[y][x];
                 pe.update_registers();
-                pe.next_conf()
-                    .map_err(|e| format!("PE at ({}, {}): {}", x, y, e))?;
+            }
+        }
+    }
+
+    pub fn next_conf(&mut self) -> Result<(), String> {
+        for y in 0..self.shape.y {
+            for x in 0..self.shape.x {
+                let pe = &mut self.pes[y][x];
+                pe.next_conf()?;
             }
         }
         Ok(())
@@ -309,6 +317,26 @@ impl Grid {
         }
         dmems.push(dmems_left);
         dmems.push(dmems_right);
+
+        // Check all PEs have the same number of configurations
+        let mut num_configs = None;
+        for y in 0..shape.y {
+            for x in 0..shape.x {
+                let pe = &pes[y][x];
+                if num_configs.is_none() {
+                    num_configs = Some(pe.configurations.len());
+                } else {
+                    assert_eq!(
+                        pe.configurations.len(),
+                        num_configs.unwrap(),
+                        "PE at ({}, {}) has a different number of configurations than the others",
+                        x,
+                        y
+                    );
+                }
+            }
+        }
+
         Grid { shape, pes, dmems }
     }
 

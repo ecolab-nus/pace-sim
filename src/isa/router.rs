@@ -214,7 +214,10 @@ impl PE {
                 }
             }
             RouterInDir::ALUOut => {
-                self.regs.reg_op1 = self.signals.wire_alu_out;
+                self.regs.reg_op1 = self
+                    .signals
+                    .wire_alu_out
+                    .expect("Updating ALU Op1 register but the wire signal is not updated");
             }
             RouterInDir::ALURes => {
                 self.regs.reg_op1 = self.regs.reg_res;
@@ -252,7 +255,10 @@ impl PE {
                 }
             }
             RouterInDir::ALUOut => {
-                self.regs.reg_op2 = self.signals.wire_alu_out;
+                self.regs.reg_op2 = self
+                    .signals
+                    .wire_alu_out
+                    .expect("Updating ALU Op2 register but the wire signal is not updated");
             }
             RouterInDir::ALURes => {
                 self.regs.reg_op2 = self.regs.reg_res;
@@ -316,7 +322,7 @@ impl PE {
                 }
             }
             RouterInDir::ALUOut => {
-                self.signals.wire_east_out = Some(self.signals.wire_alu_out);
+                self.signals.wire_east_out = Some(self.signals.wire_alu_out.unwrap());
             }
             RouterInDir::ALURes => {
                 self.signals.wire_east_out = Some(self.regs.reg_res);
@@ -340,7 +346,7 @@ impl PE {
                 self.signals.wire_south_out = Some(self.signals.wire_north_in.unwrap());
             }
             RouterInDir::ALUOut => {
-                self.signals.wire_south_out = Some(self.signals.wire_alu_out);
+                self.signals.wire_south_out = Some(self.signals.wire_alu_out.unwrap());
             }
             RouterInDir::ALURes => {
                 self.signals.wire_south_out = Some(self.regs.reg_res);
@@ -364,7 +370,7 @@ impl PE {
                 self.signals.wire_west_out = Some(self.signals.wire_north_in.unwrap());
             }
             RouterInDir::ALUOut => {
-                self.signals.wire_west_out = Some(self.signals.wire_alu_out);
+                self.signals.wire_west_out = Some(self.signals.wire_alu_out.unwrap());
             }
             RouterInDir::ALURes => {
                 self.signals.wire_west_out = Some(self.regs.reg_res);
@@ -388,7 +394,7 @@ impl PE {
                 self.signals.wire_north_out = Some(self.signals.wire_north_in.unwrap());
             }
             RouterInDir::ALUOut => {
-                self.signals.wire_north_out = Some(self.signals.wire_alu_out);
+                self.signals.wire_north_out = Some(self.signals.wire_alu_out.unwrap());
             }
             RouterInDir::ALURes => {
                 self.signals.wire_north_out = Some(self.regs.reg_res);

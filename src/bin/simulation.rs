@@ -6,14 +6,13 @@ use pace_sim::sim::grid::Grid;
 #[command(about = "Run Simulation", long_about = None)]
 struct Args {
     /// The folder path of the grid to simulate.
-    #[clap(short, long)]
+    #[clap(long)]
     folder_path: String,
-    /// Specify the number of cycles to simulate. If not specified, the simulation will run until the program terminates.
-    /// A snapshot will be taken at the end of the simulation. A memory dump will be taken at the end of the simulation.
+    /// Specify the number of cycles to simulate. If not specified, the simulation will run until the program terminates. A snapshot will be taken at the end of the simulation. A memory dump will be taken at the end of the simulation.
     #[clap(short, long)]
     cycles: Option<usize>,
     /// Dump the snapshot for every cycle.
-    #[clap(short, long)]
+    #[clap(long)]
     full_trace: bool,
 }
 
@@ -23,42 +22,44 @@ fn main() {
     if let Some(cycles) = args.cycles {
         let mut cycle = 0;
         loop {
-            if grid.simulate_cycle().is_err() {
-                break;
-            }
             if cycle >= cycles {
                 break;
             }
+            grid.simulate_cycle();
             if args.full_trace {
                 let snapshot_folder = format!("{}/cycle_{}", args.folder_path, cycle);
                 println!(
-                    "Taking snapshot at cycle {}, saved to {}",
+                    "Taking snapshot after cycle {}, saved to {}",
                     cycle, snapshot_folder
                 );
                 grid.snapshot(snapshot_folder.as_str());
                 let mem_folder = format!("{}/mem", snapshot_folder);
                 grid.dump_mem(mem_folder.as_str());
+            }
+            if grid.next_conf().is_err() {
+                panic!("Simulation finished prematurely after cycle {}", cycle);
             }
             cycle += 1;
         }
     } else {
         let mut cycle = 0;
         loop {
-            if grid.simulate_cycle().is_err() {
-                break;
-            }
+            grid.simulate_cycle();
             if args.full_trace {
                 let snapshot_folder = format!("{}/cycle_{}", args.folder_path, cycle);
                 println!(
-                    "Taking snapshot at cycle {}, saved to {}",
+                    "Taking snapshot after cycle {}, saved to {}",
                     cycle, snapshot_folder
                 );
                 grid.snapshot(snapshot_folder.as_str());
                 let mem_folder = format!("{}/mem", snapshot_folder);
                 grid.dump_mem(mem_folder.as_str());
             }
+            if grid.next_conf().is_err() {
+                break;
+            }
             cycle += 1;
         }
-        println!("Simulation completed after {} cycles", cycle);
+        println!("Simulation completed after {} cycles", cycle + 1);
     }
 }

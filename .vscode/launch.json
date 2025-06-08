@@ -1,0 +1,21 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug test_vec_mac_2x2",
+      "program": "${workspaceFolder}/target/debug/simulation",
+      "args": [
+        "--folder-path", "tests/vmac_2x2",
+        "--full-trace"
+      ],
+      "cwd": "${workspaceFolder}",
+      "stopOnEntry": false,
+      "sourceLanguages": ["rust"]
+        }
+    ]
+}

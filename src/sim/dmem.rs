@@ -2,6 +2,8 @@
 
 use strum_macros::Display;
 
+use crate::isa::value::SIMDValue;
+
 #[derive(Debug, Clone, Copy, Display)]
 pub enum DMemMode {
     Read8,
@@ -43,7 +45,10 @@ impl std::fmt::Display for DMemInterface {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&format!(
             "wire_dmem_addr: {:?},\nwire_dmem_data: {:?},\nreg_dmem_data: {:?},\nmode: {}",
-            self.wire_dmem_addr, self.wire_dmem_data, self.reg_dmem_data, self.mode
+            self.wire_dmem_addr,
+            self.wire_dmem_data.map(|v| SIMDValue::from(v)),
+            self.reg_dmem_data.map(|v| SIMDValue::from(v)),
+            self.mode
         ))
     }
 }
@@ -161,6 +166,9 @@ impl DataMemory {
         self.data[addr as usize + 2] = (data >> 16) as u8;
         self.data[addr as usize + 3] = (data >> 24) as u8;
         self.data[addr as usize + 4] = (data >> 32) as u8;
+        self.data[addr as usize + 5] = (data >> 40) as u8;
+        self.data[addr as usize + 6] = (data >> 48) as u8;
+        self.data[addr as usize + 7] = (data >> 56) as u8;
     }
 
     pub fn read64(&self, addr: u64) -> u64 {
@@ -169,6 +177,9 @@ impl DataMemory {
             | (self.data[addr as usize + 2] as u64) << 16
             | (self.data[addr as usize + 3] as u64) << 24
             | (self.data[addr as usize + 4] as u64) << 32
+            | (self.data[addr as usize + 5] as u64) << 40
+            | (self.data[addr as usize + 6] as u64) << 48
+            | (self.data[addr as usize + 7] as u64) << 56
     }
 
     fn update_port(&mut self, port: &mut DMemInterface) {

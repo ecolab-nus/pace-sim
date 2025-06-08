@@ -1,8 +1,16 @@
+use std::fmt::Debug;
 use std::ops::{Add, Mul, Sub};
 
 // Implementing the FP8 format
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub struct FP8(u8);
+
+impl Debug for FP8 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let float_val: f32 = (*self).into();
+        write!(f, "{:08b}({})", self.0, float_val)
+    }
+}
 
 impl FP8 {
     const EXP_MASK: u8 = 0b01111100;
@@ -250,8 +258,14 @@ mod tests {
         let expected = [0x42, 0x3C, 0x42, 0x41, 0x3C, 0x00, 0x3C, 0x45];
         for i in 0..8 {
             let a = FP8::from(a_bits[i]);
+            let fp32_a: f32 = a.into();
+            print!("a: {:?} ", fp32_a);
             let b = FP8::from(b_bits[i]);
+            let fp32_b: f32 = b.into();
+            print!("b: {:?} ", fp32_b);
             let c = FP8::from(c_bits[i]);
+            let fp32_c: f32 = c.into();
+            println!("c: {:?}", fp32_c);
             let res: u8 = (a + b * c).into();
             assert_eq!(res, expected[i], "idx {}", i);
         }

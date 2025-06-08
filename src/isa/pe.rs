@@ -1,21 +1,39 @@
-use crate::sim::dmem::DMemInterface;
+use crate::{isa::value::SIMDValue, sim::dmem::DMemInterface};
+use std::fmt::Debug;
 
 use super::configuration::{Configuration, Program};
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Clone, Copy, Default)]
 pub struct PERegisters {
+    pub reg_op1: u64,
+    pub reg_op2: u64,
+    pub reg_res: u64,
     pub reg_north_in: u64,
     pub reg_south_in: u64,
     pub reg_west_in: u64,
     pub reg_east_in: u64,
-    pub reg_op1: u64,
-    pub reg_op2: u64,
-    pub reg_res: u64,
     pub reg_predicate: bool,
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+impl Debug for PERegisters {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "reg_op1: {:?}\nreg_op2: {:?}\nreg_res: {:?}\nreg_north_in: {:?}\nreg_south_in: {:?}\nreg_west_in: {:?}\nreg_east_in: {:?}\nreg_predicate: {}",
+            SIMDValue::from(self.reg_op1),
+            SIMDValue::from(self.reg_op2),
+            SIMDValue::from(self.reg_res),
+            SIMDValue::from(self.reg_north_in),
+            SIMDValue::from(self.reg_south_in),
+            SIMDValue::from(self.reg_west_in),
+            SIMDValue::from(self.reg_east_in),
+            self.reg_predicate
+        )
+    }
+}
+
+#[derive(Clone, Copy, Default)]
 pub struct PESignals {
-    pub wire_alu_out: u64,
+    pub wire_alu_out: Option<u64>,
     pub wire_north_in: Option<u64>,
     pub wire_south_in: Option<u64>,
     pub wire_west_in: Option<u64>,
@@ -24,6 +42,24 @@ pub struct PESignals {
     pub wire_south_out: Option<u64>,
     pub wire_west_out: Option<u64>,
     pub wire_east_out: Option<u64>,
+}
+
+impl Debug for PESignals {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "wire_alu_out: {:?}\nwire_north_in: {:?}\nwire_south_in: {:?}\nwire_west_in: {:?}\nwire_east_in: {:?}\nwire_north_out: {:?}\nwire_south_out: {:?}\nwire_west_out: {:?}\nwire_east_out: {:?}",
+            self.wire_alu_out.map(|v| SIMDValue::from(v)),
+            self.wire_north_in.map(|v| SIMDValue::from(v)),
+            self.wire_south_in.map(|v| SIMDValue::from(v)),
+            self.wire_west_in.map(|v| SIMDValue::from(v)),
+            self.wire_east_in.map(|v| SIMDValue::from(v)),
+            self.wire_north_out.map(|v| SIMDValue::from(v)),
+            self.wire_south_out.map(|v| SIMDValue::from(v)),
+            self.wire_west_out.map(|v| SIMDValue::from(v)),
+            self.wire_east_out.map(|v| SIMDValue::from(v)),
+        )
+    }
 }
 
 #[derive(Debug, Clone, Default)]
@@ -64,13 +100,13 @@ impl PE {
         self.configurations.len() > 0
     }
 
-    /// Update the alu_out signal for ALU instructions, other instructions will not trigger the update
+    /// Update the alu_out signal for ALU instructions and SIMD instructions, other instructions will not trigger the update
     pub fn update_alu_out(&mut self) {
         let configuration = self.configurations[self.pc].clone();
         let operation = configuration.operation.clone();
 
-        if operation.is_arith_logic() {
-            self.execute_alu(&operation);
+        if operation.is_arith_logic() || operation.is_simd() {
+            self.execute_alu_simd(&operation);
         }
     }
 
@@ -90,7 +126,11 @@ impl PE {
                     !operation.is_arith_logic(),
                     "Cannot execute arithmetic logic operation after LOAD because the conflict on alu_out"
                 );
-                self.signals.wire_alu_out = dmem_interface.reg_dmem_data.unwrap();
+                assert!(
+                    dmem_interface.reg_dmem_data.is_some(),
+                    "Previous op is LOAD, but reg_dmem_data is None. Most likely you have setup memories wrong"
+                );
+                self.signals.wire_alu_out = dmem_interface.reg_dmem_data;
             }
         }
     }
@@ -127,6 +167,8 @@ impl PE {
             return Err("No more configurations".to_string());
         }
         self.pc += 1;
+        // clean all wire signals
+        self.signals = PESignals::default();
         Ok(())
     }
 
@@ -135,11 +177,11 @@ impl PE {
     pub fn snapshot(&self) -> String {
         let mut result = String::new();
         result.push_str(&format!("PC: {}\n", self.pc));
-        result.push_str(&format!("Registers: {:?}\n", self.regs));
-        result.push_str(&format!("Signals: {:?}\n", self.signals));
+        result.push_str(&format!("Reg:\n{:?}\n", self.regs));
+        result.push_str(&format!("Sig:\n{:?}\n", self.signals));
         result.push_str(&format!(
-            "current_conf: {}\n",
-            self.configurations[self.pc - 1].to_mnemonics()
+            "Conf: {}\n",
+            self.configurations[self.pc].to_mnemonics()
         ));
         result.push_str(&format!(
             "Previous op is load: {:?}\n",
