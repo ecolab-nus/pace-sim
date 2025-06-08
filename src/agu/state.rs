@@ -2,6 +2,7 @@ use crate::sim::dmem::DMemInterface;
 
 use super::instruction::{InstMode, Instruction};
 
+#[derive(Debug, Clone)]
 pub struct AGUState {
     pub pc: u32,
     pub cm: Vec<Instruction>,

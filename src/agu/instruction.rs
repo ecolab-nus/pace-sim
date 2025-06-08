@@ -1,6 +1,7 @@
 use std::{fmt::Display, str::FromStr};
 use strum_macros::{Display, EnumString};
 
+#[derive(Debug, Copy, Clone)]
 pub struct Instruction {
     pub inst_type: InstType,
     pub inst_mode: InstMode,
