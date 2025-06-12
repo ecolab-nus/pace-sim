@@ -121,15 +121,19 @@ impl PE {
         // update the alu_out signal for previous LOAD operation
         if self.is_mem_pe() {
             if self.previous_op_is_load.unwrap() {
-                // TODO: make this a warning
-                assert!(
-                    !operation.is_arith_logic(),
-                    "Cannot execute arithmetic logic operation after LOAD because the conflict on alu_out"
-                );
-                assert!(
-                    dmem_interface.reg_dmem_data.is_some(),
-                    "Previous op is LOAD, but reg_dmem_data is None. Most likely you have setup memories wrong"
-                );
+                if !operation.is_arith_logic() {
+                    log::warn!(
+                        "Previous op is LOAD, but you are executing an ALU or SIMD operation. 
+                        Knowing that the data coming back from memory has priority, you ALU result is overritten. 
+                        This is not a critical error, but you should check your memory setup."
+                    );
+                }
+                if dmem_interface.reg_dmem_data.is_none() {
+                    log::error!(
+                        "Previous op is LOAD, but no data is back next cycle. Most likely you have setup memories wrong"
+                    );
+                    panic!("Simulator stops. Fatal Error.");
+                }
                 self.signals.wire_alu_out = dmem_interface.reg_dmem_data;
             }
         }

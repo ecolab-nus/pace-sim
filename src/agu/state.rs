@@ -18,7 +18,10 @@ impl AGUState {
         let inst = &self.cm[self.pc as usize];
         let pc = self.pc as usize;
         let addr = self.arf[pc];
+
+        // update the dmem interface
         dmem.wire_dmem_addr = Some(addr as u64);
+
         match inst.inst_mode {
             InstMode::STRIDED => {
                 self.arf[pc] = addr + inst.stride as u16;

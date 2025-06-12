@@ -1,5 +1,27 @@
-use clap::Parser;
+use clap::{Parser, ValueEnum};
+use log::LevelFilter;
 use pace_sim::sim::grid::Grid;
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
+enum LogLevel {
+    Error,
+    Warn,
+    Info,
+    Debug,
+    Trace,
+}
+
+impl From<LogLevel> for LevelFilter {
+    fn from(level: LogLevel) -> Self {
+        match level {
+            LogLevel::Error => LevelFilter::Error,
+            LogLevel::Warn => LevelFilter::Warn,
+            LogLevel::Info => LevelFilter::Info,
+            LogLevel::Debug => LevelFilter::Debug,
+            LogLevel::Trace => LevelFilter::Trace,
+        }
+    }
+}
 
 /// Simulate a grid of PEs
 #[derive(Parser, Debug)]
@@ -14,6 +36,9 @@ struct Args {
     /// Dump the snapshot for every cycle.
     #[clap(long)]
     full_trace: bool,
+    /// Set the log level.
+    #[clap(short, long, default_value = "Info")]
+    log_level: LogLevel,
 }
 
 fn main() {

@@ -4,10 +4,13 @@ use nom::{
     character::complete::{digit1, multispace0},
 };
 
-use crate::isa::{
-    configuration::Program,
-    pe::PE,
-    router::{self, RouterOutDir},
+use crate::{
+    agu::state::AGUState,
+    isa::{
+        configuration::Program,
+        pe::PE,
+        router::{self, RouterOutDir},
+    },
 };
 
 use super::dmem::DataMemory;
@@ -66,6 +69,7 @@ pub struct Grid {
     pub shape: PEIdx,
     pub pes: Vec<Vec<PE>>,
     pub dmems: Vec<Vec<DataMemory>>,
+    pub agus: Vec<Vec<AGUState>>,
 }
 
 const LEFT: usize = 0;
@@ -220,6 +224,9 @@ impl Grid {
     /// This means every two PEs are connected to the same data memory.
     /// The data memory files are named as dm0, dm1, dm2, dm3, ...
     /// So for a X x Y grid, you need to provide X memory files from dm0 to dmX-1
+    /// The AGU program files are named as agu0, agu1, agu2, agu3, ...,
+    /// In our case of 2 port data memories, there are 2 AGU files per memory.
+    /// The files are named aguX, where Y = PE.Y for the first column (left edge), then Y = ARRAY.Y + PE.Y for the last column (right edge)
     pub fn from_folder(path: &str) -> Self {
         let mut entries = std::fs::read_dir(&path).unwrap();
         let mut max_x = usize::MIN;
@@ -256,6 +263,20 @@ impl Grid {
                 panic!("File {} is missing", file_path.display());
             }
             let filename = format!("dm{}", y / 2 + shape.y / 2);
+            let file_path = std::path::Path::new(&path).join(filename);
+            if !file_path.exists() {
+                panic!("File {} is missing", file_path.display());
+            }
+        }
+
+        // Check the AGU program files are present
+        for y in 0..shape.y {
+            let filename = format!("agu{}", y);
+            let file_path = std::path::Path::new(&path).join(filename);
+            if !file_path.exists() {
+                panic!("File {} is missing", file_path.display());
+            }
+            let filename = format!("agu{}", y + shape.y);
             let file_path = std::path::Path::new(&path).join(filename);
             if !file_path.exists() {
                 panic!("File {} is missing", file_path.display());
@@ -337,7 +358,12 @@ impl Grid {
             }
         }
 
-        Grid { shape, pes, dmems }
+        Grid {
+            shape,
+            pes,
+            dmems,
+            agus: Vec::new(),
+        }
     }
 
     /// Parse the filename of a PE program file, returns the coordinates of the PE
