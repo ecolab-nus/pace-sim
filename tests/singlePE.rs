@@ -143,10 +143,13 @@ fn test_single_pe() {
     assert_eq!(dmem.read16(0x10), 0x11);
     assert_eq!(dmem.read16(0x20), 0x22);
 
-    while pe.next_conf().is_ok() {
+    loop {
         pe.update_alu_out();
         pe.update_mem(&mut dmem.port1);
         dmem.update_interface();
         pe.update_registers();
+        if pe.next_conf().is_err() {
+            break;
+        }
     }
 }
