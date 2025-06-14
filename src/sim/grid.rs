@@ -8,7 +8,7 @@ use crate::{
     agu::state::AGUState,
     isa::{
         configuration::Program,
-        pe::PE,
+        pe::*,
         router::{self, RouterOutDir},
     },
 };
@@ -94,24 +94,78 @@ impl Grid {
         }
         // for the first column, update the memory interface
         for y in 0..self.shape.y {
-            let pe = &mut self.pes[y][0];
             // the left edge PEs are connected to the data memory y%2
             if y % 2 == 0 {
-                pe.update_mem(&mut self.dmems[LEFT][y / 2].port1);
+                if self.is_agu_enabled() {
+                    let pe = &mut self.pes[y][0];
+                    pe.update_mem(&mut self.dmems[LEFT][y / 2].port1, PE::AGU_ENABLED);
+                    let mem_interface = &mut self.dmems[LEFT][y / 2].port1;
+                    // when AGU is enabled, the address set by PE is ignored, generate a warning for that
+                    if mem_interface.wire_dmem_addr.is_some() {
+                        log::warn!(
+                            "AGU and PE are both setting the address, ignoring the PE's address"
+                        );
+                    }
+                    self.agus[LEFT][y].update_interface(mem_interface);
+                } else {
+                    let pe = &mut self.pes[y][0];
+                    pe.update_mem(&mut self.dmems[LEFT][y / 2].port1, PE::AGU_DISABLED);
+                }
             } else {
-                pe.update_mem(&mut self.dmems[LEFT][y / 2].port2);
+                if self.is_agu_enabled() {
+                    let pe = &mut self.pes[y][0];
+                    pe.update_mem(&mut self.dmems[LEFT][y / 2].port2, PE::AGU_ENABLED);
+                    let mem_interface = &mut self.dmems[LEFT][y / 2].port2;
+                    // when AGU is enabled, the address set by PE is ignored, generate a warning for that
+                    if mem_interface.wire_dmem_addr.is_some() {
+                        log::warn!(
+                            "AGU and PE are both setting the address, ignoring the PE's address"
+                        );
+                    }
+                    self.agus[LEFT][y].update_interface(mem_interface);
+                } else {
+                    let pe = &mut self.pes[y][0];
+                    pe.update_mem(&mut self.dmems[LEFT][y / 2].port2, PE::AGU_DISABLED);
+                }
             }
             self.dmems[LEFT][y / 2].update_interface();
         }
 
         // for the last column, update the memory interface
         for y in 0..self.shape.y {
-            let pe = &mut self.pes[y][self.shape.x - 1];
             // the right edge PEs are connected to the data memory y%2 + Y
             if y % 2 == 0 {
-                pe.update_mem(&mut self.dmems[RIGHT][y / 2].port1);
+                if self.is_agu_enabled() {
+                    let pe = &mut self.pes[y][self.shape.x - 1];
+                    pe.update_mem(&mut self.dmems[RIGHT][y / 2].port1, PE::AGU_ENABLED);
+                    let mem_interface = &mut self.dmems[RIGHT][y / 2].port1;
+                    // when AGU is enabled, the address set by PE is ignored, generate a warning for that
+                    if mem_interface.wire_dmem_addr.is_some() {
+                        log::warn!(
+                            "AGU and PE are both setting the address, ignoring the PE's address"
+                        );
+                    }
+                    self.agus[RIGHT][y].update_interface(mem_interface);
+                } else {
+                    let pe = &mut self.pes[y][self.shape.x - 1];
+                    pe.update_mem(&mut self.dmems[RIGHT][y / 2].port2, PE::AGU_DISABLED);
+                }
             } else {
-                pe.update_mem(&mut self.dmems[RIGHT][y / 2].port2);
+                if self.is_agu_enabled() {
+                    let pe = &mut self.pes[y][self.shape.x - 1];
+                    pe.update_mem(&mut self.dmems[RIGHT][y / 2].port2, PE::AGU_ENABLED);
+                    let mem_interface = &mut self.dmems[RIGHT][y / 2].port2;
+                    // when AGU is enabled, the address set by PE is ignored, generate a warning for that
+                    if mem_interface.wire_dmem_addr.is_some() {
+                        log::warn!(
+                            "AGU and PE are both setting the address, ignoring the PE's address"
+                        );
+                    }
+                    self.agus[RIGHT][y].update_interface(mem_interface);
+                } else {
+                    let pe = &mut self.pes[y][self.shape.x - 1];
+                    pe.update_mem(&mut self.dmems[RIGHT][y / 2].port2, PE::AGU_DISABLED);
+                }
             }
             self.dmems[RIGHT][y / 2].update_interface();
         }
@@ -269,17 +323,41 @@ impl Grid {
             }
         }
 
-        // Check the AGU program files are present
+        // Try to find if there is any AGU program file named aguX, if not, just consider non-AGU cases:
+        let mut agu_files_present = false;
         for y in 0..shape.y {
             let filename = format!("agu{}", y);
             let file_path = std::path::Path::new(&path).join(filename);
             if !file_path.exists() {
-                panic!("File {} is missing", file_path.display());
+                agu_files_present = true;
             }
             let filename = format!("agu{}", y + shape.y);
             let file_path = std::path::Path::new(&path).join(filename);
             if !file_path.exists() {
-                panic!("File {} is missing", file_path.display());
+                agu_files_present = true;
+            }
+        }
+
+        if !agu_files_present {
+            log::info!("No AGU program files found, considering non-AGU setting");
+        } else {
+            log::info!("AGU program files found, considering AGU setting");
+            // make sure all agu files are present
+            for y in 0..shape.y {
+                let filename = format!("agu{}", y);
+                let file_path = std::path::Path::new(&path).join(filename);
+                if !file_path.exists() {
+                    log::error!("AGU program file {} is missing", file_path.display());
+                    panic!("Simulator stops. Fatal Error.");
+                }
+            }
+            for y in 0..shape.y {
+                let filename = format!("agu{}", y + shape.y);
+                let file_path = std::path::Path::new(&path).join(filename);
+                if !file_path.exists() {
+                    log::error!("AGU program file {} is missing", file_path.display());
+                    panic!("Simulator stops. Fatal Error.");
+                }
             }
         }
 
@@ -295,6 +373,7 @@ impl Grid {
             pes.push(pes_row);
         }
 
+        // Load the PE programs
         for y in 0..shape.y {
             // The first column and last column are mem PEs
             let filename = format!("PE-Y{}X{}", y, 0);
@@ -319,6 +398,7 @@ impl Grid {
             let pe = PE::new_mem_pe(program);
             pes[y][shape.x - 1] = pe;
         }
+        log::info!("PE programs loaded successfully");
 
         // Load the data memories
         let mut dmems: Vec<Vec<DataMemory>> = Vec::new();
@@ -338,6 +418,7 @@ impl Grid {
         }
         dmems.push(dmems_left);
         dmems.push(dmems_right);
+        log::info!("Data memories loaded successfully");
 
         // Check all PEs have the same number of configurations
         let mut num_configs = None;
@@ -347,13 +428,14 @@ impl Grid {
                 if num_configs.is_none() {
                     num_configs = Some(pe.configurations.len());
                 } else {
-                    assert_eq!(
-                        pe.configurations.len(),
-                        num_configs.unwrap(),
-                        "PE at ({}, {}) has a different number of configurations than the others",
-                        x,
-                        y
-                    );
+                    if pe.configurations.len() != num_configs.unwrap() {
+                        log::error!(
+                            "PE at ({}, {}) has a different number of configurations than the others",
+                            x,
+                            y
+                        );
+                        panic!("Simulator stops. Fatal Error.");
+                    }
                 }
             }
         }
@@ -407,5 +489,9 @@ impl Grid {
             let next_pe = dst.output_pe_idx(output_direction);
             self.propagate_router_signals(dst, next_pe, opposite_direction);
         }
+    }
+
+    fn is_agu_enabled(&self) -> bool {
+        !self.agus.is_empty()
     }
 }

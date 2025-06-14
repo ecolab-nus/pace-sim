@@ -1,11 +1,6 @@
 use pace_sim::{
     self,
-    isa::{
-        configuration::Configuration,
-        operation::*,
-        pe::{PE, PERegisters, PESignals},
-        router::*,
-    },
+    isa::{configuration::Configuration, operation::*, pe::*, router::*},
     sim::dmem::DataMemory,
 };
 
@@ -145,7 +140,7 @@ fn test_single_pe() {
 
     loop {
         pe.update_alu_out();
-        pe.update_mem(&mut dmem.port1);
+        pe.update_mem(&mut dmem.port1, PE::AGU_DISABLED);
         dmem.update_interface();
         pe.update_registers();
         if pe.next_conf().is_err() {

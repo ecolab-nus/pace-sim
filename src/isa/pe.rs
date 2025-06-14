@@ -72,6 +72,9 @@ pub struct PE {
 }
 
 impl PE {
+    pub const AGU_ENABLED: bool = false;
+    pub const AGU_DISABLED: bool = true;
+
     pub fn new(program: Program) -> Self {
         Self {
             regs: PERegisters::default(),
@@ -113,10 +116,10 @@ impl PE {
     /// Update the dmem_interface for memory operations
     /// Also update the alu_out signal for previous LOAD operation
     /// For the memory PEs, if previous cycle was a load, the current cycle should not be an ALU operation because its output is overridden by the data from dmem
-    pub fn update_mem(&mut self, dmem_interface: &mut DMemInterface) {
+    pub fn update_mem(&mut self, dmem_interface: &mut DMemInterface, agu_enabled: bool) {
         let operation = self.configurations[self.pc].operation.clone();
         // prepare the dmem_interface for memory operations
-        self.prepare_dmem_interface(&operation, dmem_interface);
+        self.prepare_dmem_interface(&operation, dmem_interface, agu_enabled);
 
         // update the alu_out signal for previous LOAD operation
         if self.is_mem_pe() {

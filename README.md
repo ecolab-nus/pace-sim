@@ -130,3 +130,15 @@ wire_dmem_addr = op2
 ```
 
 # AGU
+Control Memory (CM) holds instructions
+Address Register File (ARF) holds the address to be used for the Data Memory
+The number of instructions is the same of the number of address register
+The PC of the AGU points to the current instruction and the address
+
+There are only 2 instructions: Const and Strided(S).
+For Const, the value (address) of the corresponding address register never changes
+For Strided, the value of the corresponding address register is incremented by S every time AFTER using the address for the DM.
+
+Each PE memory instruction triggers the use of current address and then the incrementation of PC.
+
+(TODO: confirm with hardware design) If the number of instructions is lower than the upper bound, after executing the last instruction, it goes back to the first one

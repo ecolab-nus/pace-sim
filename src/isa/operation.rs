@@ -276,7 +276,13 @@ impl PE {
     /// If not a memory operation, the dmem_interface will be set to NOP
     /// LOAD operation will have the data back by next cycle into the interface's reg_dmem_data
     /// The next execution (not managed by this function) will assign the reg_dmem_data to wire_alu_out by next cycle, compiler must make sure that next operation does not write to wire_alu_out
-    pub fn prepare_dmem_interface(&mut self, op: &Operation, dmem_interface: &mut DMemInterface) {
+    /// If AGU is enabled, the address is provided by AGU, so PE should not set the address
+    pub fn prepare_dmem_interface(
+        &mut self,
+        op: &Operation,
+        dmem_interface: &mut DMemInterface,
+        agu_enabled: bool,
+    ) {
         match op.op_code {
             OpCode::LOADB => {
                 dmem_interface.mode = DMemMode::Read8;
@@ -302,17 +308,21 @@ impl PE {
         }
 
         if op.is_load() {
-            if let Some(immediate) = op.immediate {
-                dmem_interface.wire_dmem_addr = Some(immediate as u64);
-            } else {
-                dmem_interface.wire_dmem_addr = Some(self.regs.reg_op2);
+            if agu_enabled {
+                if let Some(immediate) = op.immediate {
+                    dmem_interface.wire_dmem_addr = Some(immediate as u64);
+                } else {
+                    dmem_interface.wire_dmem_addr = Some(self.regs.reg_op2);
+                }
             }
             dmem_interface.wire_dmem_data = None;
         } else if op.is_store() {
-            if let Some(immediate) = op.immediate {
-                dmem_interface.wire_dmem_addr = Some(immediate as u64);
-            } else {
-                dmem_interface.wire_dmem_addr = Some(self.regs.reg_op2);
+            if agu_enabled {
+                if let Some(immediate) = op.immediate {
+                    dmem_interface.wire_dmem_addr = Some(immediate as u64);
+                } else {
+                    dmem_interface.wire_dmem_addr = Some(self.regs.reg_op2);
+                }
             }
             dmem_interface.wire_dmem_data = Some(self.regs.reg_op1);
         } else {

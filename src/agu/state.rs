@@ -14,13 +14,10 @@ impl AGUState {
         Self { pc: 0, cm, arf }
     }
 
-    pub fn step(&mut self, dmem: &mut DMemInterface) {
+    fn update(&mut self) {
         let inst = &self.cm[self.pc as usize];
         let pc = self.pc as usize;
         let addr = self.arf[pc];
-
-        // update the dmem interface
-        dmem.wire_dmem_addr = Some(addr as u64);
 
         match inst.inst_mode {
             InstMode::STRIDED => {
@@ -30,5 +27,15 @@ impl AGUState {
                 // do nothing
             }
         }
+    }
+
+    pub fn next(&mut self) {
+        self.pc = (self.pc + 1) % self.cm.len() as u32;
+    }
+
+    pub fn update_interface(&mut self, dmem: &mut DMemInterface) {
+        dmem.wire_dmem_addr = Some(self.arf[self.pc as usize] as u64);
+        self.update();
+        self.next();
     }
 }
