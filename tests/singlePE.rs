@@ -11,6 +11,30 @@ fn test_single_pe() {
     // Add the two elements
     // Store the result at 0x30
 
+    // initialize the loop
+    let init_loop = Configuration {
+        operation: Operation {
+            op_code: OpCode::JUMP,
+            immediate: NO_IMMEDIATE,
+            update_res: NO_UPDATE_RES,
+            loop_start: Some(1),
+            loop_end: Some(5),
+        },
+        router_config: RouterConfig {
+            switch_config: RouterSwitchConfig {
+                predicate: RouterInDir::Open,
+                alu_op1: RouterInDir::Open,
+                alu_op2: RouterInDir::Open,
+                east_out: RouterInDir::Open,
+                south_out: RouterInDir::Open,
+                west_out: RouterInDir::Open,
+                north_out: RouterInDir::Open,
+            },
+            input_register_bypass: DirectionsOpt::default(),
+            input_register_write: DirectionsOpt::default(),
+        },
+    };
+
     // Taking the value from west to alu_op1, because the previous LOAD send data this cycle
     let load_op1 = Configuration {
         operation: Operation {
@@ -131,7 +155,7 @@ fn test_single_pe() {
         },
     };
 
-    let configurations = vec![load_op1, load_op2, wait_op2, add, store];
+    let configurations = vec![init_loop, load_op1, load_op2, wait_op2, add, store];
 
     let mut pe = PE {
         configurations,
@@ -153,8 +177,10 @@ fn test_single_pe() {
         pe.update_mem(&mut dmem.port1, PE::AGU_DISABLED);
         dmem.update_interface();
         pe.update_registers();
-        if pe.next_conf().is_err() {
+        dbg!(&pe.pc);
+        if pe.pc >= 5 {
             break;
         }
+        pe.next_conf().unwrap();
     }
 }

@@ -1,4 +1,7 @@
-use crate::{isa::value::SIMDValue, sim::dmem::DMemInterface};
+use crate::{
+    isa::{operation::OpCode, value::SIMDValue},
+    sim::dmem::DMemInterface,
+};
 use std::fmt::Debug;
 
 use super::configuration::{Configuration, Program};
@@ -169,16 +172,27 @@ impl PE {
                 self.previous_op_is_load = Some(false);
             }
         }
+        // update the loop registers
+        if operation.is_control() {
+            if operation.op_code == OpCode::JUMP {
+                self.regs.reg_loop_start = operation.loop_start.unwrap();
+                self.regs.reg_loop_end = operation.loop_end.unwrap();
+            } else {
+                unimplemented!("Control operations other than JUMP are not supported yet");
+            }
+        }
     }
 
     pub fn next_conf(&mut self) -> Result<(), String> {
         if self.pc + 1 >= self.configurations.len() {
             return Err("No more configurations".to_string());
         }
+
         if self.pc >= self.regs.reg_loop_end as usize {
             self.pc = self.regs.reg_loop_start as usize;
+        } else {
+            self.pc += 1;
         }
-        self.pc += 1;
         // clean all wire signals
         self.signals = PESignals::default();
         Ok(())

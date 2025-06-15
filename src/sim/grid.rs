@@ -5,7 +5,7 @@ use nom::{
 };
 
 use crate::{
-    agu::state::AGUState,
+    agu::agu::AGU,
     isa::{
         configuration::Program,
         pe::*,
@@ -69,7 +69,7 @@ pub struct Grid {
     pub shape: PEIdx,
     pub pes: Vec<Vec<PE>>,
     pub dmems: Vec<Vec<DataMemory>>,
-    pub agus: Vec<Vec<AGUState>>,
+    pub agus: Vec<Vec<AGU>>,
 }
 
 const LEFT: usize = 0;
@@ -106,7 +106,7 @@ impl Grid {
                             "AGU and PE are both setting the address, ignoring the PE's address"
                         );
                     }
-                    self.agus[LEFT][y].update_interface(mem_interface);
+                    self.agus[LEFT][y].update(mem_interface);
                 } else {
                     let pe = &mut self.pes[y][0];
                     pe.update_mem(&mut self.dmems[LEFT][y / 2].port1, PE::AGU_DISABLED);
@@ -122,7 +122,7 @@ impl Grid {
                             "AGU and PE are both setting the address, ignoring the PE's address"
                         );
                     }
-                    self.agus[LEFT][y].update_interface(mem_interface);
+                    self.agus[LEFT][y].update(mem_interface);
                 } else {
                     let pe = &mut self.pes[y][0];
                     pe.update_mem(&mut self.dmems[LEFT][y / 2].port2, PE::AGU_DISABLED);
@@ -145,7 +145,7 @@ impl Grid {
                             "AGU and PE are both setting the address, ignoring the PE's address"
                         );
                     }
-                    self.agus[RIGHT][y].update_interface(mem_interface);
+                    self.agus[RIGHT][y].update(mem_interface);
                 } else {
                     let pe = &mut self.pes[y][self.shape.x - 1];
                     pe.update_mem(&mut self.dmems[RIGHT][y / 2].port2, PE::AGU_DISABLED);
@@ -161,7 +161,7 @@ impl Grid {
                             "AGU and PE are both setting the address, ignoring the PE's address"
                         );
                     }
-                    self.agus[RIGHT][y].update_interface(mem_interface);
+                    self.agus[RIGHT][y].update(mem_interface);
                 } else {
                     let pe = &mut self.pes[y][self.shape.x - 1];
                     pe.update_mem(&mut self.dmems[RIGHT][y / 2].port2, PE::AGU_DISABLED);

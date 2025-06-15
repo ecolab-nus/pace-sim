@@ -1,7 +1,15 @@
+use log::warn;
+use nom::{
+    IResult, Parser,
+    branch::alt,
+    bytes::complete::tag,
+    character::complete::{digit1, multispace0},
+    sequence::delimited,
+};
 use std::{fmt::Display, str::FromStr};
 use strum_macros::{Display, EnumString};
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Instruction {
     pub inst_type: InstType,
     pub inst_mode: InstMode,
@@ -75,6 +83,32 @@ impl Instruction {
         bin |= self.stride as u8;
         bin
     }
+
+    pub fn from_mnemonics(s: &str) -> IResult<&str, Self> {
+        let (input, inst_type) = alt((tag("LOAD"), tag("STORE"))).parse(s)?;
+        let (input, _) = delimited(multispace0, tag(","), multispace0).parse(input)?;
+        let (input, inst_mode) = alt((tag("STRIDED"), tag("CONST"))).parse(input)?;
+        let (input, _) = delimited(multispace0, tag(","), multispace0).parse(input)?;
+        let (input, data_width) = alt((tag("B8"), tag("B16"), tag("B64"))).parse(input)?;
+        let (input, _) = delimited(multispace0, tag(","), multispace0).parse(input)?;
+        let (input, stride) = digit1.parse(input)?;
+        let inst_mode: InstMode = inst_mode.parse().unwrap();
+        let stride = stride.parse::<u8>().unwrap();
+        if inst_mode == InstMode::CONST && stride != 0 {
+            warn!(
+                "Warning when loading AGU configuration: you are in CONST mode but you specified stride in the instruction"
+            );
+        }
+        Ok((
+            input,
+            Self {
+                inst_type: inst_type.parse().unwrap(),
+                inst_mode,
+                data_width: data_width.parse().unwrap(),
+                stride,
+            },
+        ))
+    }
 }
 
 impl Display for Instruction {
@@ -102,5 +136,19 @@ impl FromStr for Instruction {
             data_width: parts[2].parse().unwrap(),
             stride: parts[3].parse().unwrap(),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_instruction_parsing() {
+        let inst = Instruction::from_str("LOAD,STRIDED,B8,1").unwrap();
+        assert_eq!(inst.inst_type, InstType::LOAD);
+        assert_eq!(inst.inst_mode, InstMode::STRIDED);
+        assert_eq!(inst.data_width, DataWidth::B8);
+        assert_eq!(inst.stride, 1);
     }
 }
