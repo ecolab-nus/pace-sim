@@ -14,6 +14,8 @@ pub struct Operation {
     pub op_code: OpCode,
     pub immediate: Immediate,
     pub update_res: UpdateRes,
+    pub loop_start: Option<u8>,
+    pub loop_end: Option<u8>,
 }
 
 impl Operation {
@@ -143,8 +145,9 @@ impl PE {
     /// Execute the simple ALU operation and update the alu_out signal
     pub fn execute_alu_simd(&mut self, op: &Operation) {
         assert!(
-            !op.is_mem(),
-            "Memory operations cannot be executed in normal PE"
+            op.is_arith_logic() || op.is_simd(),
+            "Operation {:?} is not a valid ALU or SIMD operation",
+            op.op_code
         );
         match op.op_code {
             OpCode::ADD => {
@@ -240,29 +243,35 @@ impl PE {
                 self.signals.wire_alu_out = Some((op1 >= op2) as u64);
             }
 
-            OpCode::MOVCL => {
-                todo!()
-            }
-
-            OpCode::JUMP => {
-                todo!()
-            }
-
-            OpCode::MOVC => {
-                todo!()
-            }
-
             OpCode::NOP => {
                 self.signals.wire_alu_out = Some(0);
             }
-            _ => unimplemented!("Operation not implemented: {:?}", op.op_code),
+            _ => panic!(
+                "Operation {:?} is not a valid ALU or SIMD operation",
+                op.op_code
+            ),
         }
+    }
+
+    pub fn execute_jump(&mut self, op: &Operation) {
+        assert!(
+            op.is_control(),
+            "Operation {:?} is not a control operation",
+            op.op_code
+        );
+        assert!(
+            op.op_code == OpCode::JUMP,
+            "Operation {:?} is not a JUMP operation",
+            op.op_code
+        );
+        self.regs.reg_loop_start = op.loop_start.unwrap();
+        self.regs.reg_loop_end = op.loop_end.unwrap();
     }
 
     /// Update the res register, this is the only register updated by ALU
     /// You should call this function by very end if the cycle
     pub fn update_res(&mut self, op: &Operation) {
-        if op.update_res {
+        if !op.is_control() && op.update_res {
             self.regs.reg_res = self
                 .signals
                 .wire_alu_out

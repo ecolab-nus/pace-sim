@@ -12,6 +12,8 @@ pub struct PERegisters {
     pub reg_west_in: u64,
     pub reg_east_in: u64,
     pub reg_predicate: bool,
+    pub reg_loop_start: u8,
+    pub reg_loop_end: u8,
 }
 
 impl Debug for PERegisters {
@@ -172,6 +174,9 @@ impl PE {
     pub fn next_conf(&mut self) -> Result<(), String> {
         if self.pc + 1 >= self.configurations.len() {
             return Err("No more configurations".to_string());
+        }
+        if self.pc >= self.regs.reg_loop_end as usize {
+            self.pc = self.regs.reg_loop_start as usize;
         }
         self.pc += 1;
         // clean all wire signals

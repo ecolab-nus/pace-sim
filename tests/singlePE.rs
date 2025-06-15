@@ -17,6 +17,8 @@ fn test_single_pe() {
             op_code: OpCode::LOAD,
             immediate: Some(0x10),
             update_res: NO_UPDATE_RES,
+            loop_start: None,
+            loop_end: None,
         },
         router_config: RouterConfig {
             switch_config: RouterSwitchConfig {
@@ -39,6 +41,8 @@ fn test_single_pe() {
             op_code: OpCode::LOAD,
             immediate: Some(0x20),
             update_res: NO_UPDATE_RES,
+            loop_start: None,
+            loop_end: None,
         },
         router_config: RouterConfig {
             switch_config: RouterSwitchConfig {
@@ -61,6 +65,8 @@ fn test_single_pe() {
             op_code: OpCode::NOP,
             immediate: NO_IMMEDIATE,
             update_res: NO_UPDATE_RES,
+            loop_start: None,
+            loop_end: None,
         },
         router_config: RouterConfig {
             switch_config: RouterSwitchConfig {
@@ -83,6 +89,8 @@ fn test_single_pe() {
             op_code: OpCode::ADD,
             immediate: NO_IMMEDIATE,
             update_res: NO_UPDATE_RES,
+            loop_start: None,
+            loop_end: None,
         },
         router_config: RouterConfig {
             switch_config: RouterSwitchConfig {
@@ -105,6 +113,8 @@ fn test_single_pe() {
             op_code: OpCode::STORE,
             immediate: Some(0x30),
             update_res: false,
+            loop_start: None,
+            loop_end: None,
         },
         router_config: RouterConfig {
             switch_config: RouterSwitchConfig {

@@ -8,8 +8,8 @@ pub enum ConfigField {
     AluBypassBit,
     DisablePeRfBit,
     Immediate,
-    LoopEndAddress,
-    LoopStartAddress,
+    LoopEnd,
+    LoopStart,
     OpCode,
     RouterWriteEnable,
     AluUpdateResBit,
@@ -30,8 +30,8 @@ impl ConfigField {
             ConfigField::AluBypassBit => (60, 61),      // 1 bit: bit 60
             ConfigField::DisablePeRfBit => (59, 60),    // 1 bit: bit 59
             ConfigField::Immediate => (35, 51),         // 16 bits: bits 35-50
-            ConfigField::LoopEndAddress => (40, 44),    // 4 bits: bits 40-43
-            ConfigField::LoopStartAddress => (35, 40),  // 5 bits: bits 35-39
+            ConfigField::LoopEnd => (40, 45),           // 5 bits: bits 40-44
+            ConfigField::LoopStart => (35, 40),         // 5 bits: bits 35-39
             ConfigField::OpCode => (30, 35),            // 5 bits: bits 30-34
             ConfigField::RouterWriteEnable => (26, 30), // 4 bits: bits 26-29
             ConfigField::AluUpdateResBit => (25, 26),   // 1 bit: bit 25

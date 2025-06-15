@@ -129,6 +129,22 @@ if config.is_store()
 wire_dmem_addr = op2
 ```
 
+## 1.3. Jump
+```
+reset reg_predicate
+assign loop_start
+assign loop_end
+```
+the Jump instruction set the loop_start and loop_end.
+
+# 2. Loop Start/ Loop End
+
+TODO: i don't understand:
+```
+                if (control_reg_data[34:30]==5'b11110 && jumpl_reg != 5'b11110) begin
+                    addr_shifted_tile <= {1'b0,control_reg_data[49:45]};
+```
+
 # AGU
 Control Memory (CM) holds instructions
 Address Register File (ARF) holds the address to be used for the Data Memory

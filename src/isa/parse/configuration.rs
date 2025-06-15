@@ -91,6 +91,8 @@ pub mod mnemonics {
                     op_code: OpCode::ADD,
                     immediate: Some(15),
                     update_res: UPDATE_RES,
+                    loop_start: None,
+                    loop_end: None,
                 }
             );
             let expected_switch_config = RouterSwitchConfig {
@@ -275,6 +277,8 @@ input_register_write: {};
                     op_code: OpCode::ADD,
                     immediate: None,
                     update_res: NO_UPDATE_RES,
+                    loop_start: None,
+                    loop_end: None,
                 }
             );
             let binary = configuration.to_binary();
