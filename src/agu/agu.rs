@@ -4,7 +4,7 @@ use nom::{
     IResult, Parser,
     bytes::complete::tag,
     character::complete::{digit1, multispace0},
-    multi::separated_list1,
+    multi::separated_list0,
 };
 
 use crate::sim::dmem::DMemInterface;
@@ -22,7 +22,15 @@ pub struct AGU {
 }
 
 impl AGU {
+    pub fn is_enabled(&self) -> bool {
+        self.max_count > 0
+    }
+
     pub fn update(&mut self, dmem: &mut DMemInterface) {
+        assert!(
+            self.is_enabled(),
+            "AGU is not enabled, you should not call this function"
+        );
         let inst = &self.cm[self.pc as usize];
         let pc = self.pc as usize;
         let addr = self.arf[pc];
@@ -39,12 +47,12 @@ impl AGU {
     }
 
     pub fn next(&mut self) -> Result<(), String> {
+        if self.count >= self.max_count {
+            return Err("AGU execution completed".to_string());
+        }
         if self.pc == self.cm.len() as u32 - 1 {
-            self.count += 1;
             self.pc = 0;
-            if self.count >= self.max_count {
-                return Err("AGU execution completed".to_string());
-            }
+            self.count += 1;
         } else {
             self.pc += 1;
         }
@@ -68,11 +76,11 @@ impl AGU {
         let (input, _) = multispace0(s)?;
         let (input, _) = tag("CM:").parse(input)?;
         let (input, _) = multispace0.parse(input)?;
-        let (input, cm) = separated_list1(multispace0, Instruction::from_mnemonics).parse(input)?;
+        let (input, cm) = separated_list0(multispace0, Instruction::from_mnemonics).parse(input)?;
         let (input, _) = multispace0.parse(input)?;
         let (input, _) = tag("ARF:").parse(input)?;
         let (input, _) = multispace0.parse(input)?;
-        let (input, arf) = separated_list1(multispace0, digit1).parse(input)?;
+        let (input, arf) = separated_list0(multispace0, digit1).parse(input)?;
         let (input, _) = multispace0.parse(input)?;
         let (input, _) = tag("MAX COUNT:").parse(input)?;
         let (input, _) = multispace0.parse(input)?;
@@ -84,6 +92,13 @@ impl AGU {
             arf.len() == cm.len(),
             "ARF and CM must have the same length"
         );
+        if arf.len() == 0 {
+            assert!(max_count == 0, "max count must be 0 if the AGU is not used");
+        } else {
+            assert!(cm.len() > 0, "CM must have at least one instruction");
+            assert!(arf.len() > 0, "ARF must have at least one address");
+            assert!(max_count > 0, "max count must be greater than 0");
+        }
         Ok((
             input,
             Self {
@@ -131,5 +146,16 @@ mod tests {
         );
         assert_eq!(state.arf, vec![0, 10]);
         assert_eq!(state.max_count, 5);
+
+        // test AGU disabled
+        let s = r"CM:
+
+            ARF: 
+
+            MAX COUNT:
+            0
+            ";
+        let state = AGU::from_mnemonics(s).unwrap();
+        assert!(!state.is_enabled());
     }
 }

@@ -50,7 +50,8 @@ fn main() {
             if cycle >= cycles {
                 break;
             }
-            grid.simulate_cycle();
+            grid.simulate_cycle()
+                .expect("Simulation finished prematurely");
             if args.full_trace {
                 let snapshot_folder = format!("{}/cycle_{}", args.folder_path, cycle);
                 println!(
@@ -60,16 +61,14 @@ fn main() {
                 grid.snapshot(snapshot_folder.as_str());
                 let mem_folder = format!("{}/mem", snapshot_folder);
                 grid.dump_mem(mem_folder.as_str());
-            }
-            if grid.next_conf().is_err() {
-                panic!("Simulation finished prematurely after cycle {}", cycle);
             }
             cycle += 1;
         }
     } else {
         let mut cycle = 0;
         loop {
-            grid.simulate_cycle();
+            grid.simulate_cycle()
+                .expect("Simulation finished prematurely");
             if args.full_trace {
                 let snapshot_folder = format!("{}/cycle_{}", args.folder_path, cycle);
                 println!(
@@ -80,11 +79,7 @@ fn main() {
                 let mem_folder = format!("{}/mem", snapshot_folder);
                 grid.dump_mem(mem_folder.as_str());
             }
-            if grid.next_conf().is_err() {
-                break;
-            }
             cycle += 1;
         }
-        println!("Simulation completed after {} cycles", cycle + 1);
     }
 }

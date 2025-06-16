@@ -2,7 +2,7 @@ CM:
 LOAD, STRIDED, B16, 1
 
 ARF:
-0
+8
 
 MAX COUNT:
 64

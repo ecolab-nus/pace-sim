@@ -1,4 +1,4 @@
-PC: 4
+PC: 2
 Reg:
 reg_op1: SIMD[00110000/0.5 00011000/0.0625 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 reg_op2: SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
@@ -20,12 +20,12 @@ wire_north_out: None
 wire_south_out: None
 wire_west_out: None
 wire_east_out: None
-Conf: operation: STORE 1
+Conf: operation: NOP 
 switch_config: {
     Open -> predicate,
     Open -> south_out,
     Open -> west_out,
-    Open -> north_out,
+    WestIn -> north_out,
     Open -> east_out,
     Open -> alu_op2,
     Open -> alu_op1,

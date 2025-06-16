@@ -157,4 +157,10 @@ For Strided, the value of the corresponding address register is incremented by S
 
 Each PE memory instruction triggers the use of current address and then the incrementation of PC.
 
-(TODO: confirm with hardware design) If the number of instructions is lower than the upper bound, after executing the last instruction, it goes back to the first one
+### AGU stop condition
+AGU has a MAX_COUNT value that is set before execution.
+Each time AGU complete **ALL instructions**, the internal counter is incremented by 1.
+When the internal counter is equal to MAX_COUNT, AGU signals an "END OF EXECUTION".
+**Careful** AGU counter starts by 0, so MAX_COUNT is actually total number of iterations. 
+**Careful** AGU counter is incremented just after PE memory operation, however, the comparison to MAX_COUNT is done the next memory operation. That allows the entire system to finish the last iteration
+

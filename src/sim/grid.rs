@@ -78,13 +78,13 @@ const RIGHT: usize = 1;
 impl Grid {
     pub fn simulate(&mut self, cycles: usize) -> Result<(), String> {
         for _ in 0..cycles {
-            self.simulate_cycle();
-            self.next_conf()?;
+            self.simulate_cycle()?;
         }
         Ok(())
     }
 
-    pub fn simulate_cycle(&mut self) {
+    /// Simulate one cycle of the grid
+    pub fn simulate_cycle(&mut self) -> Result<(), String> {
         // First, update the ALU outputs of all PEs
         for y in 0..self.shape.y {
             for x in 0..self.shape.x {
@@ -96,26 +96,27 @@ impl Grid {
         for y in 0..self.shape.y {
             // the left edge PEs are connected to the data memory y%2
             if y % 2 == 0 {
-                if self.is_agu_enabled() {
+                if self.is_agu_enabled() && self.agus[LEFT][y].is_enabled() {
                     let pe = &mut self.pes[y][0];
-                    pe.update_mem(&mut self.dmems[LEFT][y / 2].port1, PE::AGU_ENABLED);
                     let mem_interface = &mut self.dmems[LEFT][y / 2].port1;
-                    // when AGU is enabled, the address set by PE is ignored, generate a warning for that
+                    pe.update_mem(mem_interface, PE::AGU_ENABLED);
+                    // when AGU is enabled, the address set by PE is ignored, warning
                     if mem_interface.wire_dmem_addr.is_some() {
                         log::warn!(
                             "AGU and PE are both setting the address, ignoring the PE's address"
                         );
                     }
                     self.agus[LEFT][y].update(mem_interface);
+                    self.agus[LEFT][y].next()?;
                 } else {
                     let pe = &mut self.pes[y][0];
                     pe.update_mem(&mut self.dmems[LEFT][y / 2].port1, PE::AGU_DISABLED);
                 }
             } else {
-                if self.is_agu_enabled() {
+                if self.is_agu_enabled() && self.agus[LEFT][y].is_enabled() {
                     let pe = &mut self.pes[y][0];
-                    pe.update_mem(&mut self.dmems[LEFT][y / 2].port2, PE::AGU_ENABLED);
                     let mem_interface = &mut self.dmems[LEFT][y / 2].port2;
+                    pe.update_mem(mem_interface, PE::AGU_ENABLED);
                     // when AGU is enabled, the address set by PE is ignored, generate a warning for that
                     if mem_interface.wire_dmem_addr.is_some() {
                         log::warn!(
@@ -123,6 +124,7 @@ impl Grid {
                         );
                     }
                     self.agus[LEFT][y].update(mem_interface);
+                    self.agus[LEFT][y].next()?;
                 } else {
                     let pe = &mut self.pes[y][0];
                     pe.update_mem(&mut self.dmems[LEFT][y / 2].port2, PE::AGU_DISABLED);
@@ -135,10 +137,10 @@ impl Grid {
         for y in 0..self.shape.y {
             // the right edge PEs are connected to the data memory y%2 + Y
             if y % 2 == 0 {
-                if self.is_agu_enabled() {
+                if self.is_agu_enabled() && self.agus[RIGHT][y].is_enabled() {
                     let pe = &mut self.pes[y][self.shape.x - 1];
-                    pe.update_mem(&mut self.dmems[RIGHT][y / 2].port1, PE::AGU_ENABLED);
                     let mem_interface = &mut self.dmems[RIGHT][y / 2].port1;
+                    pe.update_mem(mem_interface, PE::AGU_ENABLED);
                     // when AGU is enabled, the address set by PE is ignored, generate a warning for that
                     if mem_interface.wire_dmem_addr.is_some() {
                         log::warn!(
@@ -146,15 +148,16 @@ impl Grid {
                         );
                     }
                     self.agus[RIGHT][y].update(mem_interface);
+                    self.agus[RIGHT][y].next()?;
                 } else {
                     let pe = &mut self.pes[y][self.shape.x - 1];
                     pe.update_mem(&mut self.dmems[RIGHT][y / 2].port2, PE::AGU_DISABLED);
                 }
             } else {
-                if self.is_agu_enabled() {
+                if self.is_agu_enabled() && self.agus[RIGHT][y].is_enabled() {
                     let pe = &mut self.pes[y][self.shape.x - 1];
-                    pe.update_mem(&mut self.dmems[RIGHT][y / 2].port2, PE::AGU_ENABLED);
                     let mem_interface = &mut self.dmems[RIGHT][y / 2].port2;
+                    pe.update_mem(mem_interface, PE::AGU_ENABLED);
                     // when AGU is enabled, the address set by PE is ignored, generate a warning for that
                     if mem_interface.wire_dmem_addr.is_some() {
                         log::warn!(
@@ -162,6 +165,7 @@ impl Grid {
                         );
                     }
                     self.agus[RIGHT][y].update(mem_interface);
+                    self.agus[RIGHT][y].next()?;
                 } else {
                     let pe = &mut self.pes[y][self.shape.x - 1];
                     pe.update_mem(&mut self.dmems[RIGHT][y / 2].port2, PE::AGU_DISABLED);
@@ -206,15 +210,15 @@ impl Grid {
                 pe.update_registers();
             }
         }
-    }
 
-    pub fn next_conf(&mut self) -> Result<(), String> {
+        // move to the next configuration
         for y in 0..self.shape.y {
             for x in 0..self.shape.x {
                 let pe = &mut self.pes[y][x];
                 pe.next_conf();
             }
         }
+
         Ok(())
     }
 
@@ -426,11 +430,33 @@ impl Grid {
         dmems.push(dmems_right);
         log::info!("Data memories loaded successfully");
 
+        // Load the AGUs
+        let mut agus: Vec<Vec<AGU>> = Vec::new();
+        if agu_files_present {
+            let mut agus_left: Vec<AGU> = Vec::new();
+            let mut agus_right: Vec<AGU> = Vec::new();
+            for y in 0..shape.y {
+                let filename = format!("agu{}", y);
+                let file_path = std::path::Path::new(&path).join(&filename);
+                let agu =
+                    AGU::from_mnemonics(&std::fs::read_to_string(file_path).unwrap()).unwrap();
+                agus_left.push(agu);
+            }
+            for y in 0..shape.y {
+                let filename = format!("agu{}", y + shape.y);
+                let file_path = std::path::Path::new(&path).join(&filename);
+                let agu =
+                    AGU::from_mnemonics(&std::fs::read_to_string(file_path).unwrap()).unwrap();
+                agus_right.push(agu);
+            }
+            agus.push(agus_left);
+            agus.push(agus_right);
+        }
         Grid {
             shape,
             pes,
             dmems,
-            agus: Vec::new(),
+            agus,
         }
     }
 

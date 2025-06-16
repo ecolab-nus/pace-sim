@@ -1,4 +1,4 @@
-PC: 0
+PC: 1
 Reg:
 reg_op1: SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 reg_op2: SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
@@ -20,7 +20,7 @@ wire_north_out: None
 wire_south_out: None
 wire_west_out: None
 wire_east_out: None
-Conf: operation: JUMP [2, 4]
+Conf: operation: NOP 
 switch_config: {
     Open -> predicate,
     Open -> south_out,
