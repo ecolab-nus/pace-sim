@@ -17,5 +17,9 @@ fn test_add_2x2() {
 
     grid.simulate_cycle();
     grid.snapshot("tests/add_2x2/cycle_3");
+    grid.next_conf().unwrap();
+
+    grid.simulate_cycle();
+    grid.snapshot("tests/add_2x2/cycle_4");
     grid.dump_mem("tests/add_2x2/mem");
 }

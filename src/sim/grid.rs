@@ -212,7 +212,7 @@ impl Grid {
         for y in 0..self.shape.y {
             for x in 0..self.shape.x {
                 let pe = &mut self.pes[y][x];
-                pe.next_conf()?;
+                pe.next_conf();
             }
         }
         Ok(())
@@ -425,26 +425,6 @@ impl Grid {
         dmems.push(dmems_left);
         dmems.push(dmems_right);
         log::info!("Data memories loaded successfully");
-
-        // Check all PEs have the same number of configurations
-        let mut num_configs = None;
-        for y in 0..shape.y {
-            for x in 0..shape.x {
-                let pe = &pes[y][x];
-                if num_configs.is_none() {
-                    num_configs = Some(pe.configurations.len());
-                } else {
-                    if pe.configurations.len() != num_configs.unwrap() {
-                        log::error!(
-                            "PE at ({}, {}) has a different number of configurations than the others",
-                            x,
-                            y
-                        );
-                        panic!("Simulator stops. Fatal Error.");
-                    }
-                }
-            }
-        }
 
         Grid {
             shape,

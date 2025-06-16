@@ -181,6 +181,6 @@ fn test_single_pe() {
         if pe.pc >= 5 {
             break;
         }
-        pe.next_conf().unwrap();
+        pe.next_conf();
     }
 }

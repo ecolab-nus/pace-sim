@@ -8,6 +8,8 @@ reg_south_in: SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 000000
 reg_west_in: SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 reg_east_in: SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 reg_predicate: false
+reg_loop_start: 2
+reg_loop_end: 4
 Sig:
 wire_alu_out: None
 wire_north_in: None
@@ -18,7 +20,7 @@ wire_north_out: None
 wire_south_out: None
 wire_west_out: None
 wire_east_out: None
-Conf: operation: NOP 
+Conf: operation: JUMP [2, 4]
 switch_config: {
     Open -> predicate,
     Open -> south_out,

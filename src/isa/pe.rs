@@ -23,7 +23,7 @@ impl Debug for PERegisters {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "reg_op1: {:?}\nreg_op2: {:?}\nreg_res: {:?}\nreg_north_in: {:?}\nreg_south_in: {:?}\nreg_west_in: {:?}\nreg_east_in: {:?}\nreg_predicate: {}",
+            "reg_op1: {:?}\nreg_op2: {:?}\nreg_res: {:?}\nreg_north_in: {:?}\nreg_south_in: {:?}\nreg_west_in: {:?}\nreg_east_in: {:?}\nreg_predicate: {}\nreg_loop_start: {}\nreg_loop_end: {}",
             SIMDValue::from(self.reg_op1),
             SIMDValue::from(self.reg_op2),
             SIMDValue::from(self.reg_res),
@@ -31,7 +31,9 @@ impl Debug for PERegisters {
             SIMDValue::from(self.reg_south_in),
             SIMDValue::from(self.reg_west_in),
             SIMDValue::from(self.reg_east_in),
-            self.reg_predicate
+            self.reg_predicate,
+            self.reg_loop_start,
+            self.reg_loop_end
         )
     }
 }
@@ -183,19 +185,18 @@ impl PE {
         }
     }
 
-    pub fn next_conf(&mut self) -> Result<(), String> {
-        if self.pc + 1 >= self.configurations.len() {
-            return Err("No more configurations".to_string());
-        }
-
+    pub fn next_conf(&mut self) {
         if self.pc >= self.regs.reg_loop_end as usize {
             self.pc = self.regs.reg_loop_start as usize;
         } else {
             self.pc += 1;
+
+            if self.pc >= self.configurations.len() {
+                panic!("No more configurations");
+            }
         }
         // clean all wire signals
         self.signals = PESignals::default();
-        Ok(())
     }
 
     /// Snapshot of the PE state after a cycle of execution
