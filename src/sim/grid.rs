@@ -328,12 +328,12 @@ impl Grid {
         for y in 0..shape.y {
             let filename = format!("agu{}", y);
             let file_path = std::path::Path::new(&path).join(filename);
-            if !file_path.exists() {
+            if file_path.exists() {
                 agu_files_present = true;
             }
             let filename = format!("agu{}", y + shape.y);
             let file_path = std::path::Path::new(&path).join(filename);
-            if !file_path.exists() {
+            if file_path.exists() {
                 agu_files_present = true;
             }
         }
@@ -348,7 +348,10 @@ impl Grid {
                 let file_path = std::path::Path::new(&path).join(filename);
                 if !file_path.exists() {
                     log::error!("AGU program file {} is missing", file_path.display());
-                    panic!("Simulator stops. Fatal Error.");
+                    panic!(
+                        "AGU program file {} is missing, Simulator stops. Fatal Error.",
+                        file_path.display()
+                    );
                 }
             }
             for y in 0..shape.y {
@@ -356,7 +359,10 @@ impl Grid {
                 let file_path = std::path::Path::new(&path).join(filename);
                 if !file_path.exists() {
                     log::error!("AGU program file {} is missing", file_path.display());
-                    panic!("Simulator stops. Fatal Error.");
+                    panic!(
+                        "AGU program file {} is missing, Simulator stops. Fatal Error.",
+                        file_path.display()
+                    );
                 }
             }
         }

@@ -1,4 +1,4 @@
-PC: 2
+PC: 0
 Reg:
 reg_op1: SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 reg_op2: SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
@@ -9,7 +9,7 @@ reg_west_in: SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 0000000
 reg_east_in: SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 reg_predicate: false
 Sig:
-wire_alu_out: None
+wire_alu_out: Some(SIMD[00011000/0.0625 00001100/0.0234375 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ])
 wire_north_in: None
 wire_south_in: None
 wire_west_in: None
@@ -18,7 +18,7 @@ wire_north_out: None
 wire_south_out: None
 wire_west_out: None
 wire_east_out: None
-Conf: operation: NOP 
+Conf: operation: LOAD 0
 switch_config: {
     Open -> predicate,
     Open -> south_out,
@@ -30,4 +30,4 @@ switch_config: {
 };
 input_register_bypass: {all};
 input_register_write: {};
-Previous op is load: Some(false)
+Previous op is load: Some(true)
