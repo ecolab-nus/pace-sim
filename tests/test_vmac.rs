@@ -20,7 +20,7 @@ fn test_vmac_2x2() {
                     grid.snapshot(snapshot_folder.as_str());
                 }
                 SimulationError::SimulationEnd => {
-                    info!("Simulation finished prematurely");
+                    info!("Simulation finished");
                     break;
                 }
             }
