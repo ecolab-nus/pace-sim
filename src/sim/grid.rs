@@ -15,53 +15,6 @@ use crate::{
 
 use super::dmem::DataMemory;
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub struct PEIdx {
-    pub x: usize,
-    pub y: usize,
-}
-
-impl PEIdx {
-    pub fn north(self) -> PEIdx {
-        PEIdx {
-            x: self.x,
-            y: self.y - 1,
-        }
-    }
-
-    pub fn south(self) -> PEIdx {
-        PEIdx {
-            x: self.x,
-            y: self.y + 1,
-        }
-    }
-
-    pub fn west(self) -> PEIdx {
-        PEIdx {
-            x: self.x - 1,
-            y: self.y,
-        }
-    }
-
-    pub fn east(self) -> PEIdx {
-        PEIdx {
-            x: self.x + 1,
-            y: self.y,
-        }
-    }
-
-    /// For a given PEIdx, return the PEIdx of the output PE in the given direction
-    pub fn output_pe_idx(&self, direction: RouterOutDir) -> PEIdx {
-        match direction {
-            router::RouterOutDir::NorthOut => self.north(),
-            router::RouterOutDir::SouthOut => self.south(),
-            router::RouterOutDir::WestOut => self.west(),
-            router::RouterOutDir::EastOut => self.east(),
-            _ => panic!("You cannot get the output PE index from inside of PE"),
-        }
-    }
-}
-
 // The mem PEs are at the left and right edges of the grid.
 // The shape is (x, y), x the number of columns
 #[derive(Debug)]
@@ -75,16 +28,15 @@ pub struct Grid {
 const LEFT: usize = 0;
 const RIGHT: usize = 1;
 
-impl Grid {
-    pub fn simulate(&mut self, cycles: usize) -> Result<(), String> {
-        for _ in 0..cycles {
-            self.simulate_cycle()?;
-        }
-        Ok(())
-    }
+#[derive(Debug)]
+pub enum SimulationError {
+    PEUpdateError(PEIdx, String),
+    SimulationEnd,
+}
 
+impl Grid {
     /// Simulate one cycle of the grid
-    pub fn simulate_cycle(&mut self) -> Result<(), String> {
+    pub fn simulate_cycle(&mut self) -> Result<(), SimulationError> {
         // First, update the ALU outputs of all PEs
         for y in 0..self.shape.y {
             for x in 0..self.shape.x {
@@ -108,7 +60,9 @@ impl Grid {
                     }
                     if pe.current_conf().operation.is_mem() {
                         self.agus[LEFT][y].update(mem_interface);
-                        self.agus[LEFT][y].next()?;
+                        self.agus[LEFT][y]
+                            .next()
+                            .map_err(|_| SimulationError::SimulationEnd)?;
                     }
                 } else {
                     let pe = &mut self.pes[y][0];
@@ -127,7 +81,9 @@ impl Grid {
                     }
                     if pe.current_conf().operation.is_mem() {
                         self.agus[LEFT][y].update(mem_interface);
-                        self.agus[LEFT][y].next()?;
+                        self.agus[LEFT][y]
+                            .next()
+                            .map_err(|_| SimulationError::SimulationEnd)?;
                     }
                 } else {
                     let pe = &mut self.pes[y][0];
@@ -153,7 +109,9 @@ impl Grid {
                     }
                     if pe.current_conf().operation.is_mem() {
                         self.agus[RIGHT][y].update(mem_interface);
-                        self.agus[RIGHT][y].next()?;
+                        self.agus[RIGHT][y]
+                            .next()
+                            .map_err(|_| SimulationError::SimulationEnd)?;
                     }
                 } else {
                     let pe = &mut self.pes[y][self.shape.x - 1];
@@ -172,7 +130,9 @@ impl Grid {
                     }
                     if pe.current_conf().operation.is_mem() {
                         self.agus[RIGHT][y].update(mem_interface);
-                        self.agus[RIGHT][y].next()?;
+                        self.agus[RIGHT][y]
+                            .next()
+                            .map_err(|_| SimulationError::SimulationEnd)?;
                     }
                 } else {
                     let pe = &mut self.pes[y][self.shape.x - 1];
@@ -190,7 +150,8 @@ impl Grid {
                 let router_config = pe.configurations[pe.pc].router_config.clone();
                 if router_config.is_path_source() {
                     // update the router output signals
-                    pe.execute_router_output(&router_config);
+                    pe.execute_router_output(&router_config)
+                        .map_err(|e| SimulationError::PEUpdateError(pe_idx, e))?;
                     for output_direction in router_config.find_outputs_from_reg() {
                         let output_pe_idx = pe_idx.output_pe_idx(output_direction);
                         assert!(
@@ -206,7 +167,8 @@ impl Grid {
                             pe_idx,
                             output_pe_idx,
                             next_pe_input_direction,
-                        );
+                        )
+                        .map_err(|e| SimulationError::PEUpdateError(pe_idx, e))?;
                     }
                 }
             }
@@ -215,7 +177,8 @@ impl Grid {
         for y in 0..self.shape.y {
             for x in 0..self.shape.x {
                 let pe = &mut self.pes[y][x];
-                pe.update_registers();
+                pe.update_registers()
+                    .map_err(|e| SimulationError::PEUpdateError(PEIdx { x, y }, e))?;
             }
         }
 
@@ -501,7 +464,12 @@ impl Grid {
     }
 
     /// propagate the router signals from the src_pe to the dst_pe in the given direction (as input direction of the dst_pe)
-    fn propagate_router_signals(&mut self, src: PEIdx, dst: PEIdx, direction: router::RouterInDir) {
+    fn propagate_router_signals(
+        &mut self,
+        src: PEIdx,
+        dst: PEIdx,
+        direction: router::RouterInDir,
+    ) -> Result<(), String> {
         let src_pe = self.pes[src.y][src.x].clone();
         let dst_pe = &mut self.pes[dst.y][dst.x];
         let router_switch_config = dst_pe.configurations[dst_pe.pc]
@@ -510,9 +478,9 @@ impl Grid {
             .clone();
 
         // update the dst_pe's router signals from the src_pe
-        dst_pe.update_router_signals_from(&src_pe, direction);
+        dst_pe.update_router_signals_from(&src_pe, direction)?;
         // update the dst_pe's router output signals according to its router config
-        dst_pe.update_router_output();
+        dst_pe.update_router_output()?;
 
         // find the output directions from the given direction
         let output_directions = router_switch_config.find_output_directions(direction);
@@ -521,11 +489,59 @@ impl Grid {
         for output_direction in output_directions {
             let opposite_direction = output_direction.opposite_in_dir();
             let next_pe = dst.output_pe_idx(output_direction);
-            self.propagate_router_signals(dst, next_pe, opposite_direction);
+            self.propagate_router_signals(dst, next_pe, opposite_direction)?;
         }
+        Ok(())
     }
 
     fn is_agu_enabled(&self) -> bool {
         !self.agus.is_empty()
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct PEIdx {
+    pub x: usize,
+    pub y: usize,
+}
+
+impl PEIdx {
+    pub fn north(self) -> PEIdx {
+        PEIdx {
+            x: self.x,
+            y: self.y - 1,
+        }
+    }
+
+    pub fn south(self) -> PEIdx {
+        PEIdx {
+            x: self.x,
+            y: self.y + 1,
+        }
+    }
+
+    pub fn west(self) -> PEIdx {
+        PEIdx {
+            x: self.x - 1,
+            y: self.y,
+        }
+    }
+
+    pub fn east(self) -> PEIdx {
+        PEIdx {
+            x: self.x + 1,
+            y: self.y,
+        }
+    }
+
+    /// For a given PEIdx, return the PEIdx of the output PE in the given direction
+    pub fn output_pe_idx(&self, direction: RouterOutDir) -> PEIdx {
+        match direction {
+            router::RouterOutDir::NorthOut => self.north(),
+            router::RouterOutDir::SouthOut => self.south(),
+            router::RouterOutDir::WestOut => self.west(),
+            router::RouterOutDir::EastOut => self.east(),
+            _ => panic!("You cannot get the output PE index from inside of PE"),
+        }
     }
 }

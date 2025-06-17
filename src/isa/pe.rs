@@ -135,7 +135,7 @@ impl PE {
         // update the alu_out signal for previous LOAD operation
         if self.is_mem_pe() {
             if self.previous_op_is_load.unwrap() {
-                if !operation.is_arith_logic() {
+                if operation.is_arith_logic() || operation.is_simd() {
                     log::warn!(
                         "Previous op is LOAD, but you are executing an ALU or SIMD operation. 
                         Knowing that the data coming back from memory has priority, you ALU result is overritten. 
@@ -154,22 +154,23 @@ impl PE {
     }
 
     /// Update the router output signals according to the router config
-    pub fn update_router_output(&mut self) {
+    pub fn update_router_output(&mut self) -> Result<(), String> {
         let configuration = self.configurations[self.pc].clone();
         let router_config = configuration.router_config.clone();
-        self.execute_router_output(&router_config);
+        self.execute_router_output(&router_config)?;
+        Ok(())
     }
 
-    pub fn update_registers(&mut self) {
+    pub fn update_registers(&mut self) -> Result<(), String> {
         let configuration = self.configurations[self.pc].clone();
         let operation = configuration.operation.clone();
 
         // Update res register considering the update_res flag in the operation
         self.update_res(&operation);
         // Update router input registers
-        self.update_router_input_registers(&configuration.router_config);
+        self.update_router_input_registers(&configuration.router_config)?;
         // Update operands registers
-        self.update_operands_registers(&configuration.router_config);
+        self.update_operands_registers(&configuration.router_config)?;
         // Update previous_op_is_load
         if self.is_mem_pe() {
             if operation.is_load() {
@@ -187,6 +188,7 @@ impl PE {
                 unimplemented!("Control operations other than JUMP are not supported yet");
             }
         }
+        Ok(())
     }
 
     pub fn next_conf(&mut self) {

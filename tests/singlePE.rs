@@ -176,7 +176,7 @@ fn test_single_pe() {
         pe.update_alu_out();
         pe.update_mem(&mut dmem.port1, PE::AGU_DISABLED);
         dmem.update_interface();
-        pe.update_registers();
+        pe.update_registers().expect("PEUpdateError");
         dbg!(&pe.pc);
         if pe.pc >= 5 {
             break;

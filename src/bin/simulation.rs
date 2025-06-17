@@ -1,6 +1,6 @@
 use clap::{Parser, ValueEnum};
-use log::LevelFilter;
-use pace_sim::sim::grid::Grid;
+use log::{LevelFilter, error, info};
+use pace_sim::sim::grid::{Grid, SimulationError};
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
 enum LogLevel {
@@ -42,44 +42,45 @@ struct Args {
 }
 
 fn main() {
+    env_logger::init();
     let args = Args::parse();
     let mut grid = Grid::from_folder(&args.folder_path);
-    if let Some(cycles) = args.cycles {
-        let mut cycle = 0;
-        loop {
+    let mut cycle = 0;
+    loop {
+        if let Some(cycles) = args.cycles {
             if cycle >= cycles {
                 break;
             }
-            grid.simulate_cycle()
-                .expect("Simulation finished prematurely");
-            if args.full_trace {
-                let snapshot_folder = format!("{}/cycle_{}", args.folder_path, cycle);
-                println!(
-                    "Taking snapshot after cycle {}, saved to {}",
-                    cycle, snapshot_folder
-                );
-                grid.snapshot(snapshot_folder.as_str());
-                let mem_folder = format!("{}/mem", snapshot_folder);
-                grid.dump_mem(mem_folder.as_str());
-            }
-            cycle += 1;
         }
-    } else {
-        let mut cycle = 0;
-        loop {
-            grid.simulate_cycle()
-                .expect("Simulation finished prematurely");
-            if args.full_trace {
-                let snapshot_folder = format!("{}/cycle_{}", args.folder_path, cycle);
-                println!(
-                    "Taking snapshot after cycle {}, saved to {}",
-                    cycle, snapshot_folder
-                );
-                grid.snapshot(snapshot_folder.as_str());
-                let mem_folder = format!("{}/mem", snapshot_folder);
-                grid.dump_mem(mem_folder.as_str());
+        if let Err(e) = grid.simulate_cycle() {
+            match e {
+                SimulationError::PEUpdateError(pe_idx, e) => {
+                    error!("PEUpdateError at PE({},{}): {}", pe_idx.x, pe_idx.y, e);
+                    // create a debug folder in the same folder as the original folder
+                    let debug_folder = format!("{}/debug", args.folder_path);
+                    std::fs::create_dir_all(debug_folder.clone()).unwrap();
+                    let snapshot_folder = format!("{}/cycle_{}", debug_folder, cycle);
+                    std::fs::create_dir_all(snapshot_folder.clone()).unwrap();
+                    error!("Saving snapshot for debugging at {}", snapshot_folder);
+                    grid.snapshot(snapshot_folder.as_str());
+                    break;
+                }
+                SimulationError::SimulationEnd => {
+                    info!("Simulation finished prematurely");
+                    break;
+                }
             }
-            cycle += 1;
         }
+        if args.full_trace {
+            let snapshot_folder = format!("{}/cycle_{}", args.folder_path, cycle);
+            println!(
+                "Taking snapshot after cycle {}, saved to {}",
+                cycle, snapshot_folder
+            );
+            grid.snapshot(snapshot_folder.as_str());
+            let mem_folder = format!("{}/mem", snapshot_folder);
+            grid.dump_mem(mem_folder.as_str());
+        }
+        cycle += 1;
     }
 }
