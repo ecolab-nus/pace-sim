@@ -102,6 +102,10 @@ impl PE {
         }
     }
 
+    pub fn current_conf(&self) -> &Configuration {
+        &self.configurations[self.pc]
+    }
+
     pub fn is_mem_pe(&self) -> bool {
         self.previous_op_is_load.is_some()
     }

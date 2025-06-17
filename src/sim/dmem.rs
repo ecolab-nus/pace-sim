@@ -76,6 +76,8 @@ impl DataMemory {
     pub fn from_binary_str(s: &str) -> Self {
         let mut data = Vec::new();
         let lines = s.lines();
+        // remove spaces
+        let lines = lines.map(|line| line.replace(" ", ""));
         for line in lines {
             // Check that the input is exactly 64 characters
             if line.len() != 64 {

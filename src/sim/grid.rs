@@ -106,8 +106,10 @@ impl Grid {
                             "AGU and PE are both setting the address, ignoring the PE's address"
                         );
                     }
-                    self.agus[LEFT][y].update(mem_interface);
-                    self.agus[LEFT][y].next()?;
+                    if pe.current_conf().operation.is_mem() {
+                        self.agus[LEFT][y].update(mem_interface);
+                        self.agus[LEFT][y].next()?;
+                    }
                 } else {
                     let pe = &mut self.pes[y][0];
                     pe.update_mem(&mut self.dmems[LEFT][y / 2].port1, PE::AGU_DISABLED);
@@ -123,8 +125,10 @@ impl Grid {
                             "AGU and PE are both setting the address, ignoring the PE's address"
                         );
                     }
-                    self.agus[LEFT][y].update(mem_interface);
-                    self.agus[LEFT][y].next()?;
+                    if pe.current_conf().operation.is_mem() {
+                        self.agus[LEFT][y].update(mem_interface);
+                        self.agus[LEFT][y].next()?;
+                    }
                 } else {
                     let pe = &mut self.pes[y][0];
                     pe.update_mem(&mut self.dmems[LEFT][y / 2].port2, PE::AGU_DISABLED);
@@ -147,8 +151,10 @@ impl Grid {
                             "AGU and PE are both setting the address, ignoring the PE's address"
                         );
                     }
-                    self.agus[RIGHT][y].update(mem_interface);
-                    self.agus[RIGHT][y].next()?;
+                    if pe.current_conf().operation.is_mem() {
+                        self.agus[RIGHT][y].update(mem_interface);
+                        self.agus[RIGHT][y].next()?;
+                    }
                 } else {
                     let pe = &mut self.pes[y][self.shape.x - 1];
                     pe.update_mem(&mut self.dmems[RIGHT][y / 2].port2, PE::AGU_DISABLED);
@@ -164,8 +170,10 @@ impl Grid {
                             "AGU and PE are both setting the address, ignoring the PE's address"
                         );
                     }
-                    self.agus[RIGHT][y].update(mem_interface);
-                    self.agus[RIGHT][y].next()?;
+                    if pe.current_conf().operation.is_mem() {
+                        self.agus[RIGHT][y].update(mem_interface);
+                        self.agus[RIGHT][y].next()?;
+                    }
                 } else {
                     let pe = &mut self.pes[y][self.shape.x - 1];
                     pe.update_mem(&mut self.dmems[RIGHT][y / 2].port2, PE::AGU_DISABLED);
@@ -265,6 +273,20 @@ impl Grid {
                 let filename = format!("PE-Y{}X{}.state", y, x);
                 let file_path = std::path::Path::new(&folder_path).join(filename);
                 std::fs::write(file_path, self.pes[y][x].snapshot()).unwrap();
+            }
+        }
+
+        // dump the agus
+        if self.is_agu_enabled() {
+            for y in 0..self.shape.y {
+                let filename = format!("agu{}", y);
+                let file_path = std::path::Path::new(&folder_path).join(filename);
+                std::fs::write(file_path, self.agus[LEFT][y].to_string()).unwrap();
+            }
+            for y in 0..self.shape.y {
+                let filename = format!("agu{}", y + self.shape.y);
+                let file_path = std::path::Path::new(&folder_path).join(filename);
+                std::fs::write(file_path, self.agus[RIGHT][y].to_string()).unwrap();
             }
         }
     }

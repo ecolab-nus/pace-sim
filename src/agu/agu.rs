@@ -7,7 +7,7 @@ use nom::{
     multi::separated_list0,
 };
 
-use crate::sim::dmem::DMemInterface;
+use crate::{agu::instruction::DataWidth, sim::dmem::DMemInterface};
 
 use super::instruction::{InstMode, Instruction};
 
@@ -36,9 +36,17 @@ impl AGU {
         let addr = self.arf[pc];
 
         match inst.inst_mode {
-            InstMode::STRIDED => {
-                self.arf[pc] = addr + inst.stride as u16;
-            }
+            InstMode::STRIDED => match inst.data_width {
+                DataWidth::B8 => {
+                    self.arf[pc] = addr + inst.stride as u16;
+                }
+                DataWidth::B16 => {
+                    self.arf[pc] = addr + inst.stride as u16 * 2;
+                }
+                DataWidth::B64 => {
+                    self.arf[pc] = addr + inst.stride as u16 * 8;
+                }
+            },
             InstMode::CONST => {
                 // do nothing
             }
@@ -62,11 +70,11 @@ impl AGU {
 
 impl Display for AGU {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "PC: {}", self.pc)?;
-        write!(f, "CM: {:?}", self.cm)?;
-        write!(f, "ARF: {:?}", self.arf)?;
-        write!(f, "MAX COUNT: {}", self.max_count)?;
-        write!(f, "COUNT: {}", self.count)?;
+        write!(f, "PC: {}\n", self.pc)?;
+        write!(f, "CM: {:?}\n", self.cm)?;
+        write!(f, "ARF: {:?}\n", self.arf)?;
+        write!(f, "MAX COUNT: {}\n", self.max_count)?;
+        write!(f, "COUNT: {}\n", self.count)?;
         Ok(())
     }
 }
