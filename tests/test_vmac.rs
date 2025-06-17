@@ -31,8 +31,6 @@ fn test_vmac_2x2() {
             cycle, snapshot_folder
         );
         grid.snapshot(snapshot_folder.as_str());
-        let mem_folder = format!("{}/mem", snapshot_folder);
-        grid.dump_mem(mem_folder.as_str());
         cycle += 1;
         if cycle > 5 {
             break;

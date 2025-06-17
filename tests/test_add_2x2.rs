@@ -17,5 +17,4 @@ fn test_add_2x2() {
 
     grid.simulate_cycle().expect("Simulation failed");
     grid.snapshot("tests/add_2x2/cycle_4");
-    grid.dump_mem("tests/add_2x2/mem");
 }
