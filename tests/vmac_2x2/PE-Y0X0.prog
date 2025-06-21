@@ -8,7 +8,7 @@ switch_config: {
     Open -> alu_op2,
     Open -> alu_op1,
 };
-input_register_bypass: {all};
+input_register_used: {};
 input_register_write: {};
 
 
@@ -22,7 +22,7 @@ switch_config: {
     Open -> alu_op2,
     Open -> alu_op1,
 };
-input_register_bypass: {all};
+input_register_used: {};
 input_register_write: {};
 
 operation: NOP
@@ -35,7 +35,7 @@ switch_config: {
     Open -> alu_op2,
     Open -> alu_op1,
 };
-input_register_bypass: {all};
+input_register_used: {};
 input_register_write: {};
 
 operation: NOP
@@ -48,7 +48,7 @@ switch_config: {
     Open -> alu_op2,
     Open -> alu_op1,
 };
-input_register_bypass: {all};
+input_register_used: {};
 input_register_write: {};
 
 operation: NOP
@@ -61,7 +61,7 @@ switch_config: {
     Open -> alu_op2,
     Open -> alu_op1,
 };
-input_register_bypass: {all};
+input_register_used: {};
 input_register_write: {};
 
 operation: NOP
@@ -74,5 +74,5 @@ switch_config: {
     Open -> alu_op2,
     Open -> alu_op1,
 };
-input_register_bypass: {all};
+input_register_used: {};
 input_register_write: {};

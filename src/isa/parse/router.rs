@@ -30,8 +30,8 @@ pub mod mnemonics {
     impl RouterConfig {
         pub fn to_mnemonics(&self) -> String {
             format!(
-                "switch_config: {};\ninput_register_bypass: {};\ninput_register_write: {};",
-                self.switch_config, self.input_register_bypass, self.input_register_write
+                "switch_config: {};\ninput_register_used: {};\ninput_register_write: {};",
+                self.switch_config, self.input_register_used, self.input_register_write
             )
         }
 
@@ -43,7 +43,7 @@ pub mod mnemonics {
                 input,
                 RouterConfig {
                     switch_config,
-                    input_register_bypass: extra_config.0,
+                    input_register_used: extra_config.0,
                     input_register_write: extra_config.1,
                 },
             ))
@@ -182,11 +182,11 @@ pub mod mnemonics {
     }
 
     /// Parse a field name and its direction list: e.g.
-    /// "input_register_bypass: {north, south};"
+    /// "input_register_used: {north, south};"
     fn parse_named_directions(input: &str) -> IResult<&str, (String, DirectionsOpt)> {
         let (input, _) = multispace0(input)?;
         let (input, name) = alt((
-            map(tag("input_register_bypass"), |_| "input_register_bypass"),
+            map(tag("input_register_used"), |_| "input_register_used"),
             map(tag("input_register_write"), |_| "input_register_write"),
         ))
         .parse(input)?;
@@ -196,14 +196,14 @@ pub mod mnemonics {
         Ok((input, (name.to_string(), dirs)))
     }
 
-    /// Parse the extra configuration of the router, i.e. input_register_bypass and input_register_write
+    /// Parse the extra configuration of the router, i.e. input_register_used and input_register_write
     /// Each is a set of directions, e.g. {north, south, west, east} or {all}
     pub fn parse_extra_config(input: &str) -> IResult<&str, (DirectionsOpt, DirectionsOpt)> {
-        let mut bypass = DirectionsOpt::default();
+        let mut used = DirectionsOpt::default();
         let mut write = DirectionsOpt::default();
         let (input, (name, dirs1)) = parse_named_directions(input)?;
         match name.as_str() {
-            "input_register_bypass" => bypass = dirs1,
+            "input_register_used" => used = dirs1,
             "input_register_write" => write = dirs1,
             _ => {
                 panic!("Unknown field for router extra config: {}", name);
@@ -211,9 +211,9 @@ pub mod mnemonics {
         }
         let (input, (name, dirs2)) = parse_named_directions(input)?;
         match name.as_str() {
-            "input_register_bypass" => {
-                if bypass == DirectionsOpt::default() {
-                    bypass = dirs2
+            "input_register_used" => {
+                if used == DirectionsOpt::default() {
+                    used = dirs2
                 } else {
                     panic!("Multiple input_register_bypass fields found");
                 }
@@ -229,7 +229,7 @@ pub mod mnemonics {
                 panic!("Unknown field for router extra config: {}", name);
             }
         }
-        Ok((input, (bypass, write)))
+        Ok((input, (used, write)))
     }
 
     impl Display for RouterInDir {
@@ -457,7 +457,7 @@ pub mod mnemonics {
             ALURes -> alu_op2,
             ALUOut -> alu_op1,
         };
-        input_register_bypass: {north, south};
+        input_register_used: {north, south};
         input_register_write: {east, west};";
             let (_, cfg) = RouterConfig::parse_router_config(input).unwrap();
             let expected = RouterConfig {
@@ -470,7 +470,7 @@ pub mod mnemonics {
                     west_out: RouterInDir::WestIn,
                     north_out: RouterInDir::NorthIn,
                 },
-                input_register_bypass: DirectionsOpt {
+                input_register_used: DirectionsOpt {
                     north: true,
                     south: true,
                     ..Default::default()
@@ -618,13 +618,13 @@ pub mod binary {
             let switch_config = RouterSwitchConfig::from_binary(
                 code.get_field(ConfigField::RouterSwitchConfig) as u32,
             );
-            let input_register_bypass =
+            let input_register_used =
                 DirectionsOpt::from_binary(code.get_field(ConfigField::RouterBypass) as u8);
             let input_register_write =
                 DirectionsOpt::from_binary(code.get_field(ConfigField::RouterWriteEnable) as u8);
             Self {
                 switch_config,
-                input_register_bypass,
+                input_register_used,
                 input_register_write,
             }
         }
@@ -637,7 +637,7 @@ pub mod binary {
             );
             code.set_field(
                 ConfigField::RouterBypass,
-                self.input_register_bypass.to_binary() as u32,
+                self.input_register_used.to_binary() as u32,
             );
             code.set_field(
                 ConfigField::RouterWriteEnable,
@@ -679,7 +679,7 @@ pub mod binary {
                     south_out: RouterInDir::SouthIn,
                     east_out: RouterInDir::EastIn,
                 },
-                input_register_bypass: DirectionsOpt {
+                input_register_used: DirectionsOpt {
                     north: true,
                     south: true,
                     west: false,

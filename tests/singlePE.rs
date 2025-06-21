@@ -30,7 +30,7 @@ fn test_single_pe() {
                 west_out: RouterInDir::Open,
                 north_out: RouterInDir::Open,
             },
-            input_register_bypass: DirectionsOpt::default(),
+            input_register_used: DirectionsOpt::default(),
             input_register_write: DirectionsOpt::default(),
         },
     };
@@ -54,7 +54,7 @@ fn test_single_pe() {
                 west_out: RouterInDir::Open,
                 north_out: RouterInDir::Open,
             },
-            input_register_bypass: DirectionsOpt::default(),
+            input_register_used: DirectionsOpt::default(),
             input_register_write: DirectionsOpt::default(),
         },
     };
@@ -78,7 +78,7 @@ fn test_single_pe() {
                 west_out: RouterInDir::Open,
                 north_out: RouterInDir::Open,
             },
-            input_register_bypass: DirectionsOpt::default(),
+            input_register_used: DirectionsOpt::default(),
             input_register_write: DirectionsOpt::default(),
         },
     };
@@ -102,7 +102,7 @@ fn test_single_pe() {
                 west_out: RouterInDir::Open,
                 north_out: RouterInDir::Open,
             },
-            input_register_bypass: DirectionsOpt::default(),
+            input_register_used: DirectionsOpt::default(),
             input_register_write: DirectionsOpt::default(),
         },
     };
@@ -126,7 +126,7 @@ fn test_single_pe() {
                 west_out: RouterInDir::Open,
                 north_out: RouterInDir::Open,
             },
-            input_register_bypass: DirectionsOpt::default(),
+            input_register_used: DirectionsOpt::default(),
             input_register_write: DirectionsOpt::default(),
         },
     };
@@ -150,7 +150,7 @@ fn test_single_pe() {
                 west_out: RouterInDir::Open,
                 north_out: RouterInDir::Open,
             },
-            input_register_bypass: DirectionsOpt::default(),
+            input_register_used: DirectionsOpt::default(),
             input_register_write: DirectionsOpt::default(),
         },
     };

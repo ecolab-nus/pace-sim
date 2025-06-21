@@ -82,7 +82,7 @@ pub mod mnemonics {
             ALURes -> alu_op2,
             ALUOut -> alu_op1,
         };
-        input_register_bypass: {north, south};
+        input_register_used: {north, south};
         input_register_write: {east, west};";
             let configuration = Configuration::from_mnemonics(input).unwrap();
             assert_eq!(
@@ -104,7 +104,7 @@ pub mod mnemonics {
                 west_out: RouterInDir::WestIn,
                 north_out: RouterInDir::NorthIn,
             };
-            let expected_register_bypass = DirectionsOpt {
+            let expected_register_used = DirectionsOpt {
                 north: true,
                 south: true,
                 east: false,
@@ -121,8 +121,8 @@ pub mod mnemonics {
                 expected_switch_config
             );
             assert_eq!(
-                configuration.router_config.input_register_bypass,
-                expected_register_bypass
+                configuration.router_config.input_register_used,
+                expected_register_used
             );
             assert_eq!(
                 configuration.router_config.input_register_write,
@@ -139,7 +139,7 @@ pub mod mnemonics {
                                                EastIn -> alu_op2,
                                                SouthIn -> alu_op1,
                                            };
-                                           input_register_bypass: {};
+                                           input_register_used: {};
                                            input_register_write: {};
                                            ";
             let _configuration = Configuration::from_mnemonics(test_str).unwrap();
@@ -247,7 +247,7 @@ pub mod binary {
             ALURes -> alu_op2,
             ALUOut -> alu_op1,
         };
-        input_register_bypass: {north, south};
+        input_register_used: {north, south};
         input_register_write: {east, west};",
             )
             .unwrap();
@@ -266,7 +266,7 @@ switch_config: {
     Open -> alu_op2,
     Open -> alu_op1,
 };
-input_register_bypass: {};
+input_register_used: {};
 input_register_write: {};
 ",
             )

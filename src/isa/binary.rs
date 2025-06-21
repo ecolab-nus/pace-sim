@@ -207,7 +207,7 @@ mod tests {
             ALURes -> alu_op2,
             ALUOut -> alu_op1,
         };
-        input_register_bypass: {north, south};
+        input_register_used: {north, south};
         input_register_write: {east, west};";
         let configuration = Configuration::from_mnemonics(configuration_str).unwrap();
         let binary = configuration.to_binary();
