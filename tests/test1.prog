@@ -8,7 +8,7 @@ switch_config: {
     EastIn -> alu_op2,
     SouthIn -> alu_op1,
 };
-input_register_bypass: {};
+input_register_used: {};
 input_register_write: {};
 
 operation: ADD 
@@ -21,7 +21,7 @@ switch_config: {
     WestIn -> alu_op2,
     NorthIn -> alu_op1,
 };
-input_register_bypass: {};
+input_register_used: {};
 input_register_write: {};
 
 operation: SUB 
@@ -34,7 +34,7 @@ switch_config: {
     EastIn -> alu_op2,
     SouthIn -> alu_op1,
 };
-input_register_bypass: {};
+input_register_used: {};
 input_register_write: {};
 
 operation: MULT 
@@ -47,7 +47,7 @@ switch_config: {
     WestIn -> alu_op2,
     NorthIn -> alu_op1,
 };
-input_register_bypass: {};
+input_register_used: {};
 input_register_write: {};
 
 operation: MULT 
@@ -60,7 +60,7 @@ switch_config: {
     EastIn -> alu_op2,
     SouthIn -> alu_op1,
 };
-input_register_bypass: {};
+input_register_used: {};
 input_register_write: {};
 
 operation: ADD 
@@ -73,5 +73,5 @@ switch_config: {
     WestIn -> alu_op2,
     NorthIn -> alu_op1,
 };
-input_register_bypass: {};
+input_register_used: {};
 input_register_write: {};
