@@ -43,13 +43,27 @@ pub struct DMemInterface {
 
 impl std::fmt::Display for DMemInterface {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&format!(
-            "wire_dmem_addr: {:?},\nwire_dmem_data: {:?},\nreg_dmem_data: {:?},\nmode: {}",
-            self.wire_dmem_addr,
-            self.wire_dmem_data.map(|v| SIMDValue::from(v)),
-            self.reg_dmem_data.map(|v| SIMDValue::from(v)),
-            self.mode
-        ))
+        f.write_str(&format!("wire_dmem_addr: {:?},\n", self.wire_dmem_addr))?;
+        if let Some(v) = self.wire_dmem_data {
+            f.write_str(&format!(
+                "wire_dmem_data: 0x{:016x}|{:?},\n",
+                v,
+                SIMDValue::from(v)
+            ))?;
+        } else {
+            f.write_str("wire_dmem_data: None,\n")?;
+        }
+        if let Some(v) = self.reg_dmem_data {
+            f.write_str(&format!(
+                "reg_dmem_data: 0x{:016x}|{:?},\n",
+                v,
+                SIMDValue::from(v)
+            ))?;
+        } else {
+            f.write_str("reg_dmem_data: None,\n")?;
+        }
+        f.write_str(&format!("mode: {}", self.mode))?;
+        Ok(())
     }
 }
 

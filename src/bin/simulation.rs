@@ -1,6 +1,6 @@
 use clap::{Parser, ValueEnum};
 use log::{LevelFilter, error, info};
-use pace_sim::sim::grid::{Grid, SimulationError};
+use pace_sim::sim::grid::{DoubleSidedMemoryGrid, SimulationError};
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
 enum LogLevel {
@@ -44,7 +44,7 @@ struct Args {
 fn main() {
     env_logger::init();
     let args = Args::parse();
-    let mut grid = Grid::from_folder(&args.folder_path);
+    let mut grid = DoubleSidedMemoryGrid::from_folder(&args.folder_path);
     let mut cycle = 0;
     loop {
         if let Some(cycles) = args.cycles {
@@ -81,6 +81,7 @@ fn main() {
             let mem_folder = format!("{}/mem", snapshot_folder);
             grid.dump_mem(mem_folder.as_str());
         }
+        grid.next_cycle();
         cycle += 1;
     }
 }

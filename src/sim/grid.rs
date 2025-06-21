@@ -1,3 +1,4 @@
+use log::{error, info};
 use nom::{
     IResult,
     bytes::complete::tag,
@@ -18,7 +19,7 @@ use super::dmem::DataMemory;
 // The mem PEs are at the left and right edges of the grid.
 // The shape is (x, y), x the number of columns
 #[derive(Debug)]
-pub struct Grid {
+pub struct DoubleSidedMemoryGrid {
     pub shape: PEIdx,
     pub pes: Vec<Vec<PE>>,
     pub dmems: Vec<Vec<DataMemory>>,
@@ -34,7 +35,7 @@ pub enum SimulationError {
     SimulationEnd,
 }
 
-impl Grid {
+impl DoubleSidedMemoryGrid {
     /// Simulate one cycle of the grid
     pub fn simulate_cycle(&mut self) -> Result<(), SimulationError> {
         // First, update the ALU outputs of all PEs
@@ -182,15 +183,16 @@ impl Grid {
             }
         }
 
-        // move to the next configuration
+        Ok(())
+    }
+
+    pub fn next_cycle(&mut self) {
         for y in 0..self.shape.y {
             for x in 0..self.shape.x {
                 let pe = &mut self.pes[y][x];
                 pe.next_conf();
             }
         }
-
-        Ok(())
     }
 
     pub fn dump_mem(&self, folder_path: &str) {
@@ -437,7 +439,7 @@ impl Grid {
             agus.push(agus_left);
             agus.push(agus_right);
         }
-        Grid {
+        DoubleSidedMemoryGrid {
             shape,
             pes,
             dmems,
@@ -496,6 +498,261 @@ impl Grid {
 
     fn is_agu_enabled(&self) -> bool {
         !self.agus.is_empty()
+    }
+}
+
+pub struct SingleSidedMemoryGrid {
+    pub shape: PEIdx,
+    pub pes: Vec<Vec<PE>>,
+    pub dmems: Vec<DataMemory>, // only left-side memories
+    pub agus: Vec<AGU>,         // only left-side AGUs
+}
+
+impl SingleSidedMemoryGrid {
+    /// Simulate one cycle of the grid, with memory only on left edge
+    pub fn simulate_cycle(&mut self) -> Result<(), SimulationError> {
+        // 1) Update ALU for all PEs
+        for y in 0..self.shape.y {
+            for x in 0..self.shape.x {
+                self.pes[y][x].update_alu_out();
+            }
+        }
+
+        // 2) Update memory interface only for leftmost column
+        for y in 0..self.shape.y {
+            let pe = &mut self.pes[y][0];
+            let mem_idx = y / 2;
+            let mem = &mut self.dmems[mem_idx];
+            let port = if y % 2 == 0 {
+                &mut mem.port1
+            } else {
+                &mut mem.port2
+            };
+
+            if self.agus.get(y).map_or(false, |agu| agu.is_enabled()) {
+                pe.update_mem(port, PE::AGU_ENABLED);
+                if port.wire_dmem_addr.is_some() {
+                    log::warn!("AGU and PE both set address; ignoring PE's address");
+                }
+                if pe.current_conf().operation.is_mem() {
+                    self.agus[y].update(port);
+                    self.agus[y]
+                        .next()
+                        .map_err(|_| SimulationError::SimulationEnd)?;
+                }
+            } else {
+                pe.update_mem(port, PE::AGU_DISABLED);
+            }
+            mem.update_interface();
+        }
+
+        // 3) Router propagation and register update
+        for y in 0..self.shape.y {
+            for x in 0..self.shape.x {
+                let pe_idx = PEIdx { x, y };
+                let pe = &mut self.pes[y][x];
+                let cfg = pe.configurations[pe.pc].router_config.clone();
+                if cfg.is_path_source() {
+                    pe.execute_router_output(&cfg)
+                        .map_err(|e| SimulationError::PEUpdateError(pe_idx, e))?;
+                    for dir in cfg.find_outputs_from_reg() {
+                        let dst = pe_idx.output_pe_idx(dir);
+                        self.propagate_router_signals(pe_idx, dst, dir.opposite_in_dir())
+                            .map_err(|e| SimulationError::PEUpdateError(pe_idx, e))?;
+                    }
+                }
+            }
+        }
+
+        for y in 0..self.shape.y {
+            for x in 0..self.shape.x {
+                self.pes[y][x]
+                    .update_registers()
+                    .map_err(|e| SimulationError::PEUpdateError(PEIdx { x, y }, e))?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Dump only left-side data memories to `folder_path` as dm0, dm1, ...
+    pub fn dump_mem(&self, folder_path: &str) {
+        info!(
+            "Dumping {} data memories to {}",
+            self.dmems.len(),
+            folder_path
+        );
+        std::fs::create_dir_all(folder_path).unwrap();
+        for (i, mem) in self.dmems.iter().enumerate() {
+            let filename = format!("dm{}", i);
+            let file_path = std::path::Path::new(folder_path).join(&filename);
+            std::fs::write(&file_path, mem.to_binary_str()).unwrap();
+        }
+    }
+
+    /// Snapshot DMem ports, PE states, and AGUs (left-side only)
+    pub fn snapshot(&self, folder_path: &str) {
+        info!("Snapshotting grid state to {}", folder_path);
+        std::fs::create_dir_all(folder_path).unwrap();
+        // DataMemory snapshots
+        for (i, mem) in self.dmems.iter().enumerate() {
+            let base = std::path::Path::new(folder_path).join(format!("dm{}", i));
+            std::fs::write(&base, mem.to_binary_str()).unwrap();
+            let p1 = std::path::Path::new(folder_path).join(format!("dm{}_port1", i));
+            std::fs::write(&p1, mem.port1.to_string()).unwrap();
+            let p2 = std::path::Path::new(folder_path).join(format!("dm{}_port2", i));
+            std::fs::write(&p2, mem.port2.to_string()).unwrap();
+        }
+        // PE snapshots
+        for y in 0..self.shape.y {
+            for x in 0..self.shape.x {
+                let filename = format!("PE-Y{}X{}.state", y, x);
+                let file_path = std::path::Path::new(folder_path).join(&filename);
+                std::fs::write(&file_path, self.pes[y][x].snapshot()).unwrap();
+            }
+        }
+        // AGU snapshots if enabled
+        if !self.agus.is_empty() {
+            for (y, agu) in self.agus.iter().enumerate() {
+                let filename = format!("agu{}", y);
+                let file_path = std::path::Path::new(folder_path).join(&filename);
+                std::fs::write(&file_path, agu.to_string()).unwrap();
+            }
+        }
+    }
+
+    /// Load grid from folder, only left-side memories and AGUs
+    pub fn from_folder(path: &str) -> Self {
+        info!("Loading grid from folder: {}", path);
+        let mut entries = std::fs::read_dir(path).unwrap();
+        let mut max_x = 0;
+        let mut max_y = 0;
+
+        // find shape from PE filenames
+        for entry in entries.by_ref() {
+            let name = entry.unwrap().file_name().into_string().unwrap();
+            if let Ok((_, (x, y))) = Self::parse_pe_filename(&name) {
+                max_x = max_x.max(x);
+                max_y = max_y.max(y);
+            }
+        }
+        let shape = PEIdx {
+            x: max_x + 1,
+            y: max_y + 1,
+        };
+        info!("Determined grid shape: {} cols x {} rows", shape.x, shape.y);
+
+        // verify all PE files present
+        for y in 0..shape.y {
+            for x in 0..shape.x {
+                let f = format!("PE-Y{}X{}", y, x);
+                let pth = std::path::Path::new(path).join(&f);
+                if !pth.exists() {
+                    error!("Missing PE program file: {}", pth.display());
+                    panic!("Missing PE program file: {}", f);
+                }
+            }
+        }
+
+        // load PE programs
+        let mut pes = vec![vec![PE::default(); shape.x]; shape.y];
+        for y in 0..shape.y {
+            for x in 0..shape.x {
+                let f = format!("PE-Y{}X{}", y, x);
+                let p = std::fs::read_to_string(std::path::Path::new(path).join(&f)).unwrap();
+                let prog = Program::from_binary_str(&p).unwrap();
+                pes[y][x] = if x == 0 {
+                    PE::new_mem_pe(prog)
+                } else {
+                    PE::new(prog)
+                };
+            }
+        }
+        info!("Loaded {} PEs", shape.x * shape.y);
+
+        // load left-side memories
+        let mut dmems = Vec::new();
+        for i in 0..(shape.y + 1) / 2 {
+            let f = format!("dm{}", i);
+            let s = std::fs::read_to_string(std::path::Path::new(path).join(&f)).unwrap();
+            dmems.push(DataMemory::from_binary_str(&s));
+        }
+        info!("Loaded {} data memories", dmems.len());
+
+        // load left-side AGUs if present
+        let mut agus = Vec::new();
+        let mut has_agu = true;
+        for y in 0..shape.y {
+            if !std::path::Path::new(path)
+                .join(format!("agu{}", y))
+                .exists()
+            {
+                has_agu = false;
+                break;
+            }
+        }
+        if has_agu {
+            for y in 0..shape.y {
+                let f = format!("agu{}", y);
+                let s = std::fs::read_to_string(std::path::Path::new(path).join(&f)).unwrap();
+                agus.push(AGU::from_mnemonics(&s).unwrap());
+            }
+            info!("Loaded {} AGUs", agus.len());
+        } else {
+            info!("No AGU programs found; running without AGU support");
+        }
+
+        SingleSidedMemoryGrid {
+            shape,
+            pes,
+            dmems,
+            agus,
+        }
+    }
+
+    pub fn next_cycle(&mut self) {
+        for y in 0..self.shape.y {
+            for x in 0..self.shape.x {
+                let pe = &mut self.pes[y][x];
+                pe.next_conf();
+            }
+        }
+    }
+
+    fn parse_pe_filename(filename: &str) -> IResult<&str, (usize, usize)> {
+        let (i, _) = tag("PE-Y")(filename)?;
+        let (i, y) = digit1(i)?;
+        let (i, _) = tag("X")(i)?;
+        let (i, x) = digit1(i)?;
+        let (i, _) = multispace0(i)?;
+        if !i.is_empty() {
+            return Err(nom::Err::Error(nom::error::Error::new(
+                i,
+                nom::error::ErrorKind::Tag,
+            )));
+        }
+        Ok((i, (x.parse().unwrap(), y.parse().unwrap())))
+    }
+
+    fn propagate_router_signals(
+        &mut self,
+        src: PEIdx,
+        dst: PEIdx,
+        dir: router::RouterInDir,
+    ) -> Result<(), String> {
+        let src_pe = self.pes[src.y][src.x].clone();
+        let dst_pe = &mut self.pes[dst.y][dst.x];
+        let cfg = dst_pe.configurations[dst_pe.pc]
+            .router_config
+            .switch_config
+            .clone();
+        dst_pe.update_router_signals_from(&src_pe, dir)?;
+        dst_pe.update_router_output()?;
+        for out in cfg.find_output_directions(dir) {
+            let next = dst.output_pe_idx(out);
+            self.propagate_router_signals(dst, next, out.opposite_in_dir())?;
+        }
+        Ok(())
     }
 }
 

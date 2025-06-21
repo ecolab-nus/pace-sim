@@ -1,10 +1,10 @@
 use log::{error, info};
-use pace_sim::sim::grid::{Grid, SimulationError};
+use pace_sim::sim::grid::{DoubleSidedMemoryGrid, SimulationError};
 
 #[test]
 fn test_vmac_2x2() {
     env_logger::init();
-    let mut grid = Grid::from_folder("tests/vmac_2x2");
+    let mut grid = DoubleSidedMemoryGrid::from_folder("tests/vmac_2x2");
     let mut cycle = 0;
     loop {
         if let Err(e) = grid.simulate_cycle() {
@@ -31,6 +31,7 @@ fn test_vmac_2x2() {
             cycle, snapshot_folder
         );
         grid.snapshot(snapshot_folder.as_str());
+        grid.next_cycle();
         cycle += 1;
         if cycle > 5 {
             break;
