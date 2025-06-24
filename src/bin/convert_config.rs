@@ -4,12 +4,12 @@ use pace_sim::isa::configuration::Program;
 
 /// For given binprog file (if the file extension is .binprog), convert to prog file
 /// For given prog file (if the file extension is .prog), convert to binprog file
-/// Usage: convert <input_file> (<output_file>)
+/// Usage: convert_config <input_file> (<output_file>)
 /// If output_file is not provided, it will be the same (and in the same directory) as input_file with the extension changed
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() != 2 && args.len() != 3 {
-        eprintln!("Usage: convert <input_file> (<output_file>)");
+        eprintln!("Usage: convert_config <input_file> (<output_file>)");
         std::process::exit(1);
     }
     let input_file = &args[1];

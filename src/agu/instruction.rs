@@ -109,6 +109,31 @@ impl Instruction {
             },
         ))
     }
+
+    /// Convert the instruction to a binary string
+    /// The field is in the order of inst_type, inst_mode, data_width, stride
+    /// Refere to the corresponding enums for the value
+    pub fn to_binary_str(&self) -> String {
+        let mut bin = String::new();
+        // converting inst_type to binary, then two one bit string
+        assert!((self.inst_type as u8) < 2, "Inst type must be less than 2");
+        let inst_type_bin = format!("{:b}", self.inst_type as u8);
+        assert!((self.inst_mode as u8) < 2, "Inst mode must be less than 2");
+        let inst_mode_bin = format!("{:b}", self.inst_mode as u8);
+        assert!(
+            (self.data_width as u8) < 4,
+            "Data width must be less than 4"
+        );
+        let data_width_bin = format!("{:02b}", self.data_width as u8);
+        assert!(self.stride < 16, "Stride must be less than 16");
+        let stride_bin = format!("{:04b}", self.stride);
+        bin.push_str(&inst_type_bin);
+        bin.push_str(&inst_mode_bin);
+        bin.push_str(&data_width_bin);
+        bin.push_str(&stride_bin);
+        assert!(bin.len() == 8, "Binary string must be 8 bits");
+        bin
+    }
 }
 
 impl Display for Instruction {
@@ -150,5 +175,11 @@ mod tests {
         assert_eq!(inst.inst_mode, InstMode::STRIDED);
         assert_eq!(inst.data_width, DataWidth::B8);
         assert_eq!(inst.stride, 1);
+    }
+
+    #[test]
+    fn test_instruction_to_binary_str() {
+        let inst = Instruction::from_str("LOAD,STRIDED,B16,1").unwrap();
+        assert_eq!(inst.to_binary_str(), "00010001");
     }
 }

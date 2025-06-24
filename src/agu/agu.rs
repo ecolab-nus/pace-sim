@@ -124,6 +124,22 @@ impl AGU {
         assert!(input.is_empty());
         Ok(state)
     }
+
+    /// Convert the AGU to a binary string as two parts: the CM and the ARF
+    pub fn to_binary_str(&self) -> (String, String) {
+        let mut cm_binary = String::new();
+        let mut arf_binary = String::new();
+
+        for inst in &self.cm {
+            cm_binary.push_str(&inst.to_binary_str());
+            cm_binary.push_str("\n");
+        }
+        for addr in &self.arf {
+            assert!(*addr < 8192, "Address must be less than 8192");
+            arf_binary.push_str(&format!("{:013b}\n", addr));
+        }
+        (cm_binary, arf_binary)
+    }
 }
 
 #[cfg(test)]
@@ -165,5 +181,22 @@ mod tests {
             ";
         let state = AGU::from_mnemonics(s).unwrap();
         assert!(!state.is_enabled());
+    }
+
+    #[test]
+    fn test_binary() {
+        let s = r"CM:
+            LOAD,STRIDED,B16,1
+            STORE,CONST,B64, 0
+            ARF: 
+            0
+            10
+            MAX COUNT:
+            5
+            ";
+        let state = AGU::from_mnemonics(s).unwrap();
+        let (cm_binary, arf_binary) = state.to_binary_str();
+        assert_eq!(cm_binary, "00010001\n11100000\n");
+        assert_eq!(arf_binary, "0000000000000\n0000000001010\n");
     }
 }
