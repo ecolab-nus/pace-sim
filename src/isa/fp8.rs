@@ -263,20 +263,20 @@ mod tests {
     fn test_vector_mac() {
         // a[i], b[i], c[i] were drawn from a pseudo-random f32 generator (seed=42)
         // then converted to E4M3 (1 sign, 4-bit exp bias=7, 3-bit mantissa)
-        let a_bits: [u8; 8] = [0x3B, 0xC9, 0xC1, 0xC3, 0x41, 0x3E, 0x48, 0xC8];
-        let b_bits: [u8; 8] = [0xB4, 0xC9, 0xC3, 0x16, 0xC9, 0xC4, 0x3C, 0x2E];
-        let c_bits: [u8; 8] = [0xC3, 0x36, 0x44, 0xCA, 0x44, 0x40, 0xBD, 0xC6];
+        let a_bits: [u8; 8] = [0xB4, 0xC9, 0xC3, 0x16, 0xC9, 0xC4, 0x3C, 0x2E];
+        let b_bits: [u8; 8] = [0xC3, 0x36, 0x44, 0xCA, 0x44, 0x40, 0xBD, 0xC6];
+        let c_bits: [u8; 8] = [0x3B, 0xC9, 0xC1, 0xC3, 0x41, 0x3E, 0x48, 0xC8];
 
-        // expected[i] = FP8::from(a[i]).into::<f32>()
-        //           + FP8::from(b[i]).into::<f32>()
-        //           * FP8::from(c[i]).into::<f32>(), then rounded back into E4M3
+        // expected[i] = FP8::from(c[i]).into::<f32>()
+        //           + FP8::from(a[i]).into::<f32>()
+        //           * FP8::from(b[i]).into::<f32>(), then rounded back into E4M3
         let expected: [u8; 8] = [0x46, 0xD0, 0xD2, 0xC4, 0xD4, 0xC8, 0x3C, 0xCB];
 
         for i in 0..8 {
             let a = FP8::from(a_bits[i]);
             let b = FP8::from(b_bits[i]);
             let c = FP8::from(c_bits[i]);
-            let mac: u8 = (a + b * c).into();
+            let mac: u8 = (c + a * b).into();
             assert_eq!(
                 mac, expected[i],
                 "idx {}: a={:?}, b={:?}, c={:?} → got 0x{:02X}, want 0x{:02X}",
