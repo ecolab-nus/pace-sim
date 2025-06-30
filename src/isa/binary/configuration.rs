@@ -1,5 +1,5 @@
 use crate::isa::{
-    binary::binary::{BinaryIO, BinaryStringIO},
+    binary::binary::BinaryIO,
     configuration::{Configuration, Program},
     operation::Operation,
     router::RouterConfig,
@@ -123,40 +123,25 @@ impl BinaryIO for Program {
     }
 
     fn from_binary(code: &Vec<u8>) -> Result<Self, String> {
-        todo!()
-    }
-}
-
-impl BinaryStringIO for Program {
-    fn from_binary_str(s: &str) -> Result<Self, String> {
-        // Split the string into lines
-        let lines = s.lines().collect::<Vec<&str>>();
-        // for each line, remove the whitespace
-        let lines = lines.iter().map(|l| l.trim()).collect::<Vec<&str>>();
-        // for each line, convert to configuration
-        let mut configurations = Vec::new();
-        for (line_nb, line) in lines.iter().enumerate() {
-            let binary = Vec::<u8>::from_binary_str(line)?;
-            assert_eq!(binary.len(), 8, "Invalid binary length");
-            let configuration = Configuration::from_binary(&binary);
-            if configuration.is_err() {
-                return Err(format!(
-                    "Invalid binary string at line {}: {}",
-                    line_nb, line
-                ));
-            }
-            configurations.push(configuration.unwrap());
-        }
-        Ok(Self { configurations })
-    }
-
-    fn to_binary_str(&self) -> String {
-        self.to_binary().to_binary_str()
+        // make sure the length is a multiple of 8
+        assert_eq!(
+            code.len() % 8,
+            0,
+            "Invalid binary length, not multiple of 8"
+        );
+        // convert code into chunks of 8 bytes
+        let chunks = code.chunks(8);
+        // for each chunk, convert to u64 with little endian encoding
+        let configurations = chunks
+            .map(|c| Configuration::from_binary(&c.to_vec()))
+            .collect::<Result<Vec<Configuration>, String>>()?;
+        Ok(Program { configurations })
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::isa::binary::binary::BinaryStringIO;
     use crate::isa::operation::*;
     use std::path::Path;
 
@@ -220,18 +205,22 @@ input_register_write: {};
         let root_path = std::env::var("CARGO_MANIFEST_DIR").unwrap();
         let test_file = Path::new(&root_path).join("tests/test1.binprog");
         let str_program = std::fs::read_to_string(test_file).unwrap();
-        let program = Program::from_binary_str(&str_program).unwrap();
+        // remove the spaces and linebreaks
+        let str_program = str_program.replace(" ", "").replace("\n", "");
+        // convert to Vec<u8> and then to Program
+        let binary = Vec::<u8>::from_binary_str(&str_program).unwrap();
+        let program = Program::from_binary(&binary).unwrap();
 
-        let new_str_program = program.to_binary_str();
-        let new_program = Program::from_binary_str(&new_str_program).unwrap();
+        let new_binary = program.to_binary();
+        let new_program = Program::from_binary(&new_binary).unwrap();
         assert_eq!(program, new_program);
 
         // Converting from prog to binprog, then back to prog
         let mnemonic_file = Path::new(&root_path).join("tests/test1.prog");
         let str_program = std::fs::read_to_string(mnemonic_file).unwrap();
         let program = Program::from_mnemonics(&str_program).unwrap();
-        let new_str_program = program.to_binary_str();
-        let new_program = Program::from_binary_str(&new_str_program).unwrap();
+        let new_binary = program.to_binary();
+        let new_program = Program::from_binary(&new_binary).unwrap();
         assert_eq!(program, new_program);
     }
     #[test]
@@ -241,10 +230,11 @@ input_register_write: {};
         let root_path = std::env::var("CARGO_MANIFEST_DIR").unwrap();
         let original_binprog = Path::new(&root_path).join("tests/test1.binprog");
         let original_mnemonic = Path::new(&root_path).join("tests/test1.prog");
-        let original_binprog = std::fs::read_to_string(original_binprog).unwrap();
+        let original_binprog =
+            Vec::<u8>::from_binary_prog_file(original_binprog.to_str().unwrap()).unwrap();
         let original_mnemonic = std::fs::read_to_string(original_mnemonic).unwrap();
         // Converting from binprog to mnemonic, compare with original mnemonic
-        let program_from_binprog = Program::from_binary_str(&original_binprog).unwrap();
+        let program_from_binprog = Program::from_binary(&original_binprog).unwrap();
         let program_from_mnemonic = Program::from_mnemonics(&original_mnemonic).unwrap();
         assert_eq!(program_from_binprog, program_from_mnemonic);
 
@@ -254,8 +244,10 @@ input_register_write: {};
         let original_mnemonic = Path::new(&root_path).join("tests/add_2x2/PE-Y0X0.prog");
         let original_binprog = std::fs::read_to_string(original_binprog).unwrap();
         let original_mnemonic = std::fs::read_to_string(original_mnemonic).unwrap();
+        let original_binprog = original_binprog.replace(" ", "").replace("\n", "");
         // converting from binprog to mnemonic, compare with original mnemonic
-        let program_from_binprog = Program::from_binary_str(&original_binprog).unwrap();
+        let program_from_binprog =
+            Program::from_binary(&Vec::<u8>::from_binary_str(&original_binprog).unwrap()).unwrap();
         let program_from_mnemonic = Program::from_mnemonics(&original_mnemonic).unwrap();
         assert_eq!(program_from_binprog, program_from_mnemonic);
 
@@ -264,7 +256,8 @@ input_register_write: {};
         let original_binprog = std::fs::read_to_string(original_binprog).unwrap();
         let original_mnemonic = std::fs::read_to_string(original_mnemonic).unwrap();
         // converting from binprog to mnemonic, compare with original mnemonic
-        let program_from_binprog = Program::from_binary_str(&original_binprog).unwrap();
+        let program_from_binprog =
+            Program::from_binary(&Vec::<u8>::from_binary_str(&original_binprog).unwrap()).unwrap();
         let program_from_mnemonic = Program::from_mnemonics(&original_mnemonic).unwrap();
         assert_eq!(program_from_binprog, program_from_mnemonic);
 
@@ -273,7 +266,8 @@ input_register_write: {};
         let original_binprog = std::fs::read_to_string(original_binprog).unwrap();
         let original_mnemonic = std::fs::read_to_string(original_mnemonic).unwrap();
         // converting from binprog to mnemonic, compare with original mnemonic
-        let program_from_binprog = Program::from_binary_str(&original_binprog).unwrap();
+        let program_from_binprog =
+            Program::from_binary(&Vec::<u8>::from_binary_str(&original_binprog).unwrap()).unwrap();
         let program_from_mnemonic = Program::from_mnemonics(&original_mnemonic).unwrap();
         assert_eq!(program_from_binprog, program_from_mnemonic);
 
@@ -282,7 +276,48 @@ input_register_write: {};
         let original_binprog = std::fs::read_to_string(original_binprog).unwrap();
         let original_mnemonic = std::fs::read_to_string(original_mnemonic).unwrap();
         // converting from binprog to mnemonic, compare with original mnemonic
-        let program_from_binprog = Program::from_binary_str(&original_binprog).unwrap();
+        let program_from_binprog =
+            Program::from_binary(&Vec::<u8>::from_binary_str(&original_binprog).unwrap()).unwrap();
+        let program_from_mnemonic = Program::from_mnemonics(&original_mnemonic).unwrap();
+        assert_eq!(program_from_binprog, program_from_mnemonic);
+
+        let original_binprog = Path::new(&root_path).join("tests/array_add_2x2/PE-Y0X0");
+        let original_mnemonic = Path::new(&root_path).join("tests/array_add_2x2/PE-Y0X0.prog");
+        let original_binprog =
+            Vec::<u8>::from_binary_prog_file(original_binprog.to_str().unwrap()).unwrap();
+        let original_mnemonic = std::fs::read_to_string(original_mnemonic).unwrap();
+        // converting from binprog to mnemonic, compare with original mnemonic
+        let program_from_binprog = Program::from_binary(&original_binprog).unwrap();
+        let program_from_mnemonic = Program::from_mnemonics(&original_mnemonic).unwrap();
+        assert_eq!(program_from_binprog, program_from_mnemonic);
+
+        let original_binprog = Path::new(&root_path).join("tests/array_add_2x2/PE-Y0X1");
+        let original_mnemonic = Path::new(&root_path).join("tests/array_add_2x2/PE-Y0X1.prog");
+        let original_binprog =
+            Vec::<u8>::from_binary_prog_file(original_binprog.to_str().unwrap()).unwrap();
+        let original_mnemonic = std::fs::read_to_string(original_mnemonic).unwrap();
+        // converting from binprog to mnemonic, compare with original mnemonic
+        let program_from_binprog = Program::from_binary(&original_binprog).unwrap();
+        let program_from_mnemonic = Program::from_mnemonics(&original_mnemonic).unwrap();
+        assert_eq!(program_from_binprog, program_from_mnemonic);
+
+        let original_binprog = Path::new(&root_path).join("tests/array_add_2x2/PE-Y1X0");
+        let original_mnemonic = Path::new(&root_path).join("tests/array_add_2x2/PE-Y1X0.prog");
+        let original_binprog =
+            Vec::<u8>::from_binary_prog_file(original_binprog.to_str().unwrap()).unwrap();
+        let original_mnemonic = std::fs::read_to_string(original_mnemonic).unwrap();
+        // converting from binprog to mnemonic, compare with original mnemonic
+        let program_from_binprog = Program::from_binary(&original_binprog).unwrap();
+        let program_from_mnemonic = Program::from_mnemonics(&original_mnemonic).unwrap();
+        assert_eq!(program_from_binprog, program_from_mnemonic);
+
+        let original_binprog = Path::new(&root_path).join("tests/array_add_2x2/PE-Y1X1");
+        let original_mnemonic = Path::new(&root_path).join("tests/array_add_2x2/PE-Y1X1.prog");
+        let original_binprog =
+            Vec::<u8>::from_binary_prog_file(original_binprog.to_str().unwrap()).unwrap();
+        let original_mnemonic = std::fs::read_to_string(original_mnemonic).unwrap();
+        // converting from binprog to mnemonic, compare with original mnemonic
+        let program_from_binprog = Program::from_binary(&original_binprog).unwrap();
         let program_from_mnemonic = Program::from_mnemonics(&original_mnemonic).unwrap();
         assert_eq!(program_from_binprog, program_from_mnemonic);
     }

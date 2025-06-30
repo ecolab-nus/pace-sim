@@ -37,17 +37,16 @@ fn test_fvmac_2x2() {
         if cycle > 5 {
             break;
         }
-
-        // check the result in dm0, compare with expected_dm0
-        let dm0 = std::fs::read_to_string("tests/single_sided_fvmac_2x2/cycle_5/dm0")
-            .unwrap()
-            .replace(" ", "")
-            .replace("\n", "");
-
-        let dm0_expected = std::fs::read_to_string("tests/single_sided_fvmac_2x2/expected_dm0")
-            .unwrap()
-            .replace(" ", "")
-            .replace("\n", "");
-        assert_eq!(dm0, dm0_expected);
     }
+    // check the result in dm0, compare with expected_dm0
+    let dm0 = std::fs::read_to_string("tests/single_sided_fvmac_2x2/cycle_5/dm0")
+        .unwrap()
+        .replace(" ", "")
+        .replace("\n", "");
+
+    let dm0_expected = std::fs::read_to_string("tests/single_sided_fvmac_2x2/expected_dm0")
+        .unwrap()
+        .replace(" ", "")
+        .replace("\n", "");
+    assert_eq!(dm0, dm0_expected);
 }

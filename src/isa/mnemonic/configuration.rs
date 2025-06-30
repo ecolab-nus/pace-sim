@@ -142,5 +142,86 @@ mod tests {
                                            input_register_write: {};
                                            ";
         let _configuration = Configuration::from_mnemonics(test_str).unwrap();
+
+        let input = r"operation: NOP 
+switch_config: {
+    Open -> predicate,
+    Open -> south_out,
+    Open -> west_out,
+    Open -> north_out,
+    ALUOut -> east_out,
+    EastIn -> alu_op2,
+    SouthIn -> alu_op1,
+};
+input_register_used: {};
+input_register_write: {};
+
+operation: ADD 
+switch_config: {
+    Open -> predicate,
+    ALUOut -> south_out,
+    Open -> west_out,
+    Open -> north_out,
+    Open -> east_out,
+    WestIn -> alu_op2,
+    NorthIn -> alu_op1,
+};
+input_register_used: {};
+input_register_write: {};
+
+operation: SUB 
+switch_config: {
+    Open -> predicate,
+    Open -> south_out,
+    ALUOut -> west_out,
+    Open -> north_out,
+    Open -> east_out,
+    EastIn -> alu_op2,
+    SouthIn -> alu_op1,
+};
+input_register_used: {};
+input_register_write: {};
+
+operation: MULT 
+switch_config: {
+    Open -> predicate,
+    Open -> south_out,
+    Open -> west_out,
+    ALUOut -> north_out,
+    Open -> east_out,
+    WestIn -> alu_op2,
+    NorthIn -> alu_op1,
+};
+input_register_used: {};
+input_register_write: {};
+
+operation: MULT 
+switch_config: {
+    Open -> predicate,
+    Open -> south_out,
+    Open -> west_out,
+    Open -> north_out,
+    ALUOut -> east_out,
+    EastIn -> alu_op2,
+    SouthIn -> alu_op1,
+};
+input_register_used: {};
+input_register_write: {};
+
+operation: ADD 
+switch_config: {
+    Open -> predicate,
+    ALUOut -> south_out,
+    Open -> west_out,
+    Open -> north_out,
+    Open -> east_out,
+    WestIn -> alu_op2,
+    NorthIn -> alu_op1,
+};
+input_register_used: {};
+input_register_write: {};";
+        let program = Program::from_mnemonics(input).unwrap();
+        let mnemonic = program.to_mnemonics();
+        assert_eq!(mnemonic, input);
     }
 }

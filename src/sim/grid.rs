@@ -8,7 +8,7 @@ use nom::{
 use crate::{
     agu::agu::AGU,
     isa::{
-        binary::binary::BinaryStringIO,
+        binary::binary::{BinaryIO, BinaryStringIO},
         configuration::Program,
         pe::*,
         router::{self, RouterOutDir},
@@ -376,23 +376,24 @@ impl DoubleSidedMemoryGrid {
             // The first column and last column are mem PEs
             let filename = format!("PE-Y{}X{}", y, 0);
             let file_path = std::path::Path::new(&path).join(filename);
-            let program = std::fs::read_to_string(file_path).unwrap();
-            let program = Program::from_binary_str(&program).unwrap();
+            let program = Vec::<u8>::from_binary_prog_file(file_path.to_str().unwrap()).unwrap();
+            let program = Program::from_binary(&program).unwrap();
             let pe = PE::new_mem_pe(program);
             pes[y][0] = pe;
             for x in 1..shape.x - 1 {
                 let filename = format!("PE-Y{}X{}", y, x);
                 let file_path = std::path::Path::new(&path).join(filename);
-                let program = std::fs::read_to_string(file_path).unwrap();
-                let program = Program::from_binary_str(&program).unwrap();
+                let program =
+                    Vec::<u8>::from_binary_prog_file(file_path.to_str().unwrap()).unwrap();
+                let program = Program::from_binary(&program).unwrap();
                 let pe = PE::new(program);
                 pes[y][x] = pe;
             }
 
             let filename = format!("PE-Y{}X{}", y, shape.x - 1);
             let file_path = std::path::Path::new(&path).join(filename);
-            let program = std::fs::read_to_string(file_path).unwrap();
-            let program = Program::from_binary_str(&program).unwrap();
+            let program = Vec::<u8>::from_binary_prog_file(file_path.to_str().unwrap()).unwrap();
+            let program = Program::from_binary(&program).unwrap();
             let pe = PE::new_mem_pe(program);
             pes[y][shape.x - 1] = pe;
         }
@@ -660,8 +661,11 @@ impl SingleSidedMemoryGrid {
         for y in 0..shape.y {
             for x in 0..shape.x {
                 let f = format!("PE-Y{}X{}", y, x);
-                let p = std::fs::read_to_string(std::path::Path::new(path).join(&f)).unwrap();
-                let prog = Program::from_binary_str(&p).unwrap();
+                let prog = Vec::<u8>::from_binary_prog_file(
+                    std::path::Path::new(path).join(&f).to_str().unwrap(),
+                )
+                .unwrap();
+                let prog = Program::from_binary(&prog).unwrap();
                 pes[y][x] = if x == 0 {
                     PE::new_mem_pe(prog)
                 } else {

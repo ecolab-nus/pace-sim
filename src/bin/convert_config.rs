@@ -1,6 +1,9 @@
 use std::path::Path;
 
-use pace_sim::isa::{binary::binary::BinaryStringIO, configuration::Program};
+use pace_sim::isa::{
+    binary::binary::{BinaryIO, BinaryStringIO},
+    configuration::Program,
+};
 
 /// For given binprog file (if the file extension is .binprog), convert to prog file
 /// For given prog file (if the file extension is .prog), convert to binprog file
@@ -18,7 +21,10 @@ fn main() {
     let input_file_str = std::fs::read_to_string(input_file).unwrap();
 
     if input_file_ext == "binprog" {
-        let binprog_program = Program::from_binary_str(&input_file_str).unwrap();
+        let input_file_str = input_file_str.replace(" ", "").replace("\n", "");
+        let binprog_program =
+            Program::from_binary(&Vec::<u8>::from_binary_str(&input_file_str).unwrap()).unwrap();
+
         let prog_program = binprog_program.to_mnemonics();
         // if no output file is provided, use the same file name but with .prog extension
         let output_file = if args.len() == 2 {
@@ -33,7 +39,7 @@ fn main() {
         println!("Conversion complete, written to: {}", &output_file);
     } else if input_file_ext == "prog" {
         let prog_program = Program::from_mnemonics(&input_file_str).unwrap();
-        let binprog_program = prog_program.to_binary_str();
+        let binprog_program = prog_program.to_binary();
         // if no output file is provided, use the same file name but with .binprog extension
         let output_file = if args.len() == 2 {
             // remove the extension from the input file and add .binprog
@@ -43,7 +49,7 @@ fn main() {
         } else {
             args[2].clone()
         };
-        std::fs::write(&output_file, binprog_program).unwrap();
+        std::fs::write(&output_file, binprog_program.to_binary_str()).unwrap();
         println!("Conversion complete, written to: {}", &output_file);
     } else {
         eprintln!("Error: Invalid file extension");
