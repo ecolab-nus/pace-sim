@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use pace_sim::isa::configuration::Program;
+use pace_sim::isa::{binary::binary::BinaryStringIO, configuration::Program};
 
 /// For given binprog file (if the file extension is .binprog), convert to prog file
 /// For given prog file (if the file extension is .prog), convert to binprog file
