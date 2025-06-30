@@ -8,6 +8,7 @@ use nom::{
 use crate::{
     agu::agu::AGU,
     isa::{
+        binary::binary::BinaryStringIO,
         configuration::Program,
         pe::*,
         router::{self, RouterOutDir},
