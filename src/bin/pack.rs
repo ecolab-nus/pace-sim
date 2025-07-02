@@ -4,6 +4,7 @@
 /// Each DM is 1024 bytes, if the provided dm files are less than 1024 bytes, consider 0s.
 /// If AGU files are missing, consider AGU disabled.
 use clap::Parser;
+use pace_sim::sim::{global_mem::GlobalMemory, grid::DoubleSidedMemoryGrid};
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -15,4 +16,6 @@ struct Args {
 fn main() {
     let args = Args::parse();
     let folder_path = args.folder_path;
+    let grid = DoubleSidedMemoryGrid::from_folder(&folder_path);
+    let global_memory = GlobalMemory::default();
 }

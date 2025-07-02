@@ -26,6 +26,45 @@ impl BinaryIO for u64 {
     }
 }
 
+impl BinaryIO for u16 {
+    fn to_binary(&self) -> Vec<u8> {
+        self.to_le_bytes().to_vec()
+    }
+
+    /// Load a u16 from a binary vector with little endian encoding
+    fn from_binary(binary: &Vec<u8>) -> Result<Self, String> {
+        if binary.len() != 2 {
+            return Err(format!(
+                "Invalid binary length: expected 2, got {}",
+                binary.len()
+            ));
+        }
+        Ok(binary
+            .iter()
+            .enumerate()
+            .fold(0u16, |acc, (i, &byte)| acc | ((byte as u16) << (i * 2))))
+    }
+}
+
+impl BinaryIO for u32 {
+    fn to_binary(&self) -> Vec<u8> {
+        self.to_le_bytes().to_vec()
+    }
+
+    fn from_binary(binary: &Vec<u8>) -> Result<Self, String> {
+        if binary.len() != 4 {
+            return Err(format!(
+                "Invalid binary length: expected 4, got {}",
+                binary.len()
+            ));
+        }
+        Ok(binary
+            .iter()
+            .enumerate()
+            .fold(0u32, |acc, (i, &byte)| acc | ((byte as u32) << (i * 4))))
+    }
+}
+
 pub trait BinaryStringIO {
     fn to_binary_str(&self) -> String;
     fn from_binary_str(s: &str) -> Result<Self, String>
@@ -83,7 +122,7 @@ mod tests {
 
     #[test]
     fn test_binary_io() {
-        let code = 0b1010101010101010101010101010101010101010101010101010101010101010;
+        let code: u64 = 0b1010101010101010101010101010101010101010101010101010101010101010;
         let binary = code.to_binary();
         let expected_binary = vec![
             0b10101010, 0b10101010, 0b10101010, 0b10101010, 0b10101010, 0b10101010, 0b10101010,

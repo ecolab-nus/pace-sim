@@ -139,6 +139,7 @@ impl RouterConfig {
         }
     }
 
+    /// Convert the router config to a 64-bit binary code, MSB first, LSB last
     pub fn to_u64(&self) -> u64 {
         let mut code: u64 = 0;
         code.set_field(

@@ -27,8 +27,8 @@ pub struct DoubleSidedMemoryGrid {
     pub agus: Vec<Vec<AGU>>,
 }
 
-const LEFT: usize = 0;
-const RIGHT: usize = 1;
+pub const LEFT: usize = 0;
+pub const RIGHT: usize = 1;
 
 #[derive(Debug)]
 pub enum SimulationError {

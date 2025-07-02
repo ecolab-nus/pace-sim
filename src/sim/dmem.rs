@@ -270,6 +270,22 @@ impl DataMemory {
     pub fn capacity(&self) -> usize {
         self.data.len()
     }
+
+    pub fn to_u64_vec(&self) -> Vec<u64> {
+        assert_eq!(
+            self.data.len() % 8,
+            0,
+            "Data memory must be a multiple of 8 bytes"
+        );
+        self.data
+            .chunks_exact(8)
+            .map(|chunk| {
+                // convert &[u8;8] to [u8;8]
+                let arr: [u8; 8] = chunk.try_into().expect("chunks_exact guarantees length 8");
+                u64::from_le_bytes(arr)
+            })
+            .collect()
+    }
 }
 
 mod tests {

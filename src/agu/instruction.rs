@@ -37,53 +37,6 @@ pub enum DataWidth {
 }
 
 impl Instruction {
-    /// Loading from one byte, MSB of the value is the most significant bit
-    pub fn from_binary(bin: u8) -> Self {
-        // bit 0 is inst_type, 0 is LOAD, 1 is STORE
-        // bit 1 is inst_mode, 0 is STRIDED, 1 is CONST
-        // bit 2-3 is data_width, 00 is B8, 01 is B16, 10 is B64
-        // bit 4-7 is the stride.
-        let inst_type = if bin & 0b10000000 == 0 {
-            InstType::LOAD
-        } else {
-            InstType::STORE
-        };
-
-        let inst_mode = if bin & 0b01000000 == 0 {
-            InstMode::STRIDED
-        } else {
-            InstMode::CONST
-        };
-
-        let data_width = if bin & 0b00110000 == 0 {
-            DataWidth::B8
-        } else if bin & 0b00110000 == 0b01000000 {
-            DataWidth::B16
-        } else if bin & 0b00110000 == 0b10000000 {
-            DataWidth::B64
-        } else {
-            panic!("Invalid data width");
-        };
-
-        let stride = bin & 0b00001111;
-
-        Self {
-            inst_type,
-            inst_mode,
-            data_width,
-            stride,
-        }
-    }
-
-    pub fn to_binary(&self) -> u8 {
-        let mut bin = 0;
-        bin |= self.inst_type as u8;
-        bin |= self.inst_mode as u8;
-        bin |= self.data_width as u8;
-        bin |= self.stride as u8;
-        bin
-    }
-
     pub fn from_mnemonics(s: &str) -> IResult<&str, Self> {
         let (input, inst_type) = alt((tag("LOAD"), tag("STORE"))).parse(s)?;
         let (input, _) = delimited(multispace0, tag(","), multispace0).parse(input)?;

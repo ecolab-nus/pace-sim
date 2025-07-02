@@ -158,7 +158,7 @@ fn test_single_pe() {
     let configurations = vec![init_loop, load_op1, load_op2, wait_op2, add, store];
 
     let mut pe = PE {
-        configurations,
+        configurations: configurations,
         pc: 0,
         regs: PERegisters::default(),
         signals: PESignals::default(),

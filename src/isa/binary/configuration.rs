@@ -25,6 +25,7 @@ pub enum ConfigField {
 }
 
 impl ConfigField {
+    /// Get the bit range for the field, MSB first, LSB last
     /// Returns the bit range (start, end) where:
     /// - start is inclusive (the first bit to read)
     /// - end is exclusive (one past the last bit to read)
@@ -136,6 +137,15 @@ impl BinaryIO for Program {
             .map(|c| Configuration::from_binary(&c.to_vec()))
             .collect::<Result<Vec<Configuration>, String>>()?;
         Ok(Program { configurations })
+    }
+}
+
+impl Configuration {
+    /// Convert the configuration to a 64-bit binary code, MSB first, LSB last
+    pub fn to_u64(&self) -> u64 {
+        let router_config: u64 = self.router_config.to_u64();
+        let operation: u64 = self.operation.to_u64();
+        router_config | operation
     }
 }
 

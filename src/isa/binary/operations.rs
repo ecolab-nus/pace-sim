@@ -4,6 +4,7 @@ use crate::isa::{
 };
 
 impl Operation {
+    /// Convert the operation to a 64-bit binary code, MSB first, LSB last
     pub fn to_u64(&self) -> u64 {
         let mut code: u64 = 0;
         if self.op_code == OpCode::JUMP {

@@ -166,7 +166,7 @@ When the internal counter is equal to MAX_COUNT, AGU signals an "END OF EXECUTIO
 
 
 # Global Address
-19-bit address - [18:0]
+19-bit address - [18:0], 64 bits per address
 
 Target selection : [18:17] 
 00 PE
@@ -176,26 +176,19 @@ Target selection : [18:17]
 
 ### PE ([18:17] = "00")
 [15:10]  which PE out of 8x8 array, in y*Y + x, top left is y=0, x=0, bottom right y=7, x=7
-[9:8] WIthin PE level decoding:
+[9:8] Within PE level decoding:
 00 PE CM
 01 AGU CM
 10 AGU ARF
 11 MAX_iter (32b unsigned)
 
-PE CM:
-[6:0] 16 * (8 bytes per configuration) = 128 bytes PE CM, so [6:3] the index of the configuration
-
-AGU CM:
-[3:0] 16 * (1 byte per CM) = 16 bytes AGU CM 
-
-AGU ARF:
-[4:0] 16 * (13-bit aligned to 2 bytes) = 32 bytes AGU ARF. 13b into 2 bytes still little-endian
+[7:4] location within CM/AGU_CM/ARF - 16 locations
 
 
 ### DM ([18:17] = "01"): 
-
-[9:0] 1024 bytes content (byte addressable) for each DM
-[12:10] 8 DMs's index (top left 0, bottom left 3, top right 4, top down 7)
+[16] LEFT = 0, RIGHT = 1
+[15:14] which of the 4 DMs at each side (from top to bottom)
+[9:0] DM content, one address per 64 bits word
 
 
 
