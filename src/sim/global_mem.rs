@@ -32,7 +32,7 @@ impl GlobalMemory {
         let mut file = File::create(file_path).unwrap();
         for i in 0..self.content.len() {
             let b64 = self.content[i];
-            let b64_str = format!("{:#x}", b64);
+            let b64_str = format!("{:#x}\n", b64);
             file.write_all(b64_str.as_bytes()).unwrap();
         }
     }
@@ -109,10 +109,13 @@ impl GlobalMemory {
         for y in 0..8 {
             for x in 0..8 {
                 for cm_idx in 0..16 {
-                    let cm = &pes[y][x].configurations[cm_idx];
-                    let b64 = cm.to_u64();
-                    let region = self.get_pe_cm_region(y * 8 + x, cm_idx);
-                    region[0] = b64;
+                    let configurations = &pes[y][x].configurations;
+                    if cm_idx < configurations.len() {
+                        let cm = &configurations[cm_idx];
+                        let b64 = cm.to_u64();
+                        let region = self.get_pe_cm_region(y * 8 + x, cm_idx);
+                        region[0] = b64;
+                    }
                 }
             }
         }
@@ -180,7 +183,7 @@ impl GlobalMemory {
     /// Get the AGU CM region. But consider that the address space give one AGU to each PE,
     /// but only the edge PEs actually have AGUs. AGU order is 0 top left, 3 bottom left, 4 top right, 7 bottom right.
     fn get_agu_cm_region(&mut self, agu_idx: usize, cm_idx: usize) -> &mut [u64] {
-        assert!(agu_idx < 8);
+        assert!(agu_idx < 16);
         // computes the corresponding PE index
         let pe_y = agu_idx / 8;
         let pe_x = agu_idx % 8;

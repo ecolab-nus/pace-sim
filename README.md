@@ -190,22 +190,3 @@ Target selection : [18:17]
 [16] LEFT = 0, RIGHT = 1
 [15:14] which of the 4 DMs at each side (from top to bottom)
 [9:0] DM content, one address per 64 bits word
-
-
-
-## List:
-| Address range (hex)                          | Content / purpose (write **“unused – …”** when not decoded)                            |
-| -------------------------------------------- | -------------------------------------------------------------------------------------- |
-| 0×00000 – 0×0007F + 0×400 × k (k = 0…63) | **PE CM** – 16 × 8-byte configs (one stripe per PE)                                    |
-| 0×00080 – 0×000FF + 0×400 × k                | **unused – upper half of PE CM bit (bit 7 unused)**                        |
-| 0×00100 – 0×0010F + 0×400 × k                | **AGU CM** – 16 × 1-byte configs                                                       |
-| 0×00110 – 0×001FF + 0×400 × k                | **unused – padding after AGU CM**                                                      |
-| 0×00200 – 0×0021F + 0×400 × k                | **AGU ARF** – 16 registers, 13 bits packed into 2 bytes                                |
-| 0×00220 – 0×002FF + 0×400 × k                | **unused – padding after AGU ARF**                                                     |
-| 0×00300 – 0×00303 + 0×400 × k                | **max\_iter** – single 32-bit counter                                                  |
-| 0×00304 – 0×003FF + 0×400 × k                | **unused – padding after max\_iter**                                                   |
-| 0×10000 – 0×1 FFFF                       | **unused – bit 16 unused**                              |
-| 0×20000 – 0×21FFF, step 0×400                        | **DM j** – 1 KiB byte-addressable memory                                               |
-| 0×22000 – 0×3 FFFF                       | **unused – DM region with bits \[16:13] unused** |
-| 0×40000 – 0×5 FFFF                       | **Reserved – LUT region (top-level selector 10)**                               |
-| 0×60000 – 0×7 FFFF                       | **Reserved – Cluster-exec reserved (top-level selector 11)**                      |

@@ -5,19 +5,26 @@ use log::{error, info};
 use pace_sim::isa::binary::binary::{BinaryIO, BinaryStringIO};
 use pace_sim::isa::configuration::Program;
 use pace_sim::sim::dmem::DataMemory;
+use pace_sim::sim::global_mem::GlobalMemory;
 use pace_sim::sim::grid::SimulationError;
 use pace_sim::sim::pace::PACESystem;
 
 const TEST_FOLDER: &str = "tests/complex_scalar_8x8";
 #[test]
 fn test_complex_scalar_8x8() {
-    env_logger::init();
-    prepare_expected_dm();
-    copy_pe_prog();
-    copy_agu_prog();
-    prepare_binprog();
-    run_simulation();
-    check_final_dm_content();
+    let handle = std::thread::Builder::new()
+        .stack_size(1024 * 1024 * 1024) // 1 GiB
+        .spawn(|| {
+            env_logger::init();
+            prepare_expected_dm();
+            copy_pe_prog();
+            copy_agu_prog();
+            prepare_binprog();
+            pack_run_simulation_and_pack();
+            check_final_dm_content();
+        })
+        .unwrap();
+    handle.join().unwrap();
 }
 
 fn check_final_dm_content() {
@@ -39,9 +46,11 @@ fn check_final_dm_content() {
     }
 }
 
-fn run_simulation() {
+fn pack_run_simulation_and_pack() {
     let pace = PACESystem::from_folder(TEST_FOLDER);
     let mut grid = pace.to_grid();
+    let global_mem = GlobalMemory::from_grid(&grid);
+    global_mem.dump_to_64b_format("tests/complex_scalar_8x8/start.mem");
     let mut cycle = 0;
     loop {
         if let Err(e) = grid.simulate_cycle() {
@@ -65,6 +74,8 @@ fn run_simulation() {
         grid.next_cycle();
         cycle += 1;
     }
+    let global_mem = GlobalMemory::from_grid(&grid);
+    global_mem.dump_to_64b_format("tests/complex_scalar_8x8/end.mem");
 }
 
 fn prepare_binprog() {
