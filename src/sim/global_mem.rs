@@ -1,3 +1,5 @@
+use std::{fs::File, io::Write};
+
 ///! Conversion between an entire configuration of a grid and the global memory space
 ///! See the address mapping in the PACE 2.0 specification.
 use crate::sim::grid::*;
@@ -23,6 +25,16 @@ impl GlobalMemory {
         global_memory.fill_agu_arf_regions(grid);
         global_memory.fill_agu_max_count_regions(grid);
         global_memory
+    }
+
+    /// Dump the global memory to a file in 64b format, each line is 64 bits from MSB to LSB
+    pub fn dump_to_64b_format(&self, file_path: &str) {
+        let mut file = File::create(file_path).unwrap();
+        for i in 0..self.content.len() {
+            let b64 = self.content[i];
+            let b64_str = format!("{:#x}", b64);
+            file.write_all(b64_str.as_bytes()).unwrap();
+        }
     }
 
     fn fill_agu_max_count_regions(&mut self, grid: &DoubleSidedMemoryGrid) {

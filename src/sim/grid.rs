@@ -51,12 +51,6 @@ impl DoubleSidedMemoryGrid {
                     let pe = &mut self.pes[y][0];
                     let mem_interface = &mut self.dmems[y / 2].port1;
                     pe.update_mem(mem_interface, PE::AGU_ENABLED);
-                    // when AGU is enabled, the address set by PE is ignored, warning
-                    if mem_interface.wire_dmem_addr.is_some() {
-                        log::warn!(
-                            "AGU and PE are both setting the address, ignoring the PE's address"
-                        );
-                    }
                     if pe.current_conf().operation.is_mem() {
                         self.agus[y].update(mem_interface);
                         self.agus[y]
@@ -72,12 +66,6 @@ impl DoubleSidedMemoryGrid {
                     let pe = &mut self.pes[y][0];
                     let mem_interface = &mut self.dmems[y / 2].port2;
                     pe.update_mem(mem_interface, PE::AGU_ENABLED);
-                    // when AGU is enabled, the address set by PE is ignored, generate a warning for that
-                    if mem_interface.wire_dmem_addr.is_some() {
-                        log::warn!(
-                            "AGU and PE are both setting the address, ignoring the PE's address"
-                        );
-                    }
                     if pe.current_conf().operation.is_mem() {
                         self.agus[y].update(mem_interface);
                         self.agus[y]
@@ -100,12 +88,6 @@ impl DoubleSidedMemoryGrid {
                     let pe = &mut self.pes[y][self.shape.x - 1];
                     let mem_interface = &mut self.dmems[self.shape.y / 2 + y / 2].port1;
                     pe.update_mem(mem_interface, PE::AGU_ENABLED);
-                    // when AGU is enabled, the address set by PE is ignored, generate a warning for that
-                    if mem_interface.wire_dmem_addr.is_some() {
-                        log::warn!(
-                            "AGU and PE are both setting the address, ignoring the PE's address"
-                        );
-                    }
                     if pe.current_conf().operation.is_mem() {
                         self.agus[y + self.shape.y].update(mem_interface);
                         self.agus[y + self.shape.y]
@@ -124,12 +106,6 @@ impl DoubleSidedMemoryGrid {
                     let pe = &mut self.pes[y][self.shape.x - 1];
                     let mem_interface = &mut self.dmems[self.shape.y / 2 + y / 2].port2;
                     pe.update_mem(mem_interface, PE::AGU_ENABLED);
-                    // when AGU is enabled, the address set by PE is ignored, generate a warning for that
-                    if mem_interface.wire_dmem_addr.is_some() {
-                        log::warn!(
-                            "AGU and PE are both setting the address, ignoring the PE's address"
-                        );
-                    }
                     if pe.current_conf().operation.is_mem() {
                         self.agus[y + self.shape.y].update(mem_interface);
                         self.agus[y + self.shape.y]
@@ -540,9 +516,6 @@ impl SingleSidedMemoryGrid {
 
             if self.agus.get(y).map_or(false, |agu| agu.is_enabled()) {
                 pe.update_mem(port, PE::AGU_ENABLED);
-                if port.wire_dmem_addr.is_some() {
-                    log::warn!("AGU and PE both set address; ignoring PE's address");
-                }
                 if pe.current_conf().operation.is_mem() {
                     self.agus[y].update(port);
                     self.agus[y]

@@ -11,14 +11,14 @@ reg_predicate: false
 reg_loop_start: 1
 reg_loop_end: 5
 Sig:
-wire_alu_out: Some(SIMD[01000110/3.5 11010000/-8 11010010/-10 11000100/-3 11010100/-12 11001000/-4 00111100/1.5 11001011/-5.5 ])
+wire_alu_out: 0xd046|SIMD[01000110/3.5 11010000/-8 11010010/-10 11000100/-3 11010100/-12 11001000/-4 00111100/1.5 11001011/-5.5 ]
 wire_north_in: None
 wire_south_in: None
 wire_west_in: None
 wire_east_in: None
 wire_north_out: None
 wire_south_out: None
-wire_west_out: Some(SIMD[01000110/3.5 11010000/-8 11010010/-10 11000100/-3 11010100/-12 11001000/-4 00111100/1.5 11001011/-5.5 ])
+wire_west_out: 0xd046|SIMD[01000110/3.5 11010000/-8 11010010/-10 11000100/-3 11010100/-12 11001000/-4 00111100/1.5 11001011/-5.5 ]
 wire_east_out: None
 Conf: operation: VADD 
 switch_config: {

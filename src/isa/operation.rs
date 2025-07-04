@@ -199,12 +199,12 @@ impl PE {
             }
             OpCode::OR => {
                 let (op1, op2) = self.get_scalar_operands(op);
-                self.signals.wire_alu_out = Some((op1 as u64) | (op2 as u64));
+                self.signals.wire_alu_out = Some((op1 | op2) as u64);
             }
 
             OpCode::XOR => {
                 let (op1, op2) = self.get_scalar_operands(op);
-                self.signals.wire_alu_out = Some((op1 as u64) ^ (op2 as u64));
+                self.signals.wire_alu_out = Some((op1 ^ op2) as u64);
             }
 
             OpCode::SEL => {

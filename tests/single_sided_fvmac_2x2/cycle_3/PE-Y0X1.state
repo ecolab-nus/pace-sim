@@ -11,13 +11,13 @@ reg_predicate: false
 reg_loop_start: 1
 reg_loop_end: 5
 Sig:
-wire_alu_out: Some(SIMD[01000000/2 11001000/-4 11010000/-8 10101001/-0.28125 11010110/-14 11001100/-6 11000010/-2.5 10111100/-1.5 ])
+wire_alu_out: 0xc840|SIMD[01000000/2 11001000/-4 11010000/-8 10101001/-0.28125 11010110/-14 11001100/-6 11000010/-2.5 10111100/-1.5 ]
 wire_north_in: None
 wire_south_in: None
 wire_west_in: None
 wire_east_in: None
 wire_north_out: None
-wire_south_out: Some(SIMD[01000000/2 11001000/-4 11010000/-8 10101001/-0.28125 11010110/-14 11001100/-6 11000010/-2.5 10111100/-1.5 ])
+wire_south_out: 0xc840|SIMD[01000000/2 11001000/-4 11010000/-8 10101001/-0.28125 11010110/-14 11001100/-6 11000010/-2.5 10111100/-1.5 ]
 wire_west_out: None
 wire_east_out: None
 Conf: operation: VMUL 
