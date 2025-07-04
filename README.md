@@ -57,7 +57,8 @@ reg_alu_res = if (!) reg
 #### List of supported operations
 - ADD: 16b addition, no overflow management
 - SUB: 16b substraction, no overflow management
-- MULT: 16b multiplication, no overflow management
+- MULT: 16b modular multiplication (wrapping MUL, check Rust doc for wrapping_mul)
+- DIV: 16b modular division, (wrapping DIV, check Rust code for wrapping_div)
 - LS: Logical shift left (within the 16b result)
 - RS: Logical shift right (within the 16b result)
 - ARS: Arithmetic shift right (keeping the sign, within the 16b result)

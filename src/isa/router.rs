@@ -118,7 +118,7 @@ impl Index<Direction> for DirectionsOpt {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Copy)]
 pub struct RouterConfig {
     pub switch_config: RouterSwitchConfig,
     pub input_register_used: DirectionsOpt,

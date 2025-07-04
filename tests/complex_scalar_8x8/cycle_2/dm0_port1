@@ -1,0 +1,4 @@
+wire_dmem_addr: Some(2),
+wire_dmem_data: None,
+reg_dmem_data: 0x000000000000bc4e|SIMD[01001110/7 10111100/-1.5 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ],
+mode: Read16

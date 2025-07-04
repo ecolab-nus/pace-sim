@@ -9,7 +9,7 @@ pub const UPDATE_RES: bool = true;
 pub const NO_UPDATE_RES: bool = false;
 pub const NO_IMMEDIATE: Immediate = None;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub struct Operation {
     pub op_code: OpCode,
     pub immediate: Immediate,
@@ -50,7 +50,7 @@ impl Operation {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum OperationType {
     ArithLogic,
     SIMD,
@@ -59,7 +59,7 @@ pub enum OperationType {
     NOP,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, EnumString, Display)]
+#[derive(Debug, Clone, PartialEq, Eq, EnumString, Display, Copy)]
 pub enum OpCode {
     NOP,
     ADD,

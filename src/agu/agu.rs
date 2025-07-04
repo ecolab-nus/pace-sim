@@ -12,7 +12,7 @@ use crate::{agu::instruction::DataWidth, sim::dmem::DMemInterface};
 use super::instruction::{InstMode, Instruction};
 
 /// AGU state
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct AGU {
     pub pc: u32,
     pub cm: Vec<Instruction>,

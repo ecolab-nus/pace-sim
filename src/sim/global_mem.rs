@@ -27,14 +27,18 @@ impl GlobalMemory {
 
     fn fill_agu_max_count_regions(&mut self, grid: &DoubleSidedMemoryGrid) {
         let agus = &grid.agus;
-        let agus_left = &agus[LEFT];
-        let agus_right = &agus[RIGHT];
-        assert!(agus_left.len() == 4);
-        assert!(agus_right.len() == 4);
+        assert!(agus.len() == 16);
         // left edge AGUs
-        for i in 0..4 {
+        for i in 0..8 {
             let agu_max_count_region = self.get_agu_max_count_region(i);
-            let agu_max_count = agus_left[i].max_count;
+            let agu_max_count = agus[i].max_count;
+            let b64 = agu_max_count as u64;
+            agu_max_count_region[0] = b64;
+        }
+        // right edge AGUs
+        for i in 8..16 {
+            let agu_max_count_region = self.get_agu_max_count_region(i);
+            let agu_max_count = agus[i].max_count;
             let b64 = agu_max_count as u64;
             agu_max_count_region[0] = b64;
         }
@@ -42,13 +46,10 @@ impl GlobalMemory {
 
     fn fill_agu_arf_regions(&mut self, grid: &DoubleSidedMemoryGrid) {
         let agus = &grid.agus;
-        let agus_left = &agus[LEFT];
-        let agus_right = &agus[RIGHT];
-        assert!(agus_left.len() == 4);
-        assert!(agus_right.len() == 4);
+        assert!(agus.len() == 16);
         // left edge AGUs
-        for agu_idx in 0..4 {
-            let agu_arf = &agus_left[agu_idx].arf;
+        for agu_idx in 0..8 {
+            let agu_arf = &agus[agu_idx].arf;
             for arf_idx in 0..agu_arf.len() {
                 let b64 = agu_arf[arf_idx] as u64;
                 let region = self.get_agu_arf_region(agu_idx, arf_idx);
@@ -56,8 +57,8 @@ impl GlobalMemory {
             }
         }
         // right edge AGUs
-        for agu_idx in 0..4 {
-            let agu_arf = &agus_right[agu_idx].arf;
+        for agu_idx in 8..16 {
+            let agu_arf = &agus[agu_idx].arf;
             for arf_idx in 0..agu_arf.len() {
                 let b64 = agu_arf[arf_idx] as u64;
                 let region = self.get_agu_arf_region(agu_idx, arf_idx);
@@ -68,13 +69,10 @@ impl GlobalMemory {
 
     fn fill_agu_cm_regions(&mut self, grid: &DoubleSidedMemoryGrid) {
         let agus = &grid.agus;
-        let agus_left = &agus[LEFT];
-        let agus_right = &agus[RIGHT];
-        assert!(agus_left.len() == 4);
-        assert!(agus_right.len() == 4);
+        assert!(agus.len() == 16);
         // left edge AGUs
-        for agu_idx in 0..4 {
-            let agu_cm = &agus_left[agu_idx].cm;
+        for agu_idx in 0..8 {
+            let agu_cm = &agus[agu_idx].cm;
             for cm_idx in 0..agu_cm.len() {
                 let b64 = agu_cm[cm_idx].to_byte() as u64;
                 let region = self.get_agu_cm_region(agu_idx, cm_idx);
@@ -82,8 +80,8 @@ impl GlobalMemory {
             }
         }
         // right edge AGUs
-        for agu_idx in 0..4 {
-            let agu_cm = &agus_right[agu_idx].cm;
+        for agu_idx in 8..16 {
+            let agu_cm = &agus[agu_idx].cm;
             for cm_idx in 0..agu_cm.len() {
                 let b64 = agu_cm[cm_idx].to_byte() as u64;
                 let region = self.get_agu_cm_region(agu_idx, cm_idx);
@@ -111,24 +109,20 @@ impl GlobalMemory {
     fn fill_dm_regions(&mut self, grid: &DoubleSidedMemoryGrid) {
         // Get the DMs from grid
         let dms = &grid.dmems;
-        assert!(dms.len() == 2);
-        let dms_left = &dms[LEFT];
-        let dms_right = &dms[RIGHT];
-        assert!(dms_left.len() == 4);
-        assert!(dms_right.len() == 4);
+        assert!(dms.len() == 8);
 
         // fill the left DM region
         for i in 0..4 {
             let dm_region = self.get_dm_region(i);
-            let dm = &dms_left[i];
+            let dm = &dms[i];
             let dm_data = dm.to_u64_vec();
             assert!(dm_data.len() <= 1024);
             dm_region[..dm_data.len()].copy_from_slice(&dm_data);
         }
         // fill the right DM region
-        for i in 0..4 {
-            let dm_region = self.get_dm_region(i + 4);
-            let dm = &dms_right[i];
+        for i in 4..8 {
+            let dm_region = self.get_dm_region(i);
+            let dm = &dms[i];
             let dm_data = dm.to_u64_vec();
             assert!(dm_data.len() <= 1024);
             dm_region[..dm_data.len()].copy_from_slice(&dm_data);

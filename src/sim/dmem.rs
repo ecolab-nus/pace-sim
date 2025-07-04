@@ -83,16 +83,11 @@ impl DataMemory {
         }
     }
 
-    /// Load the data memory content from binary string
-    /// The file format is :
-    /// Big-endian, 64 bits per line, one bit per character
-    /// For each chunk of 8 bits, the most significant bit is the leftmost bit
-    pub fn from_binary_str(s: &str) -> Self {
-        let mut data = Vec::new();
+    pub fn load_binary_str(&mut self, s: &str) {
         let lines = s.lines();
         // remove spaces
         let lines = lines.map(|line| line.replace(" ", ""));
-        for line in lines {
+        for (line_idx, line) in lines.enumerate() {
             // Check that the input is exactly 64 characters
             if line.len() != 64 {
                 panic!(
@@ -109,14 +104,37 @@ impl DataMemory {
 
                 // Convert that 8-char binary string into one u8
                 let byte_val: u8 = u8::from_str_radix(chunk, 2).unwrap();
-                data.push(byte_val);
+                self.data[line_idx * 8 + chunk_idx] = byte_val;
             }
         }
-        Self {
-            data,
+    }
+
+    /// Load the data memory content from binary string
+    /// The file format is :
+    /// Big-endian, 64 bits per line, one bit per character
+    /// For each chunk of 8 bits, the most significant bit is the leftmost bit
+    pub fn from_binary_str(s: &str) -> Self {
+        let lines = s.lines();
+        // check the format
+        for line in lines {
+            // remove spaces
+            let line = line.replace(" ", "");
+            if line.len() != 64 {
+                panic!(
+                    "Expected a 64-character string, but got length {}",
+                    line.len()
+                );
+            }
+        }
+        // Count the number of lines first since lines() is an iterator
+        let num_lines = s.lines().count();
+        let mut dmem = Self {
+            data: vec![0; num_lines * 8],
             port1: DMemInterface::default(),
             port2: DMemInterface::default(),
-        }
+        };
+        dmem.load_binary_str(s);
+        dmem
     }
 
     /// Convert the data memory to a binary string

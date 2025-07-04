@@ -23,12 +23,9 @@ use super::dmem::DataMemory;
 pub struct DoubleSidedMemoryGrid {
     pub shape: PEIdx,
     pub pes: Vec<Vec<PE>>,
-    pub dmems: Vec<Vec<DataMemory>>,
-    pub agus: Vec<Vec<AGU>>,
+    pub dmems: Vec<DataMemory>,
+    pub agus: Vec<AGU>,
 }
-
-pub const LEFT: usize = 0;
-pub const RIGHT: usize = 1;
 
 #[derive(Debug)]
 pub enum SimulationError {
@@ -50,9 +47,9 @@ impl DoubleSidedMemoryGrid {
         for y in 0..self.shape.y {
             // the left edge PEs are connected to the data memory y%2
             if y % 2 == 0 {
-                if self.is_agu_enabled() && self.agus[LEFT][y].is_enabled() {
+                if self.is_agu_enabled() && self.agus[y].is_enabled() {
                     let pe = &mut self.pes[y][0];
-                    let mem_interface = &mut self.dmems[LEFT][y / 2].port1;
+                    let mem_interface = &mut self.dmems[y / 2].port1;
                     pe.update_mem(mem_interface, PE::AGU_ENABLED);
                     // when AGU is enabled, the address set by PE is ignored, warning
                     if mem_interface.wire_dmem_addr.is_some() {
@@ -61,19 +58,19 @@ impl DoubleSidedMemoryGrid {
                         );
                     }
                     if pe.current_conf().operation.is_mem() {
-                        self.agus[LEFT][y].update(mem_interface);
-                        self.agus[LEFT][y]
+                        self.agus[y].update(mem_interface);
+                        self.agus[y]
                             .next()
                             .map_err(|_| SimulationError::SimulationEnd)?;
                     }
                 } else {
                     let pe = &mut self.pes[y][0];
-                    pe.update_mem(&mut self.dmems[LEFT][y / 2].port1, PE::AGU_DISABLED);
+                    pe.update_mem(&mut self.dmems[y / 2].port1, PE::AGU_DISABLED);
                 }
             } else {
-                if self.is_agu_enabled() && self.agus[LEFT][y].is_enabled() {
+                if self.is_agu_enabled() && self.agus[y].is_enabled() {
                     let pe = &mut self.pes[y][0];
-                    let mem_interface = &mut self.dmems[LEFT][y / 2].port2;
+                    let mem_interface = &mut self.dmems[y / 2].port2;
                     pe.update_mem(mem_interface, PE::AGU_ENABLED);
                     // when AGU is enabled, the address set by PE is ignored, generate a warning for that
                     if mem_interface.wire_dmem_addr.is_some() {
@@ -82,26 +79,26 @@ impl DoubleSidedMemoryGrid {
                         );
                     }
                     if pe.current_conf().operation.is_mem() {
-                        self.agus[LEFT][y].update(mem_interface);
-                        self.agus[LEFT][y]
+                        self.agus[y].update(mem_interface);
+                        self.agus[y]
                             .next()
                             .map_err(|_| SimulationError::SimulationEnd)?;
                     }
                 } else {
                     let pe = &mut self.pes[y][0];
-                    pe.update_mem(&mut self.dmems[LEFT][y / 2].port2, PE::AGU_DISABLED);
+                    pe.update_mem(&mut self.dmems[y / 2].port2, PE::AGU_DISABLED);
                 }
             }
-            self.dmems[LEFT][y / 2].update_interface();
+            self.dmems[y / 2].update_interface();
         }
 
         // for the last column, update the memory interface
         for y in 0..self.shape.y {
             // the right edge PEs are connected to the data memory y%2 + Y
             if y % 2 == 0 {
-                if self.is_agu_enabled() && self.agus[RIGHT][y].is_enabled() {
+                if self.is_agu_enabled() && self.agus[y + self.shape.y].is_enabled() {
                     let pe = &mut self.pes[y][self.shape.x - 1];
-                    let mem_interface = &mut self.dmems[RIGHT][y / 2].port1;
+                    let mem_interface = &mut self.dmems[self.shape.y / 2 + y / 2].port1;
                     pe.update_mem(mem_interface, PE::AGU_ENABLED);
                     // when AGU is enabled, the address set by PE is ignored, generate a warning for that
                     if mem_interface.wire_dmem_addr.is_some() {
@@ -110,19 +107,22 @@ impl DoubleSidedMemoryGrid {
                         );
                     }
                     if pe.current_conf().operation.is_mem() {
-                        self.agus[RIGHT][y].update(mem_interface);
-                        self.agus[RIGHT][y]
+                        self.agus[y + self.shape.y].update(mem_interface);
+                        self.agus[y + self.shape.y]
                             .next()
                             .map_err(|_| SimulationError::SimulationEnd)?;
                     }
                 } else {
                     let pe = &mut self.pes[y][self.shape.x - 1];
-                    pe.update_mem(&mut self.dmems[RIGHT][y / 2].port2, PE::AGU_DISABLED);
+                    pe.update_mem(
+                        &mut self.dmems[self.shape.y / 2 + y / 2].port2,
+                        PE::AGU_DISABLED,
+                    );
                 }
             } else {
-                if self.is_agu_enabled() && self.agus[RIGHT][y].is_enabled() {
+                if self.is_agu_enabled() && self.agus[y + self.shape.y].is_enabled() {
                     let pe = &mut self.pes[y][self.shape.x - 1];
-                    let mem_interface = &mut self.dmems[RIGHT][y / 2].port2;
+                    let mem_interface = &mut self.dmems[self.shape.y / 2 + y / 2].port2;
                     pe.update_mem(mem_interface, PE::AGU_ENABLED);
                     // when AGU is enabled, the address set by PE is ignored, generate a warning for that
                     if mem_interface.wire_dmem_addr.is_some() {
@@ -131,17 +131,20 @@ impl DoubleSidedMemoryGrid {
                         );
                     }
                     if pe.current_conf().operation.is_mem() {
-                        self.agus[RIGHT][y].update(mem_interface);
-                        self.agus[RIGHT][y]
+                        self.agus[y + self.shape.y].update(mem_interface);
+                        self.agus[y + self.shape.y]
                             .next()
                             .map_err(|_| SimulationError::SimulationEnd)?;
                     }
                 } else {
                     let pe = &mut self.pes[y][self.shape.x - 1];
-                    pe.update_mem(&mut self.dmems[RIGHT][y / 2].port2, PE::AGU_DISABLED);
+                    pe.update_mem(
+                        &mut self.dmems[self.shape.y / 2 + y / 2].port2,
+                        PE::AGU_DISABLED,
+                    );
                 }
             }
-            self.dmems[RIGHT][y / 2].update_interface();
+            self.dmems[self.shape.y / 2 + y / 2].update_interface();
         }
 
         // For each PE, if it is a source of a multi-hop path, update the router outputs all along
@@ -158,11 +161,15 @@ impl DoubleSidedMemoryGrid {
                         let output_pe_idx = pe_idx.output_pe_idx(output_direction);
                         assert!(
                             output_pe_idx.x < self.shape.x,
-                            "edge PE is not able to send out of the array"
+                            "edge PE (y={}, x={}) is not able to send out of the array",
+                            pe_idx.y,
+                            pe_idx.x
                         );
                         assert!(
                             output_pe_idx.y < self.shape.y,
-                            "edge PE is not able to send out of the array"
+                            "edge PE (y={}, x={}) is not able to send out of the array",
+                            pe_idx.y,
+                            pe_idx.x
                         );
                         let next_pe_input_direction = output_direction.opposite_in_dir();
                         self.propagate_router_signals(
@@ -201,12 +208,12 @@ impl DoubleSidedMemoryGrid {
         for y in 0..self.shape.y / 2 {
             let filename = format!("dm{}", y);
             let file_path = std::path::Path::new(&folder_path).join(filename);
-            std::fs::write(file_path, self.dmems[LEFT][y].to_binary_str()).unwrap();
+            std::fs::write(file_path, self.dmems[y].to_binary_str()).unwrap();
         }
         for y in 0..self.shape.y / 2 {
             let filename = format!("dm{}", y + self.shape.y / 2);
             let file_path = std::path::Path::new(&folder_path).join(filename);
-            std::fs::write(file_path, self.dmems[RIGHT][y].to_binary_str()).unwrap();
+            std::fs::write(file_path, self.dmems[y + self.shape.y / 2].to_binary_str()).unwrap();
         }
     }
 
@@ -215,24 +222,32 @@ impl DoubleSidedMemoryGrid {
         for y in 0..self.shape.y / 2 {
             let filename = format!("dm{}", y);
             let file_path = std::path::Path::new(&folder_path).join(filename);
-            std::fs::write(file_path, self.dmems[LEFT][y].to_binary_str()).unwrap();
+            std::fs::write(file_path, self.dmems[y].to_binary_str()).unwrap();
             let filename = format!("dm{}_port1", y);
             let file_path = std::path::Path::new(&folder_path).join(filename);
-            std::fs::write(file_path, self.dmems[LEFT][y].port1.to_string()).unwrap();
+            std::fs::write(file_path, self.dmems[y].port1.to_string()).unwrap();
             let filename = format!("dm{}_port2", y);
             let file_path = std::path::Path::new(&folder_path).join(filename);
-            std::fs::write(file_path, self.dmems[LEFT][y].port2.to_string()).unwrap();
+            std::fs::write(file_path, self.dmems[y].port2.to_string()).unwrap();
         }
         for y in 0..self.shape.y / 2 {
             let filename = format!("dm{}", y + self.shape.y / 2);
             let file_path = std::path::Path::new(&folder_path).join(filename);
-            std::fs::write(file_path, self.dmems[RIGHT][y].to_binary_str()).unwrap();
+            std::fs::write(file_path, self.dmems[y + self.shape.y / 2].to_binary_str()).unwrap();
             let filename = format!("dm{}_port1", y + self.shape.y / 2);
             let file_path = std::path::Path::new(&folder_path).join(filename);
-            std::fs::write(file_path, self.dmems[RIGHT][y].port1.to_string()).unwrap();
+            std::fs::write(
+                file_path,
+                self.dmems[y + self.shape.y / 2].port1.to_string(),
+            )
+            .unwrap();
             let filename = format!("dm{}_port2", y + self.shape.y / 2);
             let file_path = std::path::Path::new(&folder_path).join(filename);
-            std::fs::write(file_path, self.dmems[RIGHT][y].port2.to_string()).unwrap();
+            std::fs::write(
+                file_path,
+                self.dmems[y + self.shape.y / 2].port2.to_string(),
+            )
+            .unwrap();
         }
         for y in 0..self.shape.y {
             for x in 0..self.shape.x {
@@ -247,12 +262,12 @@ impl DoubleSidedMemoryGrid {
             for y in 0..self.shape.y {
                 let filename = format!("agu{}", y);
                 let file_path = std::path::Path::new(&folder_path).join(filename);
-                std::fs::write(file_path, self.agus[LEFT][y].to_string()).unwrap();
+                std::fs::write(file_path, self.agus[y].to_string()).unwrap();
             }
             for y in 0..self.shape.y {
                 let filename = format!("agu{}", y + self.shape.y);
                 let file_path = std::path::Path::new(&folder_path).join(filename);
-                std::fs::write(file_path, self.agus[RIGHT][y].to_string()).unwrap();
+                std::fs::write(file_path, self.agus[y + self.shape.y].to_string()).unwrap();
             }
         }
     }
@@ -400,46 +415,38 @@ impl DoubleSidedMemoryGrid {
         log::info!("PE programs loaded successfully");
 
         // Load the data memories
-        let mut dmems: Vec<Vec<DataMemory>> = Vec::new();
-        let mut dmems_left: Vec<DataMemory> = Vec::new();
-        let mut dmems_right: Vec<DataMemory> = Vec::new();
+        let mut dmems: Vec<DataMemory> = Vec::new();
         for y in 0..shape.y / 2 {
             let filename = format!("dm{}", y);
             let file_path = std::path::Path::new(&path).join(&filename);
             let dmem = DataMemory::from_binary_str(&std::fs::read_to_string(file_path).unwrap());
-            dmems_left.push(dmem);
+            dmems.push(dmem);
         }
         for y in 0..shape.y / 2 {
             let filename = format!("dm{}", y + shape.y / 2);
             let file_path = std::path::Path::new(&path).join(&filename);
             let dmem = DataMemory::from_binary_str(&std::fs::read_to_string(file_path).unwrap());
-            dmems_right.push(dmem);
+            dmems.push(dmem);
         }
-        dmems.push(dmems_left);
-        dmems.push(dmems_right);
         log::info!("Data memories loaded successfully");
 
         // Load the AGUs
-        let mut agus: Vec<Vec<AGU>> = Vec::new();
+        let mut agus: Vec<AGU> = Vec::new();
         if agu_files_present {
-            let mut agus_left: Vec<AGU> = Vec::new();
-            let mut agus_right: Vec<AGU> = Vec::new();
             for y in 0..shape.y {
                 let filename = format!("agu{}", y);
                 let file_path = std::path::Path::new(&path).join(&filename);
                 let agu =
                     AGU::from_mnemonics(&std::fs::read_to_string(file_path).unwrap()).unwrap();
-                agus_left.push(agu);
+                agus.push(agu);
             }
             for y in 0..shape.y {
                 let filename = format!("agu{}", y + shape.y);
                 let file_path = std::path::Path::new(&path).join(&filename);
                 let agu =
                     AGU::from_mnemonics(&std::fs::read_to_string(file_path).unwrap()).unwrap();
-                agus_right.push(agu);
+                agus.push(agu);
             }
-            agus.push(agus_left);
-            agus.push(agus_right);
         }
         DoubleSidedMemoryGrid {
             shape,
