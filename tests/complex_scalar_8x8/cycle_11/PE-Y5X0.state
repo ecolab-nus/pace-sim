@@ -15,7 +15,7 @@ wire_alu_out: None
 wire_north_in: None
 wire_south_in: None
 wire_west_in: None
-wire_east_in: Some(SIMD[00010011/0.04296875 10000010/-0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ])
+wire_east_in: 0x8213|SIMD[00010011/0.04296875 10000010/-0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 wire_north_out: None
 wire_south_out: None
 wire_west_out: None

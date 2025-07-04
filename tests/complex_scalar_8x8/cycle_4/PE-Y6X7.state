@@ -11,14 +11,14 @@ reg_predicate: false
 reg_loop_start: 2
 reg_loop_end: 2
 Sig:
-wire_alu_out: Some(SIMD[00110100/0.75 01111100/NaN 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ])
+wire_alu_out: 0x7c34|SIMD[00110100/0.75 01111100/NaN 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 wire_north_in: None
 wire_south_in: None
 wire_west_in: None
 wire_east_in: None
 wire_north_out: None
 wire_south_out: None
-wire_west_out: Some(SIMD[00110100/0.75 01111100/NaN 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ])
+wire_west_out: 0x7c34|SIMD[00110100/0.75 01111100/NaN 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 wire_east_out: None
 Conf: operation: LOAD 0
 switch_config: {

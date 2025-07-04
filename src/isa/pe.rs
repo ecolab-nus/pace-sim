@@ -60,18 +60,22 @@ pub struct PESignals {
 
 impl Debug for PESignals {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fn format_value(v: Option<u64>) -> String {
+            v.map(|v| format!("0x{:04x}|{:?}", v as u16, SIMDValue::from(v)))
+                .unwrap_or_else(|| "None".to_string())
+        }
         write!(
             f,
-            "wire_alu_out: {:?}\nwire_north_in: {:?}\nwire_south_in: {:?}\nwire_west_in: {:?}\nwire_east_in: {:?}\nwire_north_out: {:?}\nwire_south_out: {:?}\nwire_west_out: {:?}\nwire_east_out: {:?}",
-            self.wire_alu_out.map(|v| SIMDValue::from(v)),
-            self.wire_north_in.map(|v| SIMDValue::from(v)),
-            self.wire_south_in.map(|v| SIMDValue::from(v)),
-            self.wire_west_in.map(|v| SIMDValue::from(v)),
-            self.wire_east_in.map(|v| SIMDValue::from(v)),
-            self.wire_north_out.map(|v| SIMDValue::from(v)),
-            self.wire_south_out.map(|v| SIMDValue::from(v)),
-            self.wire_west_out.map(|v| SIMDValue::from(v)),
-            self.wire_east_out.map(|v| SIMDValue::from(v)),
+            "wire_alu_out: {}\nwire_north_in: {}\nwire_south_in: {}\nwire_west_in: {}\nwire_east_in: {}\nwire_north_out: {}\nwire_south_out: {}\nwire_west_out: {}\nwire_east_out: {}",
+            format_value(self.wire_alu_out),
+            format_value(self.wire_north_in),
+            format_value(self.wire_south_in),
+            format_value(self.wire_west_in),
+            format_value(self.wire_east_in),
+            format_value(self.wire_north_out),
+            format_value(self.wire_south_out),
+            format_value(self.wire_west_out),
+            format_value(self.wire_east_out),
         )
     }
 }

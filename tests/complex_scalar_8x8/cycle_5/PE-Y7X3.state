@@ -12,7 +12,7 @@ reg_loop_start: 6
 reg_loop_end: 6
 Sig:
 wire_alu_out: None
-wire_north_in: Some(SIMD[01101110/112 11110110/-224 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ])
+wire_north_in: 0xf66e|SIMD[01101110/112 11110110/-224 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 wire_south_in: None
 wire_west_in: None
 wire_east_in: None

@@ -11,13 +11,13 @@ reg_predicate: false
 reg_loop_start: 2
 reg_loop_end: 4
 Sig:
-wire_alu_out: Some(SIMD[00000000/0 00001110/0.02734375 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ])
+wire_alu_out: 0x0e00|SIMD[00000000/0 00001110/0.02734375 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 wire_north_in: None
 wire_south_in: None
 wire_west_in: None
 wire_east_in: None
 wire_north_out: None
-wire_south_out: Some(SIMD[00000000/0 00001110/0.02734375 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ])
+wire_south_out: 0x0e00|SIMD[00000000/0 00001110/0.02734375 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 wire_west_out: None
 wire_east_out: None
 Conf: operation: ADD 
