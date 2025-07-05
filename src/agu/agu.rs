@@ -14,18 +14,25 @@ use super::instruction::{InstMode, Instruction};
 /// AGU state
 #[derive(Debug, Clone, Default)]
 pub struct AGU {
+    /// program counter
     pub pc: u32,
+    /// control memory including all instructions (configurable, not changing at runtime)
     pub cm: Vec<Instruction>,
+    /// address register file, recording the address for the next memory instruction (configurable, changing at runtime)
     pub arf: Vec<u16>,
+    /// maximum number of cycles to run (configurable, not changing at runtime)
     pub max_count: u32,
+    /// current number of cycles run (not configurable, changing at runtime)
     pub count: u32,
 }
 
 impl AGU {
+    /// Check if the AGU is enabled, i.e. the max count is greater than 0
     pub fn is_enabled(&self) -> bool {
         self.max_count > 0
     }
 
+    /// Update the given dmem interface with the current instruction (i.e. set the address)
     pub fn update(&mut self, dmem: &mut DMemInterface) {
         assert!(
             self.is_enabled(),
@@ -54,6 +61,7 @@ impl AGU {
         dmem.wire_dmem_addr = Some(addr as u64);
     }
 
+    /// Advance the program counter and the count, return AGU stop signal if the max count is reached
     pub fn next(&mut self) -> Result<(), String> {
         if self.count >= self.max_count {
             return Err("AGU execution completed".to_string());

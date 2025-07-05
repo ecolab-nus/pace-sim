@@ -1,9 +1,12 @@
-# PACE-Sim
-
 # Basic Usage
 Build:
 ```
 cargo build
+```
+
+Tests (including the example simulations in tests/)
+```
+cargo test
 ```
 
 You can simulate with snapshot and memory dump.
@@ -13,30 +16,30 @@ target/debug/simulation --help
 ```
 for the details.
 
-You can convert between format with
+You can convert between format in binary string and mnemonic of PE instructions with
 ```
-target/debug/convert <file> <file>
+target/debug/convert_config <file> <file>
 ```
 The file type recognization relies on the file extension:
 .binprog for binary string
 .prog for mnemonic (human readable and writeable)
 
-### Next TODOs:
-- AGU
-- Floating Point SIMD
+# Simulation framework
+A folder should contain 
+1. The configuration files in binary string. You can run the convertion tool to get the binary version from mnemonic.
+2. The initial content of data memories, one DM per file
+3. The AGUs files (optinal for grid simulation, obligatory for PACE complete simulations). In mnemonic only
+4. The PE files are named "PE-YyXx", Y=0 X=0 top left corner
+5. The DM files are named "DMx" every 2 edge PEs share one DM. Order : top left -> bottom left -> top right -> bottom right.
+6. The AGU files are named "AGUx", every edge PE has one AGU. Order : top left -> bottom left -> top right -> bottom right.
 
-### Further TODOs:
-TODOs:
-- Complete ISA
+The Grid (SingleSided or DoubleSided) loads all files, the become runnable.
+See examples in tests/test_add_2x2.rs or tests/test_array_add_*.
 
-# Simulation Framework
-## PE-Memory connectivity
-PE-YyX0 (the left edge PEs) are connected to the datamemory y%2. 
-PE-YyXX (the right edge PEs) are connected to the datamemory y%2+Y.
-This means every to PEs are connected to the same data memory.
+The PACESystem is for loading a folder only according to the complete PACE setup. It is convertable to Grid.
 
 # ISA
-Configuration (or the instruction) can be divided into the opration and the routing configuration :**Configuration** = **Operation** + **RoutingConfig**
+Configuration (or the instruction) can be divided into the opration and the routing configuration :**Configuration** = **Operation** + **RoutingConfig**. You find the semantics of ISA in **src/isa/ **. You find the syntax of ISA in mnemonic in **src/isa/mnemonic/ **, you find the syntax of ISA in binary in **src/isa/binary/**.
 
 ## 1. Operation
 

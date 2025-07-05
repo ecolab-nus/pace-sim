@@ -4,6 +4,7 @@ use std::{fs::File, io::Write};
 ///! See the address mapping in the PACE 2.0 specification.
 use crate::sim::grid::*;
 
+/// Global memory, per 64b according to the PACE 2.0 specification.
 pub struct GlobalMemory {
     pub content: [u64; 524288],
 }
@@ -17,6 +18,7 @@ impl Default for GlobalMemory {
 }
 
 impl GlobalMemory {
+    /// Fill the global memory address space from a grid, with respect to the PACE 2.0 specification.
     pub fn from_grid(grid: &DoubleSidedMemoryGrid) -> Self {
         let mut global_memory = Self::default();
         global_memory.fill_dm_regions(grid);

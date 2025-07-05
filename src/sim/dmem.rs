@@ -83,6 +83,8 @@ impl DataMemory {
         }
     }
 
+    /// Load the data memory content from binary string, each line is 64 bits from MSB to LSB
+    /// This allow you to create an empty DM and use this function to load the content from a binary string
     pub fn load_binary_str(&mut self, s: &str) {
         let lines = s.lines();
         // remove spaces
@@ -109,10 +111,7 @@ impl DataMemory {
         }
     }
 
-    /// Load the data memory content from binary string
-    /// The file format is :
-    /// Big-endian, 64 bits per line, one bit per character
-    /// For each chunk of 8 bits, the most significant bit is the leftmost bit
+    /// Load the data memory content from binary string, each line is 64 bits from MSB to LSB
     pub fn from_binary_str(s: &str) -> Self {
         let lines = s.lines();
         // check the format
