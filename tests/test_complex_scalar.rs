@@ -5,6 +5,7 @@ use log::{error, info};
 use pace_sim::isa::binary::binary::{BinaryIO, BinaryStringIO};
 use pace_sim::isa::configuration::Program;
 use pace_sim::sim::dmem::DataMemory;
+use pace_sim::sim::dump_header::DumpHeader;
 use pace_sim::sim::global_mem::GlobalMemory;
 use pace_sim::sim::grid::SimulationError;
 use pace_sim::sim::pace::PACESystem;
@@ -51,6 +52,7 @@ fn pack_run_simulation_and_pack() {
     let mut grid = pace.to_grid();
     let global_mem = GlobalMemory::from_grid(&grid);
     global_mem.dump_to_64b_format("tests/complex_scalar_8x8/start.mem");
+    grid.dump_header("tests/complex_scalar_8x8/pace_sys.h");
     let mut cycle = 0;
     loop {
         if let Err(e) = grid.simulate_cycle() {

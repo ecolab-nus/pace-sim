@@ -193,6 +193,7 @@ impl DataMemory {
     //         | (self.data[addr as usize + 3] as u32) << 24
     // }
 
+    /// Write 64 bits in little endian
     pub fn write64(&mut self, addr: u64, data: u64) {
         self.data[addr as usize] = data as u8;
         self.data[addr as usize + 1] = (data >> 8) as u8;
@@ -204,6 +205,7 @@ impl DataMemory {
         self.data[addr as usize + 7] = (data >> 56) as u8;
     }
 
+    /// Read 64 bits in big endian
     pub fn read64(&self, addr: u64) -> u64 {
         self.data[addr as usize] as u64
             | (self.data[addr as usize + 1] as u64) << 8
@@ -300,6 +302,22 @@ impl DataMemory {
                 // convert &[u8;8] to [u8;8]
                 let arr: [u8; 8] = chunk.try_into().expect("chunks_exact guarantees length 8");
                 u64::from_le_bytes(arr)
+            })
+            .collect()
+    }
+
+    pub fn to_u32_vec(&self) -> Vec<u32> {
+        assert_eq!(
+            self.data.len() % 16,
+            0,
+            "Data memory size must be a multiple of 4 bytes (aligned to 32 bits)"
+        );
+        self.data
+            .chunks_exact(4)
+            .map(|chunk| {
+                // convert &[u8;4] to [u8;4]
+                let arr: [u8; 4] = chunk.try_into().expect("chunks+exact guarantees length 4");
+                u32::from_le_bytes(arr)
             })
             .collect()
     }

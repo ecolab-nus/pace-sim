@@ -85,10 +85,14 @@ impl Instruction {
 
     pub fn to_byte(&self) -> u8 {
         let mut bin = 0;
-        bin |= self.inst_type as u8;
-        bin |= self.inst_mode as u8;
-        bin |= self.data_width as u8;
-        bin |= self.stride as u8;
+        // Bit 7: inst_type (0 = LOAD, 1 = STORE)
+        bin |= (self.inst_type as u8) << 7;
+        // Bit 6: inst_mode (0 = STRIDED, 1 = CONST)
+        bin |= (self.inst_mode as u8) << 6;
+        // Bits 5-4: data_width (00 = B8, 01 = B16, 10 = B64)
+        bin |= (self.data_width as u8) << 4;
+        // Bits 3-0: stride (4 bits)
+        bin |= self.stride & 0b00001111;
         bin
     }
 }
