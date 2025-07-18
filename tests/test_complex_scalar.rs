@@ -52,7 +52,7 @@ fn pack_run_simulation_and_pack() {
     let mut grid = pace.to_grid();
     let global_mem = GlobalMemory::from_grid(&grid);
     global_mem.dump_to_64b_format("tests/complex_scalar_8x8/start.mem");
-    grid.dump_header("tests/complex_scalar_8x8/pace_sys.h");
+    grid.dump_header("tests/complex_scalar_8x8/pace_sys_start.h");
     let mut cycle = 0;
     loop {
         if let Err(e) = grid.simulate_cycle() {
@@ -78,6 +78,7 @@ fn pack_run_simulation_and_pack() {
     }
     let global_mem = GlobalMemory::from_grid(&grid);
     global_mem.dump_to_64b_format("tests/complex_scalar_8x8/end.mem");
+    grid.dump_header("tests/complex_scalar_8x8/pace_sys_end.h");
 }
 
 fn prepare_binprog() {
