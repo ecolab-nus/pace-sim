@@ -136,6 +136,7 @@ wire_dmem_addr = op2
 ## 1.3. Jump
 ```
 reset reg_predicate
+using inst[49:45] as the destination
 assign loop_start
 assign loop_end
 ```
