@@ -22,6 +22,7 @@ pub enum ConfigField {
     AluUpdateResBit,
     RouterBypass,
     RouterSwitchConfig,
+    JumpDst,
 }
 
 impl ConfigField {
@@ -45,6 +46,7 @@ impl ConfigField {
             ConfigField::AluUpdateResBit => (25, 26),   // 1 bit: bit 25
             ConfigField::RouterBypass => (21, 25),      // 4 bits: bits 21-24
             ConfigField::RouterSwitchConfig => (0, 21), // 21 bits: bits 0-20
+            ConfigField::JumpDst => (45,50),           // 14 bits: bits 21-34
         }
     }
 }

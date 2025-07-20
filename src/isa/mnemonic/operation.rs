@@ -1,8 +1,5 @@
 use nom::{
-    IResult, Parser,
-    branch::alt,
-    bytes::complete::tag,
-    character::complete::{alpha1, digit1, multispace0, space0},
+    branch::alt, bytes::complete::tag, character::complete::{alpha1, digit1, multispace0, space0}, combinator::opt, IResult, Parser
 };
 use std::str::FromStr;
 
@@ -68,6 +65,10 @@ fn parse_alu_operation(input: &str) -> IResult<&str, Operation> {
 fn parse_jump(input: &str) -> IResult<&str, Operation> {
     let (input, _) = tag("JUMP")(input)?;
     let (input, _) = space0(input)?;
+    // parse the optional destination, the dst is an immediate value
+    // dst is optional.
+    let (input, dst) = opt(parse_immediate).parse(input)?;
+    let (input, _) = space0(input)?;
     let (input, _) = tag("[")(input)?;
     let (input, _) = multispace0(input)?;
     let (input, loop_start) = digit1::<_, nom::error::Error<&str>>(input)?;
@@ -87,7 +88,7 @@ fn parse_jump(input: &str) -> IResult<&str, Operation> {
         input,
         Operation {
             op_code: OpCode::JUMP,
-            immediate: None,
+            immediate: dst,
             update_res: false,
             loop_start: Some(loop_start),
             loop_end: Some(loop_end),

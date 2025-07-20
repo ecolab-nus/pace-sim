@@ -9,6 +9,14 @@ impl Operation {
         let mut code: u64 = 0;
         if self.op_code == OpCode::JUMP {
             code.set_field(ConfigField::OpCode, 30);
+            if let Some(_) = self.immediate {
+                unimplemented!("Jump to immediate destination is not implemented");
+            }
+            else {
+                // TODO a temporal fix, nobody ready understand when the jump dst is actually used.
+                // Here i assumed that the JUMP instruction is always the first instruction of the CM.
+                code.set_field(ConfigField::JumpDst, 1);
+            }
             code.set_field(ConfigField::LoopStart, self.loop_start.unwrap() as u32);
             code.set_field(ConfigField::LoopEnd, self.loop_end.unwrap() as u32);
         } else {

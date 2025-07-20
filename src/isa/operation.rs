@@ -264,6 +264,10 @@ impl PE {
             "Operation {:?} is not a JUMP operation",
             op.op_code
         );
+        assert!(
+            op.immediate.is_none(),
+            "Jump to immediate destination is not implemented"
+        );
         self.regs.reg_loop_start = op.loop_start.unwrap();
         self.regs.reg_loop_end = op.loop_end.unwrap();
     }

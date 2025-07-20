@@ -133,14 +133,15 @@ if config.is_store()
 wire_dmem_addr = op2
 ```
 
-## 1.3. Jump
+## 1.3. Jump dst [loop_start, loop_end]
 ```
 reset reg_predicate
 using inst[49:45] as the destination
 assign loop_start
 assign loop_end
 ```
-the Jump instruction set the loop_start and loop_end.
+dst is optional, if not used, just move to the next instruction. Jump also sets the loop_start and loop_end.
+Currently dst is unimplemented (if dst != None)
 
 # 2. Loop Start/ Loop End
 the instruction "Jump" or some called "SoftReset" set the loop_start and loop_end register.
