@@ -1943,7 +1943,7 @@ uint32_t agu0_arf_addr[1] = {
 };
 
 uint32_t agu1_arf_data[1] = {
-	0x00000000
+	0x00000010
 };
 
 uint32_t agu1_arf_addr[1] = {
@@ -1959,7 +1959,7 @@ uint32_t agu2_arf_addr[1] = {
 };
 
 uint32_t agu3_arf_data[1] = {
-	0x00000000
+	0x00000010
 };
 
 uint32_t agu3_arf_addr[1] = {
@@ -1975,7 +1975,7 @@ uint32_t agu4_arf_addr[1] = {
 };
 
 uint32_t agu5_arf_data[1] = {
-	0x00000000
+	0x00000010
 };
 
 uint32_t agu5_arf_addr[1] = {
@@ -1991,7 +1991,7 @@ uint32_t agu6_arf_addr[1] = {
 };
 
 uint32_t agu7_arf_data[1] = {
-	0x00000000
+	0x00000010
 };
 
 uint32_t agu7_arf_addr[1] = {
@@ -2007,7 +2007,7 @@ uint32_t agu8_arf_addr[1] = {
 };
 
 uint32_t agu9_arf_data[1] = {
-	0x00000000
+	0x00000010
 };
 
 uint32_t agu9_arf_addr[1] = {
@@ -2023,7 +2023,7 @@ uint32_t agu10_arf_addr[1] = {
 };
 
 uint32_t agu11_arf_data[1] = {
-	0x00000000
+	0x00000010
 };
 
 uint32_t agu11_arf_addr[1] = {
@@ -2039,7 +2039,7 @@ uint32_t agu12_arf_addr[1] = {
 };
 
 uint32_t agu13_arf_data[1] = {
-	0x00000000
+	0x00000010
 };
 
 uint32_t agu13_arf_addr[1] = {
@@ -2055,7 +2055,7 @@ uint32_t agu14_arf_addr[1] = {
 };
 
 uint32_t agu15_arf_data[1] = {
-	0x00000000
+	0x00000010
 };
 
 uint32_t agu15_arf_addr[1] = {

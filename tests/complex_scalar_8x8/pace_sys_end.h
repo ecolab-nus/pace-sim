@@ -1,4 +1,8 @@
-uint32_t dmem0_data[8]  = {
+uint32_t dmem0_data[12]  = {
+	0xbc4ed4b5,
+	0x01fc92fe,
+	0x4acb2757,
+	0xc326bd9c,
 	0x81298115,
 	0xaa83aa15,
 	0xaa0b7fee,
@@ -9,7 +13,7 @@ uint32_t dmem0_data[8]  = {
 	0x8106a966
 };
 
-uint32_t dmem0_addr[8]  = {
+uint32_t dmem0_addr[12]  = {
 	0x00020000,
 	0x00020004,
 	0x00020008,
@@ -17,10 +21,18 @@ uint32_t dmem0_addr[8]  = {
 	0x00020010,
 	0x00020014,
 	0x00020018,
-	0x0002001c
+	0x0002001c,
+	0x00020020,
+	0x00020024,
+	0x00020028,
+	0x0002002c
 };
 
-uint32_t dmem1_data[8]  = {
+uint32_t dmem1_data[12]  = {
+	0x03541e9f,
+	0xf83c840c,
+	0xebc10f0f,
+	0xe39c8080,
 	0xaa5c8277,
 	0xa98a81f7,
 	0xa79b7fb8,
@@ -31,7 +43,7 @@ uint32_t dmem1_data[8]  = {
 	0x8119a9cb
 };
 
-uint32_t dmem1_addr[8]  = {
+uint32_t dmem1_addr[12]  = {
 	0x00024000,
 	0x00024004,
 	0x00024008,
@@ -39,10 +51,18 @@ uint32_t dmem1_addr[8]  = {
 	0x00024010,
 	0x00024014,
 	0x00024018,
-	0x0002401c
+	0x0002401c,
+	0x00024020,
+	0x00024024,
+	0x00024028,
+	0x0002402c
 };
 
-uint32_t dmem2_data[8]  = {
+uint32_t dmem2_data[12]  = {
+	0x6c4bb70c,
+	0x166143fa,
+	0xa0ce6c97,
+	0x47a34eab,
 	0x812b7fb7,
 	0x8213a7fc,
 	0xa9d38107,
@@ -53,7 +73,7 @@ uint32_t dmem2_data[8]  = {
 	0xa99a7fc7
 };
 
-uint32_t dmem2_addr[8]  = {
+uint32_t dmem2_addr[12]  = {
 	0x00028000,
 	0x00028004,
 	0x00028008,
@@ -61,10 +81,18 @@ uint32_t dmem2_addr[8]  = {
 	0x00028010,
 	0x00028014,
 	0x00028018,
-	0x0002801c
+	0x0002801c,
+	0x00028020,
+	0x00028024,
+	0x00028028,
+	0x0002802c
 };
 
-uint32_t dmem3_data[8]  = {
+uint32_t dmem3_data[12]  = {
+	0x569b9d45,
+	0xcb8fe51d,
+	0x4eee0668,
+	0x7a6dc378,
 	0x827482b9,
 	0xa7b98152,
 	0x7fa18217,
@@ -75,7 +103,7 @@ uint32_t dmem3_data[8]  = {
 	0x8288a9a1
 };
 
-uint32_t dmem3_addr[8]  = {
+uint32_t dmem3_addr[12]  = {
 	0x0002c000,
 	0x0002c004,
 	0x0002c008,
@@ -83,10 +111,18 @@ uint32_t dmem3_addr[8]  = {
 	0x0002c010,
 	0x0002c014,
 	0x0002c018,
-	0x0002c01c
+	0x0002c01c,
+	0x0002c020,
+	0x0002c024,
+	0x0002c028,
+	0x0002c02c
 };
 
-uint32_t dmem4_data[8]  = {
+uint32_t dmem4_data[12]  = {
+	0x3a303ac8,
+	0xb21fc0c9,
+	0x168c6f2c,
+	0x9ce165af,
 	0xaaedaa36,
 	0xaa97a9df,
 	0x827c7f86,
@@ -97,7 +133,7 @@ uint32_t dmem4_data[8]  = {
 	0x811ca9b1
 };
 
-uint32_t dmem4_addr[8]  = {
+uint32_t dmem4_addr[12]  = {
 	0x00030000,
 	0x00030004,
 	0x00030008,
@@ -105,10 +141,18 @@ uint32_t dmem4_addr[8]  = {
 	0x00030010,
 	0x00030014,
 	0x00030018,
-	0x0003001c
+	0x0003001c,
+	0x00030020,
+	0x00030024,
+	0x00030028,
+	0x0003002c
 };
 
-uint32_t dmem5_data[8]  = {
+uint32_t dmem5_data[12]  = {
+	0x5e930eb3,
+	0x1f663efd,
+	0xa2206b03,
+	0x61ac916c,
 	0x8280824e,
 	0x7ffb7fba,
 	0xaa98aa6c,
@@ -119,7 +163,7 @@ uint32_t dmem5_data[8]  = {
 	0xa7ab82b9
 };
 
-uint32_t dmem5_addr[8]  = {
+uint32_t dmem5_addr[12]  = {
 	0x00034000,
 	0x00034004,
 	0x00034008,
@@ -127,10 +171,18 @@ uint32_t dmem5_addr[8]  = {
 	0x00034010,
 	0x00034014,
 	0x00034018,
-	0x0003401c
+	0x0003401c,
+	0x00034020,
+	0x00034024,
+	0x00034028,
+	0x0003402c
 };
 
-uint32_t dmem6_data[8]  = {
+uint32_t dmem6_data[12]  = {
+	0x62f64332,
+	0x1e2f9e17,
+	0x64aa5776,
+	0x39288d1c,
 	0xaa11aa78,
 	0x82318227,
 	0x81137ff1,
@@ -141,7 +193,7 @@ uint32_t dmem6_data[8]  = {
 	0xa950a9b5
 };
 
-uint32_t dmem6_addr[8]  = {
+uint32_t dmem6_addr[12]  = {
 	0x00038000,
 	0x00038004,
 	0x00038008,
@@ -149,10 +201,18 @@ uint32_t dmem6_addr[8]  = {
 	0x00038010,
 	0x00038014,
 	0x00038018,
-	0x0003801c
+	0x0003801c,
+	0x00038020,
+	0x00038024,
+	0x00038028,
+	0x0003802c
 };
 
-uint32_t dmem7_data[8]  = {
+uint32_t dmem7_data[12]  = {
+	0x63453730,
+	0xacdf7c34,
+	0x70e78937,
+	0xe8a453aa,
 	0xaa4e7f9c,
 	0x817d81da,
 	0xa92da91f,
@@ -163,7 +223,7 @@ uint32_t dmem7_data[8]  = {
 	0xaa6b7fd9
 };
 
-uint32_t dmem7_addr[8]  = {
+uint32_t dmem7_addr[12]  = {
 	0x0003c000,
 	0x0003c004,
 	0x0003c008,
@@ -171,7 +231,11 @@ uint32_t dmem7_addr[8]  = {
 	0x0003c010,
 	0x0003c014,
 	0x0003c018,
-	0x0003c01c
+	0x0003c01c,
+	0x0003c020,
+	0x0003c024,
+	0x0003c028,
+	0x0003c02c
 };
 
 uint32_t pe0_cm_data[6] = {
@@ -1943,7 +2007,7 @@ uint32_t agu0_arf_addr[1] = {
 };
 
 uint32_t agu1_arf_data[1] = {
-	0x00000022
+	0x00000032
 };
 
 uint32_t agu1_arf_addr[1] = {
@@ -1959,7 +2023,7 @@ uint32_t agu2_arf_addr[1] = {
 };
 
 uint32_t agu3_arf_data[1] = {
-	0x00000020
+	0x00000030
 };
 
 uint32_t agu3_arf_addr[1] = {
@@ -1975,7 +2039,7 @@ uint32_t agu4_arf_addr[1] = {
 };
 
 uint32_t agu5_arf_data[1] = {
-	0x00000020
+	0x00000030
 };
 
 uint32_t agu5_arf_addr[1] = {
@@ -1991,7 +2055,7 @@ uint32_t agu6_arf_addr[1] = {
 };
 
 uint32_t agu7_arf_data[1] = {
-	0x00000020
+	0x00000030
 };
 
 uint32_t agu7_arf_addr[1] = {
@@ -2007,7 +2071,7 @@ uint32_t agu8_arf_addr[1] = {
 };
 
 uint32_t agu9_arf_data[1] = {
-	0x00000020
+	0x00000030
 };
 
 uint32_t agu9_arf_addr[1] = {
@@ -2023,7 +2087,7 @@ uint32_t agu10_arf_addr[1] = {
 };
 
 uint32_t agu11_arf_data[1] = {
-	0x00000020
+	0x00000030
 };
 
 uint32_t agu11_arf_addr[1] = {
@@ -2039,7 +2103,7 @@ uint32_t agu12_arf_addr[1] = {
 };
 
 uint32_t agu13_arf_data[1] = {
-	0x00000020
+	0x00000030
 };
 
 uint32_t agu13_arf_addr[1] = {
@@ -2055,7 +2119,7 @@ uint32_t agu14_arf_addr[1] = {
 };
 
 uint32_t agu15_arf_data[1] = {
-	0x00000020
+	0x00000030
 };
 
 uint32_t agu15_arf_addr[1] = {
