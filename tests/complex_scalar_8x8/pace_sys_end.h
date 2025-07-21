@@ -1,15 +1,19 @@
-uint32_t dmem0_data[8]  = {
+uint32_t dmem0_data[12]  = {
 	0xbc4ed4b5,
 	0x01fc92fe,
 	0x4acb2757,
 	0xc326bd9c,
-	0x174e6890,
-	0x85abae71,
-	0x5775bcf5,
-	0x2c9aa964
+	0x81298115,
+	0xaa83aa15,
+	0xaa0b7fee,
+	0xaa7d82f0,
+	0x7fe9a9ff,
+	0x82e8826c,
+	0x7ff4814a,
+	0x8106a966
 };
 
-uint32_t dmem0_addr[8]  = {
+uint32_t dmem0_addr[12]  = {
 	0x00020000,
 	0x00020004,
 	0x00020008,
@@ -17,21 +21,29 @@ uint32_t dmem0_addr[8]  = {
 	0x00020010,
 	0x00020014,
 	0x00020018,
-	0x0002001c
+	0x0002001c,
+	0x00020020,
+	0x00020024,
+	0x00020028,
+	0x0002002c
 };
 
-uint32_t dmem1_data[8]  = {
+uint32_t dmem1_data[12]  = {
 	0x03541e9f,
 	0xf83c840c,
 	0xebc10f0f,
 	0xe39c8080,
-	0x1d962db7,
-	0x70e51b57,
-	0x2c42ad9b,
-	0xf4a108a7
+	0xaa5c8277,
+	0xa98a81f7,
+	0xa79b7fb8,
+	0xa7b2a9e1,
+	0x82e982ff,
+	0xa930aa59,
+	0x81d282ef,
+	0x8119a9cb
 };
 
-uint32_t dmem1_addr[8]  = {
+uint32_t dmem1_addr[12]  = {
 	0x00024000,
 	0x00024004,
 	0x00024008,
@@ -39,21 +51,29 @@ uint32_t dmem1_addr[8]  = {
 	0x00024010,
 	0x00024014,
 	0x00024018,
-	0x0002401c
+	0x0002401c,
+	0x00024020,
+	0x00024024,
+	0x00024028,
+	0x0002402c
 };
 
-uint32_t dmem2_data[8]  = {
+uint32_t dmem2_data[12]  = {
 	0x6c4bb70c,
 	0x166143fa,
 	0xa0ce6c97,
 	0x47a34eab,
-	0x84d54fd7,
-	0x2e904fc0,
-	0x8cc8a86d,
-	0xc0586796
+	0x812b7fb7,
+	0x8213a7fc,
+	0xa9d38107,
+	0x7fda824a,
+	0x817c7f39,
+	0x827f7f30,
+	0x8161a996,
+	0xa99a7fc7
 };
 
-uint32_t dmem2_addr[8]  = {
+uint32_t dmem2_addr[12]  = {
 	0x00028000,
 	0x00028004,
 	0x00028008,
@@ -61,21 +81,29 @@ uint32_t dmem2_addr[8]  = {
 	0x00028010,
 	0x00028014,
 	0x00028018,
-	0x0002801c
+	0x0002801c,
+	0x00028020,
+	0x00028024,
+	0x00028028,
+	0x0002802c
 };
 
-uint32_t dmem3_data[8]  = {
+uint32_t dmem3_data[12]  = {
 	0x569b9d45,
 	0xcb8fe51d,
 	0x4eee0668,
 	0x7a6dc378,
-	0x5b2a002f,
-	0x75662201,
-	0x0d4d297b,
-	0x3d720013
+	0x827482b9,
+	0xa7b98152,
+	0x7fa18217,
+	0xaac4a7ad,
+	0xaa73a9b1,
+	0x828daa81,
+	0x82bea977,
+	0x8288a9a1
 };
 
-uint32_t dmem3_addr[8]  = {
+uint32_t dmem3_addr[12]  = {
 	0x0002c000,
 	0x0002c004,
 	0x0002c008,
@@ -83,21 +111,29 @@ uint32_t dmem3_addr[8]  = {
 	0x0002c010,
 	0x0002c014,
 	0x0002c018,
-	0x0002c01c
+	0x0002c01c,
+	0x0002c020,
+	0x0002c024,
+	0x0002c028,
+	0x0002c02c
 };
 
-uint32_t dmem4_data[8]  = {
+uint32_t dmem4_data[12]  = {
 	0x3a303ac8,
 	0xb21fc0c9,
 	0x168c6f2c,
 	0x9ce165af,
-	0x1c184664,
-	0x9812bb98,
-	0x78a1eed7,
-	0x4c9e582e
+	0xaaedaa36,
+	0xaa97a9df,
+	0x827c7f86,
+	0x817382fb,
+	0x81ca8211,
+	0xa9a1a7b3,
+	0xa9f88257,
+	0x811ca9b1
 };
 
-uint32_t dmem4_addr[8]  = {
+uint32_t dmem4_addr[12]  = {
 	0x00030000,
 	0x00030004,
 	0x00030008,
@@ -105,21 +141,29 @@ uint32_t dmem4_addr[8]  = {
 	0x00030010,
 	0x00030014,
 	0x00030018,
-	0x0003001c
+	0x0003001c,
+	0x00030020,
+	0x00030024,
+	0x00030028,
+	0x0003002c
 };
 
-uint32_t dmem5_data[8]  = {
+uint32_t dmem5_data[12]  = {
 	0x5e930eb3,
 	0x1f663efd,
 	0xa2206b03,
 	0x61ac916c,
-	0x35236bab,
-	0x79b7cfe2,
-	0xc4c4867d,
-	0xfb6f0d45
+	0x8280824e,
+	0x7ffb7fba,
+	0xaa98aa6c,
+	0xa954a97f,
+	0x8155a78a,
+	0xa9567f34,
+	0x816e8263,
+	0xa7ab82b9
 };
 
-uint32_t dmem5_addr[8]  = {
+uint32_t dmem5_addr[12]  = {
 	0x00034000,
 	0x00034004,
 	0x00034008,
@@ -127,21 +171,29 @@ uint32_t dmem5_addr[8]  = {
 	0x00034010,
 	0x00034014,
 	0x00034018,
-	0x0003401c
+	0x0003401c,
+	0x00034020,
+	0x00034024,
+	0x00034028,
+	0x0003402c
 };
 
-uint32_t dmem6_data[8]  = {
+uint32_t dmem6_data[12]  = {
 	0x62f64332,
 	0x1e2f9e17,
 	0x64aa5776,
 	0x39288d1c,
-	0x9ebb07db,
-	0x26f2b036,
-	0x5fd0aced,
-	0xc98b7834
+	0xaa11aa78,
+	0x82318227,
+	0x81137ff1,
+	0xa9078152,
+	0x82477f3f,
+	0x7fa8a9b6,
+	0x7f258176,
+	0xa950a9b5
 };
 
-uint32_t dmem6_addr[8]  = {
+uint32_t dmem6_addr[12]  = {
 	0x00038000,
 	0x00038004,
 	0x00038008,
@@ -149,21 +201,29 @@ uint32_t dmem6_addr[8]  = {
 	0x00038010,
 	0x00038014,
 	0x00038018,
-	0x0003801c
+	0x0003801c,
+	0x00038020,
+	0x00038024,
+	0x00038028,
+	0x0003802c
 };
 
-uint32_t dmem7_data[8]  = {
+uint32_t dmem7_data[12]  = {
 	0x63453730,
 	0xacdf7c34,
 	0x70e78937,
 	0xe8a453aa,
-	0x53cb3404,
-	0x6b6857e5,
-	0x4ad7d6f7,
-	0xfb0157a0
+	0xaa4e7f9c,
+	0x817d81da,
+	0xa92da91f,
+	0xa9f6a78a,
+	0xa7a081fe,
+	0xaa577f31,
+	0xaa0e7fa6,
+	0xaa6b7fd9
 };
 
-uint32_t dmem7_addr[8]  = {
+uint32_t dmem7_addr[12]  = {
 	0x0003c000,
 	0x0003c004,
 	0x0003c008,
@@ -171,11 +231,15 @@ uint32_t dmem7_addr[8]  = {
 	0x0003c010,
 	0x0003c014,
 	0x0003c018,
-	0x0003c01c
+	0x0003c01c,
+	0x0003c020,
+	0x0003c024,
+	0x0003c028,
+	0x0003c02c
 };
 
 uint32_t pe0_cm_data[6] = {
-	0x801fffff, 0x00002217,
+	0x801fffff, 0x00004217,
 	0x001fffff, 0x40000006,
 	0x001ffffc, 0x40000006
 };
@@ -192,7 +256,7 @@ uint32_t pe0_cm_addr[6] = {
 uint32_t pe1_cm_data[8] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x0000231f,
+	0x801fafff, 0x0000631f,
 	0x001faffc, 0x4000002a
 };
 
@@ -211,7 +275,7 @@ uint32_t pe2_cm_data[10] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x00002427,
+	0x801fafff, 0x00008427,
 	0x801faffc, 0x40000032
 };
 
@@ -233,7 +297,7 @@ uint32_t pe3_cm_data[12] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x0000252f,
+	0x801fafff, 0x0000a52f,
 	0xc01fafe7, 0x40000038
 };
 
@@ -257,7 +321,7 @@ uint32_t pe4_cm_data[12] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x0000252f,
+	0x801f8fff, 0x0000a52f,
 	0xc01f8fe7, 0x40000038
 };
 
@@ -280,7 +344,7 @@ uint32_t pe5_cm_data[10] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x00002427,
+	0x801f8fff, 0x00008427,
 	0x801f8f3f, 0x40000032
 };
 
@@ -300,7 +364,7 @@ uint32_t pe5_cm_addr[10] = {
 uint32_t pe6_cm_data[8] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x0000231f,
+	0x801f8fff, 0x0000631f,
 	0x001f8f3f, 0x4000002a
 };
 
@@ -316,7 +380,7 @@ uint32_t pe6_cm_addr[8] = {
 };
 
 uint32_t pe7_cm_data[6] = {
-	0x801fffff, 0x00002217,
+	0x801fffff, 0x00004217,
 	0x001fffff, 0x40000006,
 	0x001fff3f, 0x40000006
 };
@@ -339,7 +403,7 @@ uint32_t pe8_cm_data[20] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x0000294f,
+	0x801f8fff, 0x0001294f,
 	0xc01f8fff, 0x40000006
 };
 
@@ -374,7 +438,7 @@ uint32_t pe9_cm_data[18] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x00002847,
+	0x801f8fff, 0x00010847,
 	0x801f8f3f, 0x400007f8
 };
 
@@ -406,7 +470,7 @@ uint32_t pe10_cm_data[16] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x0000273f,
+	0x801f8fff, 0x0000e73f,
 	0x401f8f3f, 0x40055553
 };
 
@@ -435,7 +499,7 @@ uint32_t pe11_cm_data[14] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fbfff, 0x00002637,
+	0x801fbfff, 0x0000c637,
 	0x401fbf3f, 0x40000031
 };
 
@@ -462,7 +526,7 @@ uint32_t pe12_cm_data[14] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fbfff, 0x00002637,
+	0x801fbfff, 0x0000c637,
 	0x401fbffc, 0x40000031
 };
 
@@ -490,7 +554,7 @@ uint32_t pe13_cm_data[16] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x0000273f,
+	0x801fafff, 0x0000e73f,
 	0x401faffc, 0x40055553
 };
 
@@ -521,7 +585,7 @@ uint32_t pe14_cm_data[18] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x00002847,
+	0x801fafff, 0x00010847,
 	0x801faffc, 0x400007f8
 };
 
@@ -555,7 +619,7 @@ uint32_t pe15_cm_data[20] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x0000294f,
+	0x801fafff, 0x0001294f,
 	0xc01fafff, 0x40000006
 };
 
@@ -583,7 +647,7 @@ uint32_t pe15_cm_addr[20] = {
 };
 
 uint32_t pe16_cm_data[6] = {
-	0x801fffff, 0x00002217,
+	0x801fffff, 0x00004217,
 	0x001fffff, 0x40000006,
 	0x001ffffc, 0x40000006
 };
@@ -600,7 +664,7 @@ uint32_t pe16_cm_addr[6] = {
 uint32_t pe17_cm_data[8] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x0000231f,
+	0x801fafff, 0x0000631f,
 	0x001faffc, 0x4000002a
 };
 
@@ -619,7 +683,7 @@ uint32_t pe18_cm_data[10] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x00002427,
+	0x801fafff, 0x00008427,
 	0x801faffc, 0x40000032
 };
 
@@ -641,7 +705,7 @@ uint32_t pe19_cm_data[12] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x0000252f,
+	0x801fafff, 0x0000a52f,
 	0xc01fafe7, 0x40000038
 };
 
@@ -665,7 +729,7 @@ uint32_t pe20_cm_data[12] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x0000252f,
+	0x801f8fff, 0x0000a52f,
 	0xc01f8fe7, 0x40000038
 };
 
@@ -688,7 +752,7 @@ uint32_t pe21_cm_data[10] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x00002427,
+	0x801f8fff, 0x00008427,
 	0x801f8f3f, 0x40000032
 };
 
@@ -708,7 +772,7 @@ uint32_t pe21_cm_addr[10] = {
 uint32_t pe22_cm_data[8] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x0000231f,
+	0x801f8fff, 0x0000631f,
 	0x001f8f3f, 0x4000002a
 };
 
@@ -724,7 +788,7 @@ uint32_t pe22_cm_addr[8] = {
 };
 
 uint32_t pe23_cm_data[6] = {
-	0x801fffff, 0x00002217,
+	0x801fffff, 0x00004217,
 	0x001fffff, 0x40000006,
 	0x001fff3f, 0x40000006
 };
@@ -747,7 +811,7 @@ uint32_t pe24_cm_data[20] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x0000294f,
+	0x801f8fff, 0x0001294f,
 	0xc01f8fff, 0x40000006
 };
 
@@ -782,7 +846,7 @@ uint32_t pe25_cm_data[18] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x00002847,
+	0x801f8fff, 0x00010847,
 	0x801f8f3f, 0x400007f8
 };
 
@@ -814,7 +878,7 @@ uint32_t pe26_cm_data[16] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x0000273f,
+	0x801f8fff, 0x0000e73f,
 	0x401f8f3f, 0x40055553
 };
 
@@ -843,7 +907,7 @@ uint32_t pe27_cm_data[14] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fbfff, 0x00002637,
+	0x801fbfff, 0x0000c637,
 	0x401fbf3f, 0x40000031
 };
 
@@ -870,7 +934,7 @@ uint32_t pe28_cm_data[14] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fbfff, 0x00002637,
+	0x801fbfff, 0x0000c637,
 	0x401fbffc, 0x40000031
 };
 
@@ -898,7 +962,7 @@ uint32_t pe29_cm_data[16] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x0000273f,
+	0x801fafff, 0x0000e73f,
 	0x401faffc, 0x40055553
 };
 
@@ -929,7 +993,7 @@ uint32_t pe30_cm_data[18] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x00002847,
+	0x801fafff, 0x00010847,
 	0x801faffc, 0x400007f8
 };
 
@@ -963,7 +1027,7 @@ uint32_t pe31_cm_data[20] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x0000294f,
+	0x801fafff, 0x0001294f,
 	0xc01fafff, 0x40000006
 };
 
@@ -991,7 +1055,7 @@ uint32_t pe31_cm_addr[20] = {
 };
 
 uint32_t pe32_cm_data[6] = {
-	0x801fffff, 0x00002217,
+	0x801fffff, 0x00004217,
 	0x001fffff, 0x40000006,
 	0x001ffffc, 0x40000006
 };
@@ -1008,7 +1072,7 @@ uint32_t pe32_cm_addr[6] = {
 uint32_t pe33_cm_data[8] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x0000231f,
+	0x801fafff, 0x0000631f,
 	0x001faffc, 0x4000002a
 };
 
@@ -1027,7 +1091,7 @@ uint32_t pe34_cm_data[10] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x00002427,
+	0x801fafff, 0x00008427,
 	0x801faffc, 0x40000032
 };
 
@@ -1049,7 +1113,7 @@ uint32_t pe35_cm_data[12] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x0000252f,
+	0x801fafff, 0x0000a52f,
 	0xc01fafe7, 0x40000038
 };
 
@@ -1073,7 +1137,7 @@ uint32_t pe36_cm_data[12] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x0000252f,
+	0x801f8fff, 0x0000a52f,
 	0xc01f8fe7, 0x40000038
 };
 
@@ -1096,7 +1160,7 @@ uint32_t pe37_cm_data[10] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x00002427,
+	0x801f8fff, 0x00008427,
 	0x801f8f3f, 0x40000032
 };
 
@@ -1116,7 +1180,7 @@ uint32_t pe37_cm_addr[10] = {
 uint32_t pe38_cm_data[8] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x0000231f,
+	0x801f8fff, 0x0000631f,
 	0x001f8f3f, 0x4000002a
 };
 
@@ -1132,7 +1196,7 @@ uint32_t pe38_cm_addr[8] = {
 };
 
 uint32_t pe39_cm_data[6] = {
-	0x801fffff, 0x00002217,
+	0x801fffff, 0x00004217,
 	0x001fffff, 0x40000006,
 	0x001fff3f, 0x40000006
 };
@@ -1155,7 +1219,7 @@ uint32_t pe40_cm_data[20] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x0000294f,
+	0x801f8fff, 0x0001294f,
 	0xc01f8fff, 0x40000006
 };
 
@@ -1190,7 +1254,7 @@ uint32_t pe41_cm_data[18] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x00002847,
+	0x801f8fff, 0x00010847,
 	0x801f8f3f, 0x400007f8
 };
 
@@ -1222,7 +1286,7 @@ uint32_t pe42_cm_data[16] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x0000273f,
+	0x801f8fff, 0x0000e73f,
 	0x401f8f3f, 0x40055553
 };
 
@@ -1251,7 +1315,7 @@ uint32_t pe43_cm_data[14] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fbfff, 0x00002637,
+	0x801fbfff, 0x0000c637,
 	0x401fbf3f, 0x40000031
 };
 
@@ -1278,7 +1342,7 @@ uint32_t pe44_cm_data[14] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fbfff, 0x00002637,
+	0x801fbfff, 0x0000c637,
 	0x401fbffc, 0x40000031
 };
 
@@ -1306,7 +1370,7 @@ uint32_t pe45_cm_data[16] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x0000273f,
+	0x801fafff, 0x0000e73f,
 	0x401faffc, 0x40055553
 };
 
@@ -1337,7 +1401,7 @@ uint32_t pe46_cm_data[18] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x00002847,
+	0x801fafff, 0x00010847,
 	0x801faffc, 0x400007f8
 };
 
@@ -1371,7 +1435,7 @@ uint32_t pe47_cm_data[20] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x0000294f,
+	0x801fafff, 0x0001294f,
 	0xc01fafff, 0x40000006
 };
 
@@ -1399,7 +1463,7 @@ uint32_t pe47_cm_addr[20] = {
 };
 
 uint32_t pe48_cm_data[6] = {
-	0x801fffff, 0x00002217,
+	0x801fffff, 0x00004217,
 	0x001fffff, 0x40000006,
 	0x001ffffc, 0x40000006
 };
@@ -1416,7 +1480,7 @@ uint32_t pe48_cm_addr[6] = {
 uint32_t pe49_cm_data[8] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x0000231f,
+	0x801fafff, 0x0000631f,
 	0x001faffc, 0x4000002a
 };
 
@@ -1435,7 +1499,7 @@ uint32_t pe50_cm_data[10] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x00002427,
+	0x801fafff, 0x00008427,
 	0x801faffc, 0x40000032
 };
 
@@ -1457,7 +1521,7 @@ uint32_t pe51_cm_data[12] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x0000252f,
+	0x801fafff, 0x0000a52f,
 	0xc01fafe7, 0x40000038
 };
 
@@ -1481,7 +1545,7 @@ uint32_t pe52_cm_data[12] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x0000252f,
+	0x801f8fff, 0x0000a52f,
 	0xc01f8fe7, 0x40000038
 };
 
@@ -1504,7 +1568,7 @@ uint32_t pe53_cm_data[10] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x00002427,
+	0x801f8fff, 0x00008427,
 	0x801f8f3f, 0x40000032
 };
 
@@ -1524,7 +1588,7 @@ uint32_t pe53_cm_addr[10] = {
 uint32_t pe54_cm_data[8] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x0000231f,
+	0x801f8fff, 0x0000631f,
 	0x001f8f3f, 0x4000002a
 };
 
@@ -1540,7 +1604,7 @@ uint32_t pe54_cm_addr[8] = {
 };
 
 uint32_t pe55_cm_data[6] = {
-	0x801fffff, 0x00002217,
+	0x801fffff, 0x00004217,
 	0x001fffff, 0x40000006,
 	0x001fff3f, 0x40000006
 };
@@ -1563,7 +1627,7 @@ uint32_t pe56_cm_data[20] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x0000294f,
+	0x801f8fff, 0x0001294f,
 	0xc01f8fff, 0x40000006
 };
 
@@ -1598,7 +1662,7 @@ uint32_t pe57_cm_data[18] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x00002847,
+	0x801f8fff, 0x00010847,
 	0x801f8f3f, 0x400007f8
 };
 
@@ -1630,7 +1694,7 @@ uint32_t pe58_cm_data[16] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801f8fff, 0x0000273f,
+	0x801f8fff, 0x0000e73f,
 	0x401f8f3f, 0x40055553
 };
 
@@ -1659,7 +1723,7 @@ uint32_t pe59_cm_data[14] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fbfff, 0x00002637,
+	0x801fbfff, 0x0000c637,
 	0x401fbf3f, 0x40000031
 };
 
@@ -1686,7 +1750,7 @@ uint32_t pe60_cm_data[14] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fbfff, 0x00002637,
+	0x801fbfff, 0x0000c637,
 	0x401fbffc, 0x40000031
 };
 
@@ -1714,7 +1778,7 @@ uint32_t pe61_cm_data[16] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x0000273f,
+	0x801fafff, 0x0000e73f,
 	0x401faffc, 0x40055553
 };
 
@@ -1745,7 +1809,7 @@ uint32_t pe62_cm_data[18] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x00002847,
+	0x801fafff, 0x00010847,
 	0x801faffc, 0x400007f8
 };
 
@@ -1779,7 +1843,7 @@ uint32_t pe63_cm_data[20] = {
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
 	0x001fffff, 0x00000000,
-	0x801fafff, 0x0000294f,
+	0x801fafff, 0x0001294f,
 	0xc01fafff, 0x40000006
 };
 
@@ -1935,7 +1999,7 @@ uint32_t agu15_cm_addr[1] = {
 };
 
 uint32_t agu0_arf_data[1] = {
-	0x00000082
+	0x00000032
 };
 
 uint32_t agu0_arf_addr[1] = {
@@ -1943,7 +2007,7 @@ uint32_t agu0_arf_addr[1] = {
 };
 
 uint32_t agu1_arf_data[1] = {
-	0x00000010
+	0x00000032
 };
 
 uint32_t agu1_arf_addr[1] = {
@@ -1951,7 +2015,7 @@ uint32_t agu1_arf_addr[1] = {
 };
 
 uint32_t agu2_arf_data[1] = {
-	0x00000080
+	0x00000030
 };
 
 uint32_t agu2_arf_addr[1] = {
@@ -1959,7 +2023,7 @@ uint32_t agu2_arf_addr[1] = {
 };
 
 uint32_t agu3_arf_data[1] = {
-	0x00000010
+	0x00000030
 };
 
 uint32_t agu3_arf_addr[1] = {
@@ -1967,7 +2031,7 @@ uint32_t agu3_arf_addr[1] = {
 };
 
 uint32_t agu4_arf_data[1] = {
-	0x00000080
+	0x00000030
 };
 
 uint32_t agu4_arf_addr[1] = {
@@ -1975,7 +2039,7 @@ uint32_t agu4_arf_addr[1] = {
 };
 
 uint32_t agu5_arf_data[1] = {
-	0x00000010
+	0x00000030
 };
 
 uint32_t agu5_arf_addr[1] = {
@@ -1983,7 +2047,7 @@ uint32_t agu5_arf_addr[1] = {
 };
 
 uint32_t agu6_arf_data[1] = {
-	0x00000080
+	0x00000030
 };
 
 uint32_t agu6_arf_addr[1] = {
@@ -1991,7 +2055,7 @@ uint32_t agu6_arf_addr[1] = {
 };
 
 uint32_t agu7_arf_data[1] = {
-	0x00000010
+	0x00000030
 };
 
 uint32_t agu7_arf_addr[1] = {
@@ -1999,7 +2063,7 @@ uint32_t agu7_arf_addr[1] = {
 };
 
 uint32_t agu8_arf_data[1] = {
-	0x00000080
+	0x00000030
 };
 
 uint32_t agu8_arf_addr[1] = {
@@ -2007,7 +2071,7 @@ uint32_t agu8_arf_addr[1] = {
 };
 
 uint32_t agu9_arf_data[1] = {
-	0x00000010
+	0x00000030
 };
 
 uint32_t agu9_arf_addr[1] = {
@@ -2015,7 +2079,7 @@ uint32_t agu9_arf_addr[1] = {
 };
 
 uint32_t agu10_arf_data[1] = {
-	0x00000080
+	0x00000030
 };
 
 uint32_t agu10_arf_addr[1] = {
@@ -2023,7 +2087,7 @@ uint32_t agu10_arf_addr[1] = {
 };
 
 uint32_t agu11_arf_data[1] = {
-	0x00000010
+	0x00000030
 };
 
 uint32_t agu11_arf_addr[1] = {
@@ -2031,7 +2095,7 @@ uint32_t agu11_arf_addr[1] = {
 };
 
 uint32_t agu12_arf_data[1] = {
-	0x00000080
+	0x00000030
 };
 
 uint32_t agu12_arf_addr[1] = {
@@ -2039,7 +2103,7 @@ uint32_t agu12_arf_addr[1] = {
 };
 
 uint32_t agu13_arf_data[1] = {
-	0x00000010
+	0x00000030
 };
 
 uint32_t agu13_arf_addr[1] = {
@@ -2047,7 +2111,7 @@ uint32_t agu13_arf_addr[1] = {
 };
 
 uint32_t agu14_arf_data[1] = {
-	0x00000080
+	0x00000030
 };
 
 uint32_t agu14_arf_addr[1] = {
@@ -2055,7 +2119,7 @@ uint32_t agu14_arf_addr[1] = {
 };
 
 uint32_t agu15_arf_data[1] = {
-	0x00000010
+	0x00000030
 };
 
 uint32_t agu15_arf_addr[1] = {

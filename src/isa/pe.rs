@@ -5,7 +5,7 @@ use crate::{
 use std::fmt::Debug;
 
 use super::configuration::{Configuration, Program};
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy)]
 pub struct PERegisters {
     pub reg_op1: u64,
     pub reg_op2: u64,
@@ -17,6 +17,23 @@ pub struct PERegisters {
     pub reg_predicate: bool,
     pub reg_loop_start: u8,
     pub reg_loop_end: u8,
+}
+
+impl Default for PERegisters {
+    fn default() -> Self {
+        Self {
+            reg_op1: 0,
+            reg_op2: 0,
+            reg_res: 0,
+            reg_north_in: 0,
+            reg_south_in: 0,
+            reg_west_in: 0,
+            reg_east_in: 0,
+            reg_predicate: false,
+            reg_loop_start: 0,
+            reg_loop_end: u8::MAX,
+        }
+    }
 }
 
 impl Debug for PERegisters {

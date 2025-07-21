@@ -20,7 +20,7 @@ wire_north_out: None
 wire_south_out: None
 wire_west_out: None
 wire_east_out: None
-Conf: operation: NOP 
+Conf: operation: JUMP [2, 5]
 switch_config: {
     Open -> predicate,
     Open -> south_out,

@@ -136,12 +136,12 @@ wire_dmem_addr = op2
 ## 1.3. Jump dst [loop_start, loop_end]
 ```
 reset reg_predicate
-using inst[49:45] as the destination
+using inst[49:45] as the destination  (jump_dst)
 assign loop_start
 assign loop_end
 ```
-dst is optional, if not used, just move to the next instruction. Jump also sets the loop_start and loop_end.
-Currently dst is unimplemented (if dst != None)
+jump_dst is optional, if not used, just move to the next instruction. Jump also sets the loop_start and loop_end.
+Currently only supports the case where loop_start = jump_dst
 
 # 2. Loop Start/ Loop End
 the instruction "Jump" or some called "SoftReset" set the loop_start and loop_end register.

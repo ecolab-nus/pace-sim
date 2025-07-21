@@ -9,7 +9,7 @@ reg_west_in: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 
 reg_east_in: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 reg_predicate: false
 reg_loop_start: 0
-reg_loop_end: 0
+reg_loop_end: 255
 Sig:
 wire_alu_out: None
 wire_north_in: None

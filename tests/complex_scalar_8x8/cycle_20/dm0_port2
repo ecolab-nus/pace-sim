@@ -1,4 +1,4 @@
-wire_dmem_addr: None,
-wire_dmem_data: None,
+wire_dmem_addr: Some(38),
+wire_dmem_data: 0x00000000000082e8|SIMD[11101000/-64 10000010/-0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ],
 reg_dmem_data: None,
-mode: NOP
+mode: Write16
