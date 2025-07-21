@@ -27,6 +27,10 @@ impl Operation {
         self.op_code.get_type() == OperationType::Control
     }
 
+    pub fn is_jump(&self) -> bool {
+        self.op_code == OpCode::JUMP
+    }
+
     pub fn is_arith_logic(&self) -> bool {
         self.op_code.get_type() == OperationType::ArithLogic
     }

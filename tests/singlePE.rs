@@ -15,7 +15,7 @@ fn test_single_pe() {
     let init_loop = Configuration {
         operation: Operation {
             op_code: OpCode::JUMP,
-            immediate: NO_IMMEDIATE,
+            immediate: Some(1),
             update_res: NO_UPDATE_RES,
             loop_start: Some(1),
             loop_end: Some(5),
@@ -163,6 +163,7 @@ fn test_single_pe() {
         regs: PERegisters::default(),
         signals: PESignals::default(),
         previous_op_is_load: Some(false),
+        previous_op: None,
     };
 
     let mut dmem = DataMemory::new(65536);

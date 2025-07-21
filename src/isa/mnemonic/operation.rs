@@ -1,5 +1,9 @@
 use nom::{
-    branch::alt, bytes::complete::tag, character::complete::{alpha1, digit1, multispace0, space0}, combinator::opt, IResult, Parser
+    IResult, Parser,
+    branch::alt,
+    bytes::complete::tag,
+    character::complete::{alpha1, digit1, multispace0, space0},
+    combinator::opt,
 };
 use std::str::FromStr;
 
@@ -84,6 +88,15 @@ fn parse_jump(input: &str) -> IResult<&str, Operation> {
     assert!(loop_end < 16, "Loop end must be within 4 bits");
     let (input, _) = multispace0(input)?;
     let (input, _) = tag("]")(input)?;
+
+    // if dst is not set, use the loop start as jump dst
+    let dst = if dst.is_none() {
+        Some(loop_start as u16)
+    } else {
+        dst
+    };
+    assert!(dst.is_some(), "Jump destination must be set");
+    assert!(dst.unwrap() < 16, "Jump destination out of bounds");
     Ok((
         input,
         Operation {
@@ -229,7 +242,7 @@ mod tests {
             operation,
             Operation {
                 op_code: OpCode::JUMP,
-                immediate: None,
+                immediate: Some(0),
                 update_res: false,
                 loop_start: Some(0),
                 loop_end: Some(5),

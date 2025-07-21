@@ -8,12 +8,12 @@ impl Operation {
     pub fn to_u64(&self) -> u64 {
         let mut code: u64 = 0;
         if self.op_code == OpCode::JUMP {
-            code.set_field(ConfigField::OpCode, 30);
-            if let Some(_) = self.immediate {
-                unimplemented!("Jump to immediate destination is not implemented");
+            code.set_field(ConfigField::OpCode, self.op_code.to_binary() as u32);
+            if let Some(imm) = self.immediate {
+                assert!(imm < 16, "Jump destination out of bounds");
+                code.set_field(ConfigField::JumpDst, imm as u32);
             } else {
-                // if jump dst not set, use the loop start as jump dst
-                code.set_field(ConfigField::JumpDst, self.loop_start.unwrap() as u32);
+                panic!("Jump destination must be set");
             }
             code.set_field(ConfigField::LoopStart, self.loop_start.unwrap() as u32);
             code.set_field(ConfigField::LoopEnd, self.loop_end.unwrap() as u32);
@@ -37,13 +37,10 @@ impl Operation {
             let loop_start = code.get_field(ConfigField::LoopStart) as u8;
             let loop_end = code.get_field(ConfigField::LoopEnd) as u8;
             let jump_dst = code.get_field(ConfigField::JumpDst) as u8;
-            assert_eq!(
-                jump_dst, loop_start,
-                "Jump destination must be the same as loop start"
-            );
+            assert!(jump_dst < 16, "Jump destination out of bounds");
             return Operation {
                 op_code: op,
-                immediate: None,
+                immediate: Some(jump_dst as u16),
                 update_res: false,
                 loop_start: Some(loop_start),
                 loop_end: Some(loop_end),
@@ -166,7 +163,7 @@ mod tests {
 
         let jump = Operation {
             op_code: OpCode::JUMP,
-            immediate: None,
+            immediate: Some(0),
             update_res: false,
             loop_start: Some(0),
             loop_end: Some(5),

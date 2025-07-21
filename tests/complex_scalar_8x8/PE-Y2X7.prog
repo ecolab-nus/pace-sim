@@ -1,4 +1,4 @@
-operation: JUMP [2, 2]
+operation: JUMP 1 [2, 2]
 switch_config: {
     Open -> predicate,
     Open -> south_out,

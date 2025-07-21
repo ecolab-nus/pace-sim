@@ -1,5 +1,8 @@
 use crate::{
-    isa::{operation::OpCode, value::SIMDValue},
+    isa::{
+        operation::{OpCode, Operation},
+        value::SIMDValue,
+    },
     sim::dmem::DMemInterface,
 };
 use std::fmt::Debug;
@@ -31,7 +34,7 @@ impl Default for PERegisters {
             reg_east_in: 0,
             reg_predicate: false,
             reg_loop_start: 0,
-            reg_loop_end: u8::MAX,
+            reg_loop_end: 15,
         }
     }
 }
@@ -104,6 +107,7 @@ pub struct PE {
     pub pc: usize,
     pub configurations: Vec<Configuration>,
     pub previous_op_is_load: Option<bool>,
+    pub previous_op: Option<Operation>,
 }
 
 impl PE {
@@ -117,6 +121,7 @@ impl PE {
             pc: 0,
             configurations: program.configurations,
             previous_op_is_load: None,
+            previous_op: None,
         }
     }
 
@@ -127,6 +132,7 @@ impl PE {
             pc: 0,
             configurations: program.configurations,
             previous_op_is_load: Some(false),
+            previous_op: None,
         }
     }
 
@@ -220,15 +226,23 @@ impl PE {
     }
 
     pub fn next_conf(&mut self) {
-        if self.pc >= self.regs.reg_loop_end as usize {
+        let current_conf = self.configurations[self.pc].clone();
+        // following the RTL implementation: if current op is jump but previous op is not jump, jump
+        if current_conf.operation.is_jump()
+            && (self.previous_op.is_none()
+                || self.previous_op.is_some() && !self.previous_op.unwrap().is_jump())
+        {
+            self.pc = current_conf.operation.immediate.unwrap() as usize;
+            assert!(self.pc <= 15, "Jump destination out of bounds");
+        } else if self.pc >= self.regs.reg_loop_end as usize
+            || self.pc < self.regs.reg_loop_start as usize
+        {
             self.pc = self.regs.reg_loop_start as usize;
         } else {
             self.pc += 1;
-
-            if self.pc >= self.configurations.len() {
-                panic!("No more configurations");
-            }
         }
+        // keep the previous operation
+        self.previous_op = Some(current_conf.operation.clone());
         // clean all wire signals
         self.signals = PESignals::default();
     }
