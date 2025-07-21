@@ -1,6 +1,6 @@
-PC: 7
+PC: 0
 Reg:
-reg_op1: 0x0060|SIMD[01100000/32 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+reg_op1: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 reg_op2: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 reg_res: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 reg_north_in: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
@@ -8,27 +8,27 @@ reg_south_in: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0
 reg_west_in: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 reg_east_in: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 reg_predicate: false
-reg_loop_start: 7
-reg_loop_end: 7
+reg_loop_start: 0
+reg_loop_end: 0
 Sig:
-wire_alu_out: 0x82d1|SIMD[11010001/-9 10000010/-0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+wire_alu_out: None
 wire_north_in: None
 wire_south_in: None
 wire_west_in: None
-wire_east_in: 0x0060|SIMD[01100000/32 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+wire_east_in: None
 wire_north_out: None
 wire_south_out: None
-wire_west_out: 0x82d1|SIMD[11010001/-9 10000010/-0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+wire_west_out: None
 wire_east_out: None
-Conf: operation: XOR 43690
+Conf: operation: NOP 
 switch_config: {
     Open -> predicate,
     Open -> south_out,
-    ALUOut -> west_out,
+    Open -> west_out,
     Open -> north_out,
     Open -> east_out,
     Open -> alu_op2,
-    EastIn -> alu_op1,
+    Open -> alu_op1,
 };
 input_register_used: {};
 input_register_write: {};

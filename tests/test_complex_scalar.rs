@@ -22,7 +22,7 @@ fn test_complex_scalar_8x8() {
             copy_agu_prog();
             prepare_binprog();
             pack_run_simulation_and_pack();
-            // check_final_dm_content();
+            check_final_dm_content();
         })
         .unwrap();
     handle.join().unwrap();
