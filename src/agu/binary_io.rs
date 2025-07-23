@@ -45,35 +45,35 @@ impl BinaryIO for Instruction {
     }
 }
 impl Instruction {
-    /// Loading from one byte, MSB of the value is the most significant bit
+    /// Loading from one byte, bit 0 is the least significant bit, bit 7 is the most significant bit
     pub fn from_byte(bin: u8) -> Self {
         // bit 0 is inst_type, 0 is LOAD, 1 is STORE
         // bit 1 is inst_mode, 0 is STRIDED, 1 is CONST
         // bit 2-3 is data_width, 00 is B8, 01 is B16, 10 is B64
         // bit 4-7 is the stride.
-        let inst_type = if bin & 0b10000000 == 0 {
+        let inst_type = if bin & 0b00000001 == 0 {
             InstType::LOAD
         } else {
             InstType::STORE
         };
 
-        let inst_mode = if bin & 0b01000000 == 0 {
+        let inst_mode = if bin & 0b00000010 == 0 {
             InstMode::STRIDED
         } else {
             InstMode::CONST
         };
 
-        let data_width = if bin & 0b00110000 == 0 {
+        let data_width = if bin & 0b00001100 == 0 {
             DataWidth::B8
-        } else if bin & 0b00110000 == 0b01000000 {
+        } else if bin & 0b00001100 == 1 {
             DataWidth::B16
-        } else if bin & 0b00110000 == 0b10000000 {
+        } else if bin & 0b00001100 == 2 {
             DataWidth::B64
         } else {
             panic!("Invalid data width");
         };
 
-        let stride = bin & 0b00001111;
+        let stride = (bin & 0b11110000) >> 4;
 
         Self {
             inst_type,
@@ -85,14 +85,14 @@ impl Instruction {
 
     pub fn to_byte(&self) -> u8 {
         let mut bin = 0;
-        // Bit 7: inst_type (0 = LOAD, 1 = STORE)
-        bin |= (self.inst_type as u8) << 7;
-        // Bit 6: inst_mode (0 = STRIDED, 1 = CONST)
-        bin |= (self.inst_mode as u8) << 6;
-        // Bits 5-4: data_width (00 = B8, 01 = B16, 10 = B64)
-        bin |= (self.data_width as u8) << 4;
-        // Bits 3-0: stride (4 bits)
-        bin |= self.stride & 0b00001111;
+        // Bit 0: inst_type (0 = LOAD, 1 = STORE)
+        bin |= (self.inst_type as u8) << 0;
+        // Bit 1: inst_mode (0 = STRIDED, 1 = CONST)
+        bin |= (self.inst_mode as u8) << 1;
+        // Bits 2-3: data_width (00 = B8, 01 = B16, 10 = B64)
+        bin |= (self.data_width as u8) << 2;
+        // Bits 4-7: stride (4 bits)
+        bin |= (self.stride & 0b00001111) << 4;
         bin
     }
 }

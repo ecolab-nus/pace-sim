@@ -1807,7 +1807,7 @@ uint32_t pe63_cm_addr[20] = {
 };
 
 uint32_t agu0_cm_data[1] = {
-	0x00000011
+	0x00000014
 };
 
 uint32_t agu0_cm_addr[1] = {
@@ -1815,7 +1815,7 @@ uint32_t agu0_cm_addr[1] = {
 };
 
 uint32_t agu1_cm_data[1] = {
-	0x00000091
+	0x00000015
 };
 
 uint32_t agu1_cm_addr[1] = {
@@ -1823,7 +1823,7 @@ uint32_t agu1_cm_addr[1] = {
 };
 
 uint32_t agu2_cm_data[1] = {
-	0x00000011
+	0x00000014
 };
 
 uint32_t agu2_cm_addr[1] = {
@@ -1831,7 +1831,7 @@ uint32_t agu2_cm_addr[1] = {
 };
 
 uint32_t agu3_cm_data[1] = {
-	0x00000091
+	0x00000015
 };
 
 uint32_t agu3_cm_addr[1] = {
@@ -1839,7 +1839,7 @@ uint32_t agu3_cm_addr[1] = {
 };
 
 uint32_t agu4_cm_data[1] = {
-	0x00000011
+	0x00000014
 };
 
 uint32_t agu4_cm_addr[1] = {
@@ -1847,7 +1847,7 @@ uint32_t agu4_cm_addr[1] = {
 };
 
 uint32_t agu5_cm_data[1] = {
-	0x00000091
+	0x00000015
 };
 
 uint32_t agu5_cm_addr[1] = {
@@ -1855,7 +1855,7 @@ uint32_t agu5_cm_addr[1] = {
 };
 
 uint32_t agu6_cm_data[1] = {
-	0x00000011
+	0x00000014
 };
 
 uint32_t agu6_cm_addr[1] = {
@@ -1863,7 +1863,7 @@ uint32_t agu6_cm_addr[1] = {
 };
 
 uint32_t agu7_cm_data[1] = {
-	0x00000091
+	0x00000015
 };
 
 uint32_t agu7_cm_addr[1] = {
@@ -1871,7 +1871,7 @@ uint32_t agu7_cm_addr[1] = {
 };
 
 uint32_t agu8_cm_data[1] = {
-	0x00000011
+	0x00000014
 };
 
 uint32_t agu8_cm_addr[1] = {
@@ -1879,7 +1879,7 @@ uint32_t agu8_cm_addr[1] = {
 };
 
 uint32_t agu9_cm_data[1] = {
-	0x00000091
+	0x00000015
 };
 
 uint32_t agu9_cm_addr[1] = {
@@ -1887,7 +1887,7 @@ uint32_t agu9_cm_addr[1] = {
 };
 
 uint32_t agu10_cm_data[1] = {
-	0x00000011
+	0x00000014
 };
 
 uint32_t agu10_cm_addr[1] = {
@@ -1895,7 +1895,7 @@ uint32_t agu10_cm_addr[1] = {
 };
 
 uint32_t agu11_cm_data[1] = {
-	0x00000091
+	0x00000015
 };
 
 uint32_t agu11_cm_addr[1] = {
@@ -1903,7 +1903,7 @@ uint32_t agu11_cm_addr[1] = {
 };
 
 uint32_t agu12_cm_data[1] = {
-	0x00000011
+	0x00000014
 };
 
 uint32_t agu12_cm_addr[1] = {
@@ -1911,7 +1911,7 @@ uint32_t agu12_cm_addr[1] = {
 };
 
 uint32_t agu13_cm_data[1] = {
-	0x00000091
+	0x00000015
 };
 
 uint32_t agu13_cm_addr[1] = {
@@ -1919,7 +1919,7 @@ uint32_t agu13_cm_addr[1] = {
 };
 
 uint32_t agu14_cm_data[1] = {
-	0x00000011
+	0x00000014
 };
 
 uint32_t agu14_cm_addr[1] = {
@@ -1927,7 +1927,7 @@ uint32_t agu14_cm_addr[1] = {
 };
 
 uint32_t agu15_cm_data[1] = {
-	0x00000091
+	0x00000015
 };
 
 uint32_t agu15_cm_addr[1] = {
