@@ -217,11 +217,28 @@ impl DumpHeader for DoubleSidedMemoryGrid {
         }
 
         // dump the AGU max count
-        let mut agu_max_count_data = format!("uint32_t agu_max_count_data[{}] = {{\n", self.agus.len());
-        let mut agu_max_count_addr = format!("uint32_t agu_max_count_addr[{}] = {{\n", self.agus.len());
+        let mut agu_max_count_data =
+            format!("uint32_t agu_max_count_data[{}] = {{\n", self.agus.len());
+        let mut agu_max_count_addr =
+            format!("uint32_t agu_max_count_addr[{}] = {{\n", self.agus.len());
         for (agu_idx, agu) in self.agus.iter().enumerate() {
-            // for each max count
-            let b32 = agu.max_count.clone() as u32;
+            // for each max count, the upper(most significant) 8 bits are used for the loop end (the total number of instructions),
+            // the lower 24 bits are used for the actual max count
+            let b32_lower = agu.max_count.clone() as u32;
+            assert!(
+                b32_lower & 0xff000000 == 0,
+                "The max count cannot be greater than 16777215"
+            );
+            let inst_count = agu.cm.len();
+            assert!(
+                agu.cm.len() == agu.arf.len(),
+                "The number of instructions and ARFs must be the same"
+            );
+            assert!(
+                inst_count <= 256,
+                "The number of instructions is represented within 8 bits"
+            );
+            let b32 = b32_lower | (inst_count as u32) << 24;
             agu_max_count_data.push_str(&format!("\t0x{:08x},\n", b32));
             // dump the AGU max count address
             // calculate the corresponding PE index from AGU index
