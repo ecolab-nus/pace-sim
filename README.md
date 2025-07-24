@@ -159,6 +159,10 @@ For Strided, the value of the corresponding address register is incremented by S
 
 Each PE memory instruction triggers the use of current address and then the incrementation of PC.
 
+### AGU trigger bit
+In the current implementation, the AGU PC incrementation is triggered by the AGU trigger bit (bit 59) in the binary.
+In the current implementation of this framework, only the memory operations will have this bit set. However, in theory, any opeartion could have this bit set. Need to extend the syntax of my assembly for supporting that.
+
 ### AGU stop condition
 AGU has a MAX_COUNT value that is set before execution.
 Each time AGU complete **ALL instructions**, the internal counter is incremented by 1.
@@ -167,7 +171,7 @@ When the internal counter is equal to MAX_COUNT, AGU signals an "END OF EXECUTIO
 **Careful** AGU counter is incremented just after PE memory operation, however, the comparison to MAX_COUNT is done the next memory operation. That allows the entire system to finish the last iteration
 
 
-# Global Address
+<!-- # Global Address
 19-bit address - [18:0], 64 bits per address
 
 Target selection : [18:17] 
@@ -190,4 +194,4 @@ Target selection : [18:17]
 ### DM ([18:17] = "01"): 
 [16] LEFT = 0, RIGHT = 1
 [15:14] which of the 4 DMs at each side (from top to bottom)
-[9:0] DM content, one address per 64 bits word
+[9:0] DM content, one address per 64 bits word -->

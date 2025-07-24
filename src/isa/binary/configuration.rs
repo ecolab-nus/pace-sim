@@ -13,7 +13,7 @@ pub enum ConfigField {
     MsbBit,
     UseFloatBit,
     AluBypassBit,
-    DisablePeRfBit,
+    AguTrigger,
     Immediate,
     LoopEnd,
     LoopStart,
@@ -37,7 +37,7 @@ impl ConfigField {
             ConfigField::MsbBit => (62, 63),            // 1 bit: bit 62
             ConfigField::UseFloatBit => (61, 62),       // 1 bit: bit 61
             ConfigField::AluBypassBit => (60, 61),      // 1 bit: bit 60
-            ConfigField::DisablePeRfBit => (59, 60),    // 1 bit: bit 59
+            ConfigField::AguTrigger => (59, 60),        // 1 bit: bit 59
             ConfigField::Immediate => (35, 51),         // 16 bits: bits 35-50
             ConfigField::LoopEnd => (40, 45),           // 5 bits: bits 40-44
             ConfigField::LoopStart => (35, 40),         // 5 bits: bits 35-39
@@ -46,7 +46,7 @@ impl ConfigField {
             ConfigField::AluUpdateResBit => (25, 26),   // 1 bit: bit 25
             ConfigField::RouterBypass => (21, 25),      // 4 bits: bits 21-24
             ConfigField::RouterSwitchConfig => (0, 21), // 21 bits: bits 0-20
-            ConfigField::JumpDst => (45,50),           // 14 bits: bits 21-34
+            ConfigField::JumpDst => (45, 50),           // 14 bits: bits 21-34
         }
     }
 }
@@ -55,7 +55,7 @@ pub trait ConfigurationField {
     fn get_field(&self, field: ConfigField) -> u32;
     fn set_field(&mut self, field: ConfigField, value: u32);
     fn get_bool_field(&self, field: ConfigField) -> bool;
-    fn set_bool_field(&mut self, field: ConfigField, value: &bool);
+    fn set_bool_field(&mut self, field: ConfigField, value: bool);
 }
 
 impl ConfigurationField for ConfigCode {
@@ -87,13 +87,13 @@ impl ConfigurationField for ConfigCode {
         self.get_field(field) == 1
     }
 
-    fn set_bool_field(&mut self, field: ConfigField, value: &bool) {
+    fn set_bool_field(&mut self, field: ConfigField, value: bool) {
         assert_eq!(
             field.get_range().1 - field.get_range().0,
             1,
             "Field is not a single bit"
         );
-        self.set_field(field, *value as u32);
+        self.set_field(field, value as u32);
     }
 }
 
@@ -147,7 +147,11 @@ impl Configuration {
     pub fn to_u64(&self) -> u64 {
         let router_config: u64 = self.router_config.to_u64();
         let operation: u64 = self.operation.to_u64();
-        router_config | operation
+        let mut code = router_config | operation;
+        if self.operation.is_mem() {
+            code.set_bool_field(ConfigField::AguTrigger, true);
+        }
+        code
     }
 }
 
