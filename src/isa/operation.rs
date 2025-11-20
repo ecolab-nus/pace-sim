@@ -9,6 +9,7 @@ pub const UPDATE_RES: bool = true;
 pub const NO_UPDATE_RES: bool = false;
 pub const NO_IMMEDIATE: Immediate = None;
 
+// If ALU operation, immediate is the immediate value, but if jump operation, immediate is the jump destination (bit 45-50)
 #[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub struct Operation {
     pub op_code: OpCode,
