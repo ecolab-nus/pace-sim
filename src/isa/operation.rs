@@ -293,12 +293,12 @@ impl PE {
     /// If not a memory operation, the dmem_interface will be set to NOP
     /// LOAD operation will have the data back by next cycle into the interface's reg_dmem_data
     /// The next execution (not managed by this function) will assign the reg_dmem_data to wire_alu_out by next cycle, compiler must make sure that next operation does not write to wire_alu_out
-    /// If AGU is enabled, the address is provided by AGU, so PE should not set the address
+    /// If AGU is enabled (active low), the address is provided by AGU, so PE should not set the address
     pub fn prepare_dmem_interface(
         &mut self,
         op: &Operation,
         dmem_interface: &mut DMemInterface,
-        agu_enabled: bool,
+        agu_enabled: bool, // active low
     ) {
         match op.op_code {
             OpCode::LOADB => {
@@ -325,6 +325,7 @@ impl PE {
         }
 
         if op.is_load() {
+            // agu_enabled is active low
             if agu_enabled {
                 if let Some(immediate) = op.immediate {
                     dmem_interface.wire_dmem_addr = Some(immediate as u64);
@@ -334,6 +335,7 @@ impl PE {
             }
             dmem_interface.wire_dmem_data = None;
         } else if op.is_store() {
+            // agu_enabled is active low
             if agu_enabled {
                 if let Some(immediate) = op.immediate {
                     dmem_interface.wire_dmem_addr = Some(immediate as u64);

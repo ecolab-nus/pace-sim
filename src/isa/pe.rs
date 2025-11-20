@@ -161,6 +161,7 @@ impl PE {
     /// Update the dmem_interface for memory operations
     /// Also update the alu_out signal for previous LOAD operation
     /// For the memory PEs, if previous cycle was a load, the current cycle should not be an ALU operation because its output is overridden by the data from dmem
+    /// agu_enabled is active low
     pub fn update_mem(&mut self, dmem_interface: &mut DMemInterface, agu_enabled: bool) {
         let operation = self.configurations[self.pc].operation.clone();
         // prepare the dmem_interface for memory operations
