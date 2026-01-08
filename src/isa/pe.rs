@@ -111,9 +111,6 @@ pub struct PE {
 }
 
 impl PE {
-    pub const AGU_ENABLED: bool = false;
-    pub const AGU_DISABLED: bool = true;
-
     pub fn new(program: Program) -> Self {
         Self {
             regs: PERegisters::default(),
@@ -161,11 +158,14 @@ impl PE {
     /// Update the dmem_interface for memory operations
     /// Also update the alu_out signal for previous LOAD operation
     /// For the memory PEs, if previous cycle was a load, the current cycle should not be an ALU operation because its output is overridden by the data from dmem
-    /// agu_enabled is active low
-    pub fn update_mem(&mut self, dmem_interface: &mut DMemInterface, agu_enabled: bool) {
-        let operation = self.configurations[self.pc].operation.clone();
-        // prepare the dmem_interface for memory operations
-        self.prepare_dmem_interface(&operation, dmem_interface, agu_enabled);
+    /// AGU has already set the mode and address on dmem_interface before this is called.
+    pub fn update_mem(&mut self, dmem_interface: &mut DMemInterface) {
+        let configuration = self.configurations[self.pc].clone();
+        let operation = configuration.operation.clone();
+        let agu_trigger = configuration.agu_trigger;
+
+        // prepare the dmem_interface for memory operations (validates AguTrigger, sets wire_dmem_data for STORE)
+        self.prepare_dmem_interface(&operation, dmem_interface, agu_trigger);
 
         // update the alu_out signal for previous LOAD operation
         if self.is_mem_pe() {
@@ -196,7 +196,7 @@ impl PE {
         Ok(())
     }
 
-    pub fn update_registers(&mut self) -> Result<(), String> {
+    pub fn update_registers(&mut self, dmem_interface: Option<&DMemInterface>) -> Result<(), String> {
         let configuration = self.configurations[self.pc].clone();
         let operation = configuration.operation.clone();
 
@@ -206,12 +206,16 @@ impl PE {
         self.update_router_input_registers(&configuration.router_config)?;
         // Update operands registers
         self.update_operands_registers(&configuration.router_config)?;
-        // Update previous_op_is_load
+        // Update previous_op_is_load based on dmem_interface.mode (set by AGU)
         if self.is_mem_pe() {
-            if operation.is_load() {
-                self.previous_op_is_load = Some(true);
-            } else {
-                self.previous_op_is_load = Some(false);
+            if let Some(dmem) = dmem_interface {
+                // Use the mode set by AGU (and potentially invalidated by AguTrigger) to determine if this was a load
+                if dmem.mode.is_load() {
+                    self.previous_op_is_load = Some(true);
+                } else {
+                    // STORE or NOP: clear previous_op_is_load
+                    self.previous_op_is_load = Some(false);
+                }
             }
         }
         // update the loop registers

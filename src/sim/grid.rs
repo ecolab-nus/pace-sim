@@ -35,7 +35,14 @@ pub enum SimulationError {
 
 impl DoubleSidedMemoryGrid {
     /// Simulate one cycle of the grid
+    /// AGU is required for all memory PEs in the new design.
     pub fn simulate_cycle(&mut self) -> Result<(), SimulationError> {
+        // Verify AGU is enabled (required in new design)
+        assert!(
+            self.is_agu_enabled(),
+            "AGU is required for memory operations in the new design"
+        );
+
         // First, update the ALU outputs of all PEs
         for y in 0..self.shape.y {
             for x in 0..self.shape.x {
@@ -43,84 +50,88 @@ impl DoubleSidedMemoryGrid {
                 pe.update_alu_out();
             }
         }
+
         // for the first column, update the memory interface
         for y in 0..self.shape.y {
-            // the left edge PEs are connected to the data memory y%2
-            if y % 2 == 0 {
-                if self.is_agu_enabled() && self.agus[y].is_enabled() {
-                    let pe = &mut self.pes[y][0];
-                    let mem_interface = &mut self.dmems[y / 2].port1;
-                    pe.update_mem(mem_interface, PE::AGU_ENABLED);
-                    if pe.current_conf().operation.is_mem() {
-                        self.agus[y].update(mem_interface);
-                        self.agus[y]
-                            .next()
-                            .map_err(|_| SimulationError::SimulationEnd)?;
-                    }
-                } else {
-                    let pe = &mut self.pes[y][0];
-                    pe.update_mem(&mut self.dmems[y / 2].port1, PE::AGU_DISABLED);
-                }
+            let agu_idx = y;
+            let mem_idx = y / 2;
+            let port = if y % 2 == 0 { 1 } else { 2 };
+
+            assert!(
+                self.agus[agu_idx].is_enabled(),
+                "AGU {} must be enabled for memory PE at y={}",
+                agu_idx,
+                y
+            );
+
+            let mem_interface = if port == 1 {
+                &mut self.dmems[mem_idx].port1
             } else {
-                if self.is_agu_enabled() && self.agus[y].is_enabled() {
-                    let pe = &mut self.pes[y][0];
-                    let mem_interface = &mut self.dmems[y / 2].port2;
-                    pe.update_mem(mem_interface, PE::AGU_ENABLED);
-                    if pe.current_conf().operation.is_mem() {
-                        self.agus[y].update(mem_interface);
-                        self.agus[y]
-                            .next()
-                            .map_err(|_| SimulationError::SimulationEnd)?;
-                    }
-                } else {
-                    let pe = &mut self.pes[y][0];
-                    pe.update_mem(&mut self.dmems[y / 2].port2, PE::AGU_DISABLED);
-                }
+                &mut self.dmems[mem_idx].port2
+            };
+
+            // Check AguTrigger first - only call AGU.update() if triggered
+            let pe = &mut self.pes[y][0];
+            let agu_trigger = pe.current_conf().agu_trigger;
+
+            if agu_trigger {
+                // 1. AGU sets mode and address on DMemInterface
+                self.agus[agu_idx].update(mem_interface);
             }
-            self.dmems[y / 2].update_interface();
+
+            // 2. PE processes (sets wire_dmem_data for STORE, invalidates mode if no trigger)
+            pe.update_mem(mem_interface);
+
+            // 3. Call AGU.next() based on AguTrigger
+            if agu_trigger {
+                self.agus[agu_idx]
+                    .next()
+                    .map_err(|_| SimulationError::SimulationEnd)?;
+            }
+
+            self.dmems[mem_idx].update_interface();
         }
 
         // for the last column, update the memory interface
         for y in 0..self.shape.y {
-            // the right edge PEs are connected to the data memory y%2 + Y
-            if y % 2 == 0 {
-                if self.is_agu_enabled() && self.agus[y + self.shape.y].is_enabled() {
-                    let pe = &mut self.pes[y][self.shape.x - 1];
-                    let mem_interface = &mut self.dmems[self.shape.y / 2 + y / 2].port1;
-                    pe.update_mem(mem_interface, PE::AGU_ENABLED);
-                    if pe.current_conf().operation.is_mem() {
-                        self.agus[y + self.shape.y].update(mem_interface);
-                        self.agus[y + self.shape.y]
-                            .next()
-                            .map_err(|_| SimulationError::SimulationEnd)?;
-                    }
-                } else {
-                    let pe = &mut self.pes[y][self.shape.x - 1];
-                    pe.update_mem(
-                        &mut self.dmems[self.shape.y / 2 + y / 2].port2,
-                        PE::AGU_DISABLED,
-                    );
-                }
+            let agu_idx = y + self.shape.y;
+            let mem_idx = self.shape.y / 2 + y / 2;
+            let port = if y % 2 == 0 { 1 } else { 2 };
+
+            assert!(
+                self.agus[agu_idx].is_enabled(),
+                "AGU {} must be enabled for memory PE at y={}, x={}",
+                agu_idx,
+                y,
+                self.shape.x - 1
+            );
+
+            let mem_interface = if port == 1 {
+                &mut self.dmems[mem_idx].port1
             } else {
-                if self.is_agu_enabled() && self.agus[y + self.shape.y].is_enabled() {
-                    let pe = &mut self.pes[y][self.shape.x - 1];
-                    let mem_interface = &mut self.dmems[self.shape.y / 2 + y / 2].port2;
-                    pe.update_mem(mem_interface, PE::AGU_ENABLED);
-                    if pe.current_conf().operation.is_mem() {
-                        self.agus[y + self.shape.y].update(mem_interface);
-                        self.agus[y + self.shape.y]
-                            .next()
-                            .map_err(|_| SimulationError::SimulationEnd)?;
-                    }
-                } else {
-                    let pe = &mut self.pes[y][self.shape.x - 1];
-                    pe.update_mem(
-                        &mut self.dmems[self.shape.y / 2 + y / 2].port2,
-                        PE::AGU_DISABLED,
-                    );
-                }
+                &mut self.dmems[mem_idx].port2
+            };
+
+            // Check AguTrigger first - only call AGU.update() if triggered
+            let pe = &mut self.pes[y][self.shape.x - 1];
+            let agu_trigger = pe.current_conf().agu_trigger;
+
+            if agu_trigger {
+                // 1. AGU sets mode and address on DMemInterface
+                self.agus[agu_idx].update(mem_interface);
             }
-            self.dmems[self.shape.y / 2 + y / 2].update_interface();
+
+            // 2. PE processes (sets wire_dmem_data for STORE, invalidates mode if no trigger)
+            pe.update_mem(mem_interface);
+
+            // 3. Call AGU.next() based on AguTrigger, not PE opcode
+            if agu_trigger {
+                self.agus[agu_idx]
+                    .next()
+                    .map_err(|_| SimulationError::SimulationEnd)?;
+            }
+
+            self.dmems[mem_idx].update_interface();
         }
 
         // For each PE, if it is a source of a multi-hop path, update the router outputs all along
@@ -159,10 +170,32 @@ impl DoubleSidedMemoryGrid {
             }
         }
 
+        // Update registers for all PEs, passing dmem_interface for memory PEs
         for y in 0..self.shape.y {
             for x in 0..self.shape.x {
                 let pe = &mut self.pes[y][x];
-                pe.update_registers()
+                let dmem_interface = if x == 0 {
+                    // Left edge memory PE
+                    let mem_idx = y / 2;
+                    let port = if y % 2 == 0 {
+                        &self.dmems[mem_idx].port1
+                    } else {
+                        &self.dmems[mem_idx].port2
+                    };
+                    Some(port)
+                } else if x == self.shape.x - 1 {
+                    // Right edge memory PE
+                    let mem_idx = self.shape.y / 2 + y / 2;
+                    let port = if y % 2 == 0 {
+                        &self.dmems[mem_idx].port1
+                    } else {
+                        &self.dmems[mem_idx].port2
+                    };
+                    Some(port)
+                } else {
+                    None
+                };
+                pe.update_registers(dmem_interface)
                     .map_err(|e| SimulationError::PEUpdateError(PEIdx { x, y }, e))?;
             }
         }
@@ -495,7 +528,14 @@ pub struct SingleSidedMemoryGrid {
 
 impl SingleSidedMemoryGrid {
     /// Simulate one cycle of the grid, with memory only on left edge
+    /// AGU is required for all memory PEs in the new design.
     pub fn simulate_cycle(&mut self) -> Result<(), SimulationError> {
+        // Verify AGU is enabled (required in new design)
+        assert!(
+            !self.agus.is_empty(),
+            "AGU is required for memory operations in the new design"
+        );
+
         // 1) Update ALU for all PEs
         for y in 0..self.shape.y {
             for x in 0..self.shape.x {
@@ -505,8 +545,15 @@ impl SingleSidedMemoryGrid {
 
         // 2) Update memory interface only for leftmost column
         for y in 0..self.shape.y {
-            let pe = &mut self.pes[y][0];
             let mem_idx = y / 2;
+
+            assert!(
+                self.agus.get(y).map_or(false, |agu| agu.is_enabled()),
+                "AGU {} must be enabled for memory PE at y={}",
+                y,
+                y
+            );
+
             let mem = &mut self.dmems[mem_idx];
             let port = if y % 2 == 0 {
                 &mut mem.port1
@@ -514,21 +561,29 @@ impl SingleSidedMemoryGrid {
                 &mut mem.port2
             };
 
-            if self.agus.get(y).map_or(false, |agu| agu.is_enabled()) {
-                pe.update_mem(port, PE::AGU_ENABLED);
-                if pe.current_conf().operation.is_mem() {
-                    self.agus[y].update(port);
-                    self.agus[y]
-                        .next()
-                        .map_err(|_| SimulationError::SimulationEnd)?;
-                }
-            } else {
-                pe.update_mem(port, PE::AGU_DISABLED);
+            // Check AguTrigger first - only call AGU.update() if triggered
+            let pe = &mut self.pes[y][0];
+            let agu_trigger = pe.current_conf().agu_trigger;
+
+            if agu_trigger {
+                // 1. AGU sets mode and address on DMemInterface
+                self.agus[y].update(port);
             }
+
+            // 2. PE processes (sets wire_dmem_data for STORE, invalidates mode if no trigger)
+            pe.update_mem(port);
+
+            // 3. Call AGU.next() based on AguTrigger
+            if agu_trigger {
+                self.agus[y]
+                    .next()
+                    .map_err(|_| SimulationError::SimulationEnd)?;
+            }
+
             mem.update_interface();
         }
 
-        // 3) Router propagation and register update
+        // 3) Router propagation
         for y in 0..self.shape.y {
             for x in 0..self.shape.x {
                 let pe_idx = PEIdx { x, y };
@@ -546,10 +601,23 @@ impl SingleSidedMemoryGrid {
             }
         }
 
+        // 4) Update registers for all PEs, passing dmem_interface for memory PEs
         for y in 0..self.shape.y {
             for x in 0..self.shape.x {
-                self.pes[y][x]
-                    .update_registers()
+                let pe = &mut self.pes[y][x];
+                let dmem_interface = if x == 0 {
+                    // Left edge memory PE
+                    let mem_idx = y / 2;
+                    let port = if y % 2 == 0 {
+                        &self.dmems[mem_idx].port1
+                    } else {
+                        &self.dmems[mem_idx].port2
+                    };
+                    Some(port)
+                } else {
+                    None
+                };
+                pe.update_registers(dmem_interface)
                     .map_err(|e| SimulationError::PEUpdateError(PEIdx { x, y }, e))?;
             }
         }

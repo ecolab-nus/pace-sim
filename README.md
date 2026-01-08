@@ -43,12 +43,21 @@ Configuration (or the instruction) can be divided into the opration and the rout
 
 ## 1. Operation
 
-### 1.1 ALU_OP(!)(imm)
-- ALU_OP the operation code, 
-- ! for marking the update of reg_alu_res, corresponding to operation.update_res in the simulator.
-- imm is Option\<imm\>, if imm is present, is is used as the second operand, corresponding to operation.immediate in the simulator. 
-- All ALU operations are 16 bits operation
-- only 16bits of alu_out is used, no overflow management above 16-bit
+### 1.1 ALU_OP(!)(?)(\<imm\>)
+- ALU_OP: the operation code
+- `!` marks the update of reg_alu_res, corresponding to operation.update_res in the simulator
+- `?` marks the AGU trigger bit (bit 59), which controls whether AGU advances to the next instruction. When present, the AGU will update its state after this cycle.
+- \<imm\>: optional immediate value. If present, it is used as the second operand (operation.immediate in the simulator)
+- All ALU operations are 16-bit operations
+- Only 16 bits of alu_out are used, no overflow management above 16-bit
+
+**Syntax examples:**
+- `ADD` - no flags, no immediate
+- `ADD!` - update_res only
+- `ADD?` - agu_trigger only (triggers AGU advancement)
+- `ADD!?` or `ADD?!` - both update_res and agu_trigger
+- `ADD! 15` - update_res with immediate
+- `ADD!? 15` - both flags with immediate
 
 ```
 op1 = reg_op1;
@@ -112,28 +121,24 @@ else
 wire_alu_out = 0x00
 ```
 
-### 1.2 MEM_OP (imm)
-STOREB(8b) STORE(16b) STORED(64b)
-LOADB(8b) LOAD(16b) LOADD(64b)
-```
-op1 = reg_op1;
-op2 = if (imm.is_some()) imm, else reg_op2
-```
+### 1.2 MEM_OP (\<imm\>) [DEPRECATED]
+**Note:** PE memory opcodes (LOAD/STORE) are deprecated. Memory operations are now controlled by the AGU instruction. The AGU determines whether the operation is LOAD or STORE, and the data width. Use the `?` marker on other operations (like NOP?) to trigger AGU-controlled memory operations.
 
-STORE:
-```
-if config.is_load()
-wire_dmem_data = op1
-wire_dmem_addr = op2
-```
+~~STOREB(8b) STORE(16b) STORED(64b)~~
+~~LOADB(8b) LOAD(16b) LOADD(64b)~~
 
-LOAD:
-```
-if config.is_store()
-wire_dmem_addr = op2
-```
+These opcodes will raise an error during simulation.
 
-## 1.3. Jump dst [loop_start, loop_end]
+## 1.3. JUMP(?)\<dst\> [loop_start, loop_end]
+- `?` optional AGU trigger marker (triggers AGU advancement)
+- `dst` optional jump destination (if not specified, defaults to loop_start)
+- `loop_start`, `loop_end` define the loop boundaries
+
+**Syntax examples:**
+- `JUMP [0, 5]` - jump to 0, loop from 0 to 5
+- `JUMP? [0, 5]` - same with AGU trigger
+- `JUMP 3 [0, 5]` - jump to 3, loop from 0 to 5
+
 ```
 reset reg_predicate
 using inst[49:45] as the destination  (jump_dst)
@@ -160,8 +165,22 @@ For Strided, the value of the corresponding address register is incremented by S
 Each PE memory instruction triggers the use of current address and then the incrementation of PC.
 
 ### AGU trigger bit
-In the current implementation, the AGU PC incrementation is triggered by the AGU trigger bit (bit 59) in the binary.
-In the current implementation of this framework, only the memory operations will have this bit set. However, in theory, any opeartion could have this bit set. Need to extend the syntax of my assembly for supporting that.
+The AGU PC incrementation is controlled by the AGU trigger bit (bit 59) in the binary configuration.
+
+In the new design, memory operations are controlled by the AGU instruction (LOAD/STORE determined by AGU, not PE opcode). The `?` marker in the operation mnemonic sets this bit:
+- `NOP?` - NOP with AGU trigger (AGU advances after this cycle)
+- `ADD?` - ADD with AGU trigger
+- `ADD!?` - ADD with both update_res and AGU trigger
+
+When the AGU trigger bit is HIGH:
+1. The AGU's mode setting (LOAD/STORE) is valid
+2. AGU.next() is called after the cycle, advancing the AGU PC
+3. For STORE operations, the PE sets `wire_dmem_data` from `reg_op1`
+
+When the AGU trigger bit is LOW:
+1. The memory mode is invalidated to NOP
+2. AGU.next() is NOT called
+3. No memory operation occurs
 
 ### AGU stop condition
 AGU has a MAX_COUNT value that is set before execution.

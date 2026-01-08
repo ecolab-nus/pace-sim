@@ -11,6 +11,9 @@ use pace_sim::sim::grid::SimulationError;
 use pace_sim::sim::pace::PACESystem;
 
 const TEST_FOLDER: &str = "tests/complex_scalar_8x8";
+
+/// Test complex scalar operations on an 8x8 grid with AGU-driven memory operations.
+/// PE programs use NOP? to trigger AGU memory operations instead of LOAD/STORE.
 #[test]
 fn test_complex_scalar_8x8() {
     let handle = std::thread::Builder::new()

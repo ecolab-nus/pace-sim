@@ -3,13 +3,14 @@ use nom::{IResult, Parser, character::complete::multispace0, multi::separated_li
 use crate::isa::{
     configuration::{Configuration, Program},
     mnemonic::operation,
+    operation::OpCode,
     router::RouterConfig,
 };
 
 impl Configuration {
     fn parse_configuration(s: &str) -> IResult<&str, Configuration> {
         let (input, _) = multispace0(s)?;
-        let (input, operation) = operation::parse_operation(input)?;
+        let (input, (operation, agu_trigger)) = operation::parse_operation_with_trigger(input)?;
         let (input, _) = multispace0(input)?;
         let (input, router_config) = RouterConfig::parse_router_config(input)?;
         let (input, _) = multispace0(input)?;
@@ -18,6 +19,7 @@ impl Configuration {
             Configuration {
                 operation,
                 router_config,
+                agu_trigger,
             },
         ))
     }
@@ -29,11 +31,46 @@ impl Configuration {
     }
 
     pub fn to_mnemonics(&self) -> String {
+        // Build operation string with agu_trigger marker
+        let op_str = self.operation_to_mnemonics_with_trigger();
         format!(
             "{}\n{}",
-            self.operation.to_mnemonics(),
+            op_str,
             self.router_config.to_mnemonics()
         )
+    }
+
+    /// Convert operation to mnemonics, including the ? marker for agu_trigger
+    fn operation_to_mnemonics_with_trigger(&self) -> String {
+        let op = &self.operation;
+        let mut result = String::new();
+        result.push_str("operation: ");
+        
+        if op.op_code == OpCode::JUMP {
+            result.push_str("JUMP");
+            if self.agu_trigger {
+                result.push('?');
+            }
+            result.push_str(&format!(
+                " [{}, {}]",
+                op.loop_start.unwrap(),
+                op.loop_end.unwrap()
+            ));
+        } else {
+            result.push_str(&op.op_code.to_string());
+            // Add flags: ! for update_res, ? for agu_trigger
+            if op.update_res {
+                result.push('!');
+            }
+            if self.agu_trigger {
+                result.push('?');
+            }
+            result.push(' ');
+            if let Some(imm) = op.immediate {
+                result.push_str(&imm.to_string());
+            }
+        }
+        result
     }
 }
 
@@ -70,6 +107,68 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_parse_configuration_with_agu_trigger() {
+        // Test configuration with agu_trigger marker (?)
+        let input = r"operation: ADD!? 15
+            switch_config: {
+            Open -> predicate,
+            SouthIn -> south_out,
+            WestIn -> west_out,
+            NorthIn -> north_out,
+            EastIn -> east_out,
+            ALURes -> alu_op2,
+            ALUOut -> alu_op1,
+        };
+        input_register_used: {north, south};
+        input_register_write: {east, west};";
+        let configuration = Configuration::from_mnemonics(input).unwrap();
+        assert_eq!(configuration.operation.op_code, OpCode::ADD);
+        assert_eq!(configuration.operation.immediate, Some(15));
+        assert_eq!(configuration.operation.update_res, true);
+        assert_eq!(configuration.agu_trigger, true);
+
+        // Test roundtrip with agu_trigger
+        let mnemonic = configuration.to_mnemonics();
+        let parsed_back = Configuration::from_mnemonics(&mnemonic).unwrap();
+        assert_eq!(parsed_back.agu_trigger, true);
+        assert_eq!(parsed_back.operation.update_res, true);
+        assert_eq!(parsed_back.operation.immediate, Some(15));
+
+        // Test NOP with agu_trigger
+        let input = r"operation: NOP?
+            switch_config: {
+            Open -> predicate,
+            Open -> south_out,
+            Open -> west_out,
+            Open -> north_out,
+            Open -> east_out,
+            Open -> alu_op2,
+            Open -> alu_op1,
+        };
+        input_register_used: {};
+        input_register_write: {};";
+        let configuration = Configuration::from_mnemonics(input).unwrap();
+        assert_eq!(configuration.operation.op_code, OpCode::NOP);
+        assert_eq!(configuration.agu_trigger, true);
+
+        // Test without agu_trigger (should be false)
+        let input = r"operation: ADD! 15
+            switch_config: {
+            Open -> predicate,
+            Open -> south_out,
+            Open -> west_out,
+            Open -> north_out,
+            Open -> east_out,
+            Open -> alu_op2,
+            Open -> alu_op1,
+        };
+        input_register_used: {};
+        input_register_write: {};";
+        let configuration = Configuration::from_mnemonics(input).unwrap();
+        assert_eq!(configuration.agu_trigger, false);
+    }
+
+    #[test]
     fn test_parse_configuration() {
         let input = r"operation: ADD! 15
             switch_config: {
@@ -94,6 +193,7 @@ mod tests {
                 loop_end: None,
             }
         );
+        assert_eq!(configuration.agu_trigger, false);
         let expected_switch_config = RouterSwitchConfig {
             predicate: RouterInDir::Open,
             alu_op1: RouterInDir::ALUOut,

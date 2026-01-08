@@ -101,7 +101,8 @@ impl BinaryIO for Configuration {
     fn to_binary(&self) -> Vec<u8> {
         let router_config: u64 = self.router_config.to_u64();
         let operation: u64 = self.operation.to_u64();
-        let code = router_config | operation;
+        let mut code = router_config | operation;
+        code.set_bool_field(ConfigField::AguTrigger, self.agu_trigger);
         code.to_le_bytes().to_vec()
     }
 
@@ -109,9 +110,11 @@ impl BinaryIO for Configuration {
         let code = u64::from_binary(code)?;
         let router_config = RouterConfig::from_u64(code);
         let operation = Operation::from_u64(code);
+        let agu_trigger = code.get_bool_field(ConfigField::AguTrigger);
         Ok(Self {
             router_config,
             operation,
+            agu_trigger,
         })
     }
 }
@@ -148,9 +151,7 @@ impl Configuration {
         let router_config: u64 = self.router_config.to_u64();
         let operation: u64 = self.operation.to_u64();
         let mut code = router_config | operation;
-        if self.operation.is_mem() {
-            code.set_bool_field(ConfigField::AguTrigger, true);
-        }
+        code.set_bool_field(ConfigField::AguTrigger, self.agu_trigger);
         code
     }
 }

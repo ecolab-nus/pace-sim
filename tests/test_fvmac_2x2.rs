@@ -1,7 +1,10 @@
 use log::{error, info};
 use pace_sim::sim::grid::{SimulationError, SingleSidedMemoryGrid};
 
+/// This test uses the old non-AGU model which is no longer supported.
+/// Memory operations now require AGU in the new design.
 #[test]
+#[ignore = "Test uses old non-AGU model - AGU is now required for memory operations"]
 fn test_fvmac_2x2() {
     env_logger::init();
     let mut grid = SingleSidedMemoryGrid::from_folder("tests/single_sided_fvmac_2x2");

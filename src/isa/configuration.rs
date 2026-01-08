@@ -4,6 +4,7 @@ use crate::isa::{operation::Operation, router::RouterConfig};
 pub struct Configuration {
     pub operation: Operation,
     pub router_config: RouterConfig,
+    pub agu_trigger: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

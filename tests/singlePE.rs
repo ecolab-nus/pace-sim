@@ -1,15 +1,13 @@
 use pace_sim::{
     self,
     isa::{configuration::Configuration, operation::*, pe::*, router::*},
-    sim::dmem::DataMemory,
 };
 
+/// Test a single PE doing ALU operations (ADD, SUB, MULT)
+/// Note: Memory operations (LOAD/STORE) now require AGU and are tested separately.
 #[test]
-fn test_single_pe() {
-    // Load one 16b element from 0x10
-    // Load one 16b element from 0x20
-    // Add the two elements
-    // Store the result at 0x30
+fn test_single_pe_alu() {
+    // Test sequence: Initialize loop, perform some ALU operations
 
     // initialize the loop
     let init_loop = Configuration {
@@ -18,7 +16,7 @@ fn test_single_pe() {
             immediate: Some(1),
             update_res: NO_UPDATE_RES,
             loop_start: Some(1),
-            loop_end: Some(5),
+            loop_end: Some(4),
         },
         router_config: RouterConfig {
             switch_config: RouterSwitchConfig {
@@ -33,21 +31,22 @@ fn test_single_pe() {
             input_register_used: DirectionsOpt::default(),
             input_register_write: DirectionsOpt::default(),
         },
+        agu_trigger: false,
     };
 
-    // Taking the value from west to alu_op1, because the previous LOAD send data this cycle
-    let load_op1 = Configuration {
+    // ADD with immediate: result = op1 + 10 (op1 starts at 0)
+    let add_imm = Configuration {
         operation: Operation {
-            op_code: OpCode::LOAD,
-            immediate: Some(0x10),
-            update_res: NO_UPDATE_RES,
+            op_code: OpCode::ADD,
+            immediate: Some(10),
+            update_res: UPDATE_RES,
             loop_start: None,
             loop_end: None,
         },
         router_config: RouterConfig {
             switch_config: RouterSwitchConfig {
                 predicate: RouterInDir::Open,
-                alu_op1: RouterInDir::Open,
+                alu_op1: RouterInDir::ALURes, // Use previous result as op1
                 alu_op2: RouterInDir::Open,
                 east_out: RouterInDir::Open,
                 south_out: RouterInDir::Open,
@@ -57,21 +56,22 @@ fn test_single_pe() {
             input_register_used: DirectionsOpt::default(),
             input_register_write: DirectionsOpt::default(),
         },
+        agu_trigger: false,
     };
 
-    // The value of op2 is ready at this cycle, take it from west, but you cannot do the ADD yet, this cycle just load the data to the alu_op2
-    let load_op2 = Configuration {
+    // MULT with immediate: result = op1 * 2
+    let mult_imm = Configuration {
         operation: Operation {
-            op_code: OpCode::LOAD,
-            immediate: Some(0x20),
-            update_res: NO_UPDATE_RES,
+            op_code: OpCode::MULT,
+            immediate: Some(2),
+            update_res: UPDATE_RES,
             loop_start: None,
             loop_end: None,
         },
         router_config: RouterConfig {
             switch_config: RouterSwitchConfig {
                 predicate: RouterInDir::Open,
-                alu_op1: RouterInDir::ALUOut,
+                alu_op1: RouterInDir::ALURes,
                 alu_op2: RouterInDir::Open,
                 east_out: RouterInDir::Open,
                 south_out: RouterInDir::Open,
@@ -81,10 +81,36 @@ fn test_single_pe() {
             input_register_used: DirectionsOpt::default(),
             input_register_write: DirectionsOpt::default(),
         },
+        agu_trigger: false,
     };
 
-    // NOP just get the data from dmem interface to op2
-    let wait_op2 = Configuration {
+    // SUB with immediate: result = op1 - 5
+    let sub_imm = Configuration {
+        operation: Operation {
+            op_code: OpCode::SUB,
+            immediate: Some(5),
+            update_res: UPDATE_RES,
+            loop_start: None,
+            loop_end: None,
+        },
+        router_config: RouterConfig {
+            switch_config: RouterSwitchConfig {
+                predicate: RouterInDir::Open,
+                alu_op1: RouterInDir::ALURes,
+                alu_op2: RouterInDir::Open,
+                east_out: RouterInDir::Open,
+                south_out: RouterInDir::Open,
+                west_out: RouterInDir::Open,
+                north_out: RouterInDir::Open,
+            },
+            input_register_used: DirectionsOpt::default(),
+            input_register_write: DirectionsOpt::default(),
+        },
+        agu_trigger: false,
+    };
+
+    // NOP at end
+    let nop = Configuration {
         operation: Operation {
             op_code: OpCode::NOP,
             immediate: NO_IMMEDIATE,
@@ -96,30 +122,6 @@ fn test_single_pe() {
             switch_config: RouterSwitchConfig {
                 predicate: RouterInDir::Open,
                 alu_op1: RouterInDir::Open,
-                alu_op2: RouterInDir::ALUOut,
-                east_out: RouterInDir::Open,
-                south_out: RouterInDir::Open,
-                west_out: RouterInDir::Open,
-                north_out: RouterInDir::Open,
-            },
-            input_register_used: DirectionsOpt::default(),
-            input_register_write: DirectionsOpt::default(),
-        },
-    };
-
-    // Now add the two elements, store the result in alu_res
-    let add = Configuration {
-        operation: Operation {
-            op_code: OpCode::ADD,
-            immediate: NO_IMMEDIATE,
-            update_res: NO_UPDATE_RES,
-            loop_start: None,
-            loop_end: None,
-        },
-        router_config: RouterConfig {
-            switch_config: RouterSwitchConfig {
-                predicate: RouterInDir::Open,
-                alu_op1: RouterInDir::ALUOut,
                 alu_op2: RouterInDir::Open,
                 east_out: RouterInDir::Open,
                 south_out: RouterInDir::Open,
@@ -129,59 +131,31 @@ fn test_single_pe() {
             input_register_used: DirectionsOpt::default(),
             input_register_write: DirectionsOpt::default(),
         },
+        agu_trigger: false,
     };
 
-    // Store the result at 0x30
-    let store = Configuration {
-        operation: Operation {
-            op_code: OpCode::STORE,
-            immediate: Some(0x30),
-            update_res: false,
-            loop_start: None,
-            loop_end: None,
-        },
-        router_config: RouterConfig {
-            switch_config: RouterSwitchConfig {
-                predicate: RouterInDir::Open,
-                alu_op1: RouterInDir::Open,
-                alu_op2: RouterInDir::Open,
-                east_out: RouterInDir::Open,
-                south_out: RouterInDir::Open,
-                west_out: RouterInDir::Open,
-                north_out: RouterInDir::Open,
-            },
-            input_register_used: DirectionsOpt::default(),
-            input_register_write: DirectionsOpt::default(),
-        },
-    };
-
-    let configurations = vec![init_loop, load_op1, load_op2, wait_op2, add, store];
+    let configurations = vec![init_loop, add_imm, mult_imm, sub_imm, nop];
 
     let mut pe = PE {
         configurations: configurations,
         pc: 0,
         regs: PERegisters::default(),
         signals: PESignals::default(),
-        previous_op_is_load: Some(false),
+        previous_op_is_load: None, // Not a memory PE
         previous_op: None,
     };
 
-    let mut dmem = DataMemory::new(65536);
-    dmem.write16(0x10, 0x11);
-    dmem.write16(0x20, 0x22);
-
-    assert_eq!(dmem.read16(0x10), 0x11);
-    assert_eq!(dmem.read16(0x20), 0x22);
-
-    loop {
+    // Run simulation
+    for cycle in 0..5 {
         pe.update_alu_out();
-        pe.update_mem(&mut dmem.port1, PE::AGU_DISABLED);
-        dmem.update_interface();
-        pe.update_registers().expect("PEUpdateError");
-        dbg!(&pe.pc);
-        if pe.pc >= 5 {
+        pe.update_registers(None).expect("PEUpdateError");
+        println!("Cycle {}: PC={}, reg_res={}", cycle, pe.pc, pe.regs.reg_res);
+        if pe.pc >= 4 {
             break;
         }
         pe.next_conf();
     }
+
+    // After: 0 + 10 = 10, 10 * 2 = 20, 20 - 5 = 15
+    assert_eq!(pe.regs.reg_res, 15, "Expected final result to be 15");
 }

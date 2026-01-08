@@ -114,7 +114,7 @@ switch_config: {
 input_register_used: {};
 input_register_write: {};
 
-operation: STORE 0
+operation: NOP?
 switch_config: {
     Open -> predicate,
     Open -> south_out,

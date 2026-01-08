@@ -288,65 +288,39 @@ impl PE {
         }
     }
 
-    /// Execute the memory operation, which means preparing the dmem interface for the correct mode, address and data
-    /// If load operation, the address is set to the immediate or reg_op2
-    /// If store operation, the address is set to the immediate or reg_op2, data is set to reg_op1
-    /// If not a memory operation, the dmem_interface will be set to NOP
-    /// LOAD operation will have the data back by next cycle into the interface's reg_dmem_data
-    /// The next execution (not managed by this function) will assign the reg_dmem_data to wire_alu_out by next cycle, compiler must make sure that next operation does not write to wire_alu_out
-    /// If AGU is enabled (active low), the address is provided by AGU, so PE should not set the address
+    /// Prepare the dmem interface for memory operations based on AGU's mode setting and AguTrigger.
+    /// AGU has already set the mode and address on the dmem_interface.
+    /// This function:
+    /// - Errors if PE opcode is LOAD/STORE (deprecated in new design)
+    /// - If AguTrigger is LOW, invalidates mode to NOP
+    /// - If mode is STORE, sets wire_dmem_data = reg_op1
     pub fn prepare_dmem_interface(
         &mut self,
         op: &Operation,
         dmem_interface: &mut DMemInterface,
-        agu_enabled: bool, // active low
+        agu_trigger: bool,
     ) {
-        match op.op_code {
-            OpCode::LOADB => {
-                dmem_interface.mode = DMemMode::Read8;
-            }
-            OpCode::LOAD => {
-                dmem_interface.mode = DMemMode::Read16;
-            }
-            OpCode::LOADD => {
-                dmem_interface.mode = DMemMode::Read64;
-            }
-            OpCode::STOREB => {
-                dmem_interface.mode = DMemMode::Write8;
-            }
-            OpCode::STORE => {
-                dmem_interface.mode = DMemMode::Write16;
-            }
-            OpCode::STORED => {
-                dmem_interface.mode = DMemMode::Write64;
-            }
-            _ => {
-                dmem_interface.mode = DMemMode::NOP;
-            }
+        // Error on PE LOAD/STORE opcodes - these are deprecated
+        if op.is_load() || op.is_store() {
+            panic!(
+                "PE LOAD/STORE opcodes are deprecated. Memory operations are now controlled by AGU. \
+                Found opcode: {:?}",
+                op.op_code
+            );
         }
 
-        if op.is_load() {
-            // agu_enabled is active low
-            if agu_enabled {
-                if let Some(immediate) = op.immediate {
-                    dmem_interface.wire_dmem_addr = Some(immediate as u64);
-                } else {
-                    dmem_interface.wire_dmem_addr = Some(self.regs.reg_op2);
-                }
-            }
+        // If AguTrigger is LOW, invalidate the mode set by AGU
+        if !agu_trigger {
+            dmem_interface.mode = DMemMode::NOP;
+            dmem_interface.wire_dmem_addr = None;
             dmem_interface.wire_dmem_data = None;
-        } else if op.is_store() {
-            // agu_enabled is active low
-            if agu_enabled {
-                if let Some(immediate) = op.immediate {
-                    dmem_interface.wire_dmem_addr = Some(immediate as u64);
-                } else {
-                    dmem_interface.wire_dmem_addr = Some(self.regs.reg_op2);
-                }
-            }
+            return;
+        }
+
+        // If mode is STORE, set wire_dmem_data from reg_op1
+        if dmem_interface.mode.is_store() {
             dmem_interface.wire_dmem_data = Some(self.regs.reg_op1);
         } else {
-            dmem_interface.wire_dmem_addr = None;
             dmem_interface.wire_dmem_data = None;
         }
     }

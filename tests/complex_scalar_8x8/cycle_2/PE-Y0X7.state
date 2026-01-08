@@ -20,7 +20,7 @@ wire_north_out: None
 wire_south_out: None
 wire_west_out: 0x3ac8|SIMD[11001000/-4 00111010/1.25 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 wire_east_out: None
-Conf: operation: LOAD 0
+Conf: operation: NOP? 
 switch_config: {
     Open -> predicate,
     Open -> south_out,

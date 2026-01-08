@@ -7,9 +7,9 @@ use nom::{
     multi::separated_list0,
 };
 
-use crate::{agu::instruction::DataWidth, sim::dmem::DMemInterface};
+use crate::{agu::instruction::DataWidth, sim::dmem::{DMemInterface, DMemMode}};
 
-use super::instruction::{InstMode, Instruction};
+use super::instruction::{InstMode, InstType, Instruction};
 
 /// AGU state
 #[derive(Debug, Clone, Default)]
@@ -32,7 +32,7 @@ impl AGU {
         self.max_count > 0
     }
 
-    /// Update the given dmem interface with the current instruction (i.e. set the address)
+    /// Update the given dmem interface with the current instruction (i.e. set the address and mode)
     pub fn update(&mut self, dmem: &mut DMemInterface) {
         assert!(
             self.is_enabled(),
@@ -59,6 +59,16 @@ impl AGU {
             }
         }
         dmem.wire_dmem_addr = Some(addr as u64);
+
+        // Set mode directly based on AGU instruction
+        dmem.mode = match (inst.inst_type, inst.data_width) {
+            (InstType::LOAD, DataWidth::B8) => DMemMode::Read8,
+            (InstType::LOAD, DataWidth::B16) => DMemMode::Read16,
+            (InstType::LOAD, DataWidth::B64) => DMemMode::Read64,
+            (InstType::STORE, DataWidth::B8) => DMemMode::Write8,
+            (InstType::STORE, DataWidth::B16) => DMemMode::Write16,
+            (InstType::STORE, DataWidth::B64) => DMemMode::Write64,
+        };
     }
 
     /// Advance the program counter and the count, return AGU stop signal if the max count is reached
