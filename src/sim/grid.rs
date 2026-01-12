@@ -6,7 +6,7 @@ use nom::{
 };
 
 use crate::{
-    agu::agu::AGU,
+    agu::{agu::AGU, instruction::Instruction},
     isa::{
         binary::binary::{BinaryIO, BinaryStringIO},
         configuration::Program,
@@ -43,7 +43,30 @@ impl DoubleSidedMemoryGrid {
             "AGU is required for memory operations in the new design"
         );
 
-        // First, update the ALU outputs of all PEs
+        // Step 1: Receive memory data for LOAD operations (2-cycle latency)
+        // This MUST happen BEFORE update_alu_out() so ALU can use loaded data
+        // Left edge memory PEs
+        for y in 0..self.shape.y {
+            let mem_idx = y / 2;
+            let port = if y % 2 == 0 {
+                &self.dmems[mem_idx].port1
+            } else {
+                &self.dmems[mem_idx].port2
+            };
+            self.pes[y][0].receive_mem_data(port);
+        }
+        // Right edge memory PEs
+        for y in 0..self.shape.y {
+            let mem_idx = self.shape.y / 2 + y / 2;
+            let port = if y % 2 == 0 {
+                &self.dmems[mem_idx].port1
+            } else {
+                &self.dmems[mem_idx].port2
+            };
+            self.pes[y][self.shape.x - 1].receive_mem_data(port);
+        }
+
+        // Step 2: Update the ALU outputs of all PEs (now reg_op1 may have loaded data)
         for y in 0..self.shape.y {
             for x in 0..self.shape.x {
                 let pe = &mut self.pes[y][x];
@@ -51,7 +74,7 @@ impl DoubleSidedMemoryGrid {
             }
         }
 
-        // for the first column, update the memory interface
+        // Step 3: Update memory interface for left column (handle STORE operations)
         for y in 0..self.shape.y {
             let agu_idx = y;
             let mem_idx = y / 2;
@@ -75,14 +98,14 @@ impl DoubleSidedMemoryGrid {
             let agu_trigger = pe.current_conf().agu_trigger;
 
             if agu_trigger {
-                // 1. AGU sets mode and address on DMemInterface
+                // AGU sets mode and address on DMemInterface
                 self.agus[agu_idx].update(mem_interface);
             }
 
-            // 2. PE processes (sets wire_dmem_data for STORE, invalidates mode if no trigger)
+            // PE processes (sets wire_dmem_data for STORE, invalidates mode if no trigger)
             pe.update_mem(mem_interface);
 
-            // 3. Call AGU.next() based on AguTrigger
+            // Call AGU.next() based on AguTrigger
             if agu_trigger {
                 self.agus[agu_idx]
                     .next()
@@ -170,32 +193,32 @@ impl DoubleSidedMemoryGrid {
             }
         }
 
-        // Update registers for all PEs, passing dmem_interface for memory PEs
+        // Update registers for all PEs, passing AGU instruction for memory PEs
         for y in 0..self.shape.y {
             for x in 0..self.shape.x {
                 let pe = &mut self.pes[y][x];
-                let dmem_interface = if x == 0 {
-                    // Left edge memory PE
-                    let mem_idx = y / 2;
-                    let port = if y % 2 == 0 {
-                        &self.dmems[mem_idx].port1
+                // For memory PEs, pass the current AGU instruction if agu_trigger is set
+                let current_agu_cm: Option<&Instruction> = if x == 0 {
+                    // Left edge memory PE - AGU index is y
+                    let agu_idx = y;
+                    if pe.current_conf().agu_trigger {
+                        Some(self.agus[agu_idx].current_instruction())
                     } else {
-                        &self.dmems[mem_idx].port2
-                    };
-                    Some(port)
+                        None
+                    }
                 } else if x == self.shape.x - 1 {
-                    // Right edge memory PE
-                    let mem_idx = self.shape.y / 2 + y / 2;
-                    let port = if y % 2 == 0 {
-                        &self.dmems[mem_idx].port1
+                    // Right edge memory PE - AGU index is y + shape.y
+                    let agu_idx = y + self.shape.y;
+                    if pe.current_conf().agu_trigger {
+                        Some(self.agus[agu_idx].current_instruction())
                     } else {
-                        &self.dmems[mem_idx].port2
-                    };
-                    Some(port)
+                        None
+                    }
                 } else {
+                    // Non-memory PE
                     None
                 };
-                pe.update_registers(dmem_interface)
+                pe.update_registers(current_agu_cm)
                     .map_err(|e| SimulationError::PEUpdateError(PEIdx { x, y }, e))?;
             }
         }
@@ -536,14 +559,26 @@ impl SingleSidedMemoryGrid {
             "AGU is required for memory operations in the new design"
         );
 
-        // 1) Update ALU for all PEs
+        // Step 1: Receive memory data for LOAD operations (2-cycle latency)
+        // This MUST happen BEFORE update_alu_out() so ALU can use loaded data
+        for y in 0..self.shape.y {
+            let mem_idx = y / 2;
+            let port = if y % 2 == 0 {
+                &self.dmems[mem_idx].port1
+            } else {
+                &self.dmems[mem_idx].port2
+            };
+            self.pes[y][0].receive_mem_data(port);
+        }
+
+        // Step 2: Update ALU for all PEs (now reg_op1 may have loaded data)
         for y in 0..self.shape.y {
             for x in 0..self.shape.x {
                 self.pes[y][x].update_alu_out();
             }
         }
 
-        // 2) Update memory interface only for leftmost column
+        // Step 3: Update memory interface only for leftmost column (handle STORE operations)
         for y in 0..self.shape.y {
             let mem_idx = y / 2;
 
@@ -566,14 +601,14 @@ impl SingleSidedMemoryGrid {
             let agu_trigger = pe.current_conf().agu_trigger;
 
             if agu_trigger {
-                // 1. AGU sets mode and address on DMemInterface
+                // AGU sets mode and address on DMemInterface
                 self.agus[y].update(port);
             }
 
-            // 2. PE processes (sets wire_dmem_data for STORE, invalidates mode if no trigger)
+            // PE processes (sets wire_dmem_data for STORE, invalidates mode if no trigger)
             pe.update_mem(port);
 
-            // 3. Call AGU.next() based on AguTrigger
+            // Call AGU.next() based on AguTrigger
             if agu_trigger {
                 self.agus[y]
                     .next()
@@ -601,23 +636,23 @@ impl SingleSidedMemoryGrid {
             }
         }
 
-        // 4) Update registers for all PEs, passing dmem_interface for memory PEs
+        // 4) Update registers for all PEs, passing AGU instruction for memory PEs
         for y in 0..self.shape.y {
             for x in 0..self.shape.x {
                 let pe = &mut self.pes[y][x];
-                let dmem_interface = if x == 0 {
-                    // Left edge memory PE
-                    let mem_idx = y / 2;
-                    let port = if y % 2 == 0 {
-                        &self.dmems[mem_idx].port1
+                // For memory PEs (left edge), pass the current AGU instruction if agu_trigger is set
+                let current_agu_cm: Option<&Instruction> = if x == 0 {
+                    // Left edge memory PE - AGU index is y
+                    if pe.current_conf().agu_trigger {
+                        Some(self.agus[y].current_instruction())
                     } else {
-                        &self.dmems[mem_idx].port2
-                    };
-                    Some(port)
+                        None
+                    }
                 } else {
+                    // Non-memory PE
                     None
                 };
-                pe.update_registers(dmem_interface)
+                pe.update_registers(current_agu_cm)
                     .map_err(|e| SimulationError::PEUpdateError(PEIdx { x, y }, e))?;
             }
         }

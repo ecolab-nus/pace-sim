@@ -1,4 +1,3 @@
-use crate::sim::dmem::{DMemInterface, DMemMode};
 use strum_macros::{Display, EnumString};
 
 use super::{pe::PE, value::SIMDValue};
@@ -285,43 +284,6 @@ impl PE {
                 .signals
                 .wire_alu_out
                 .expect("Updating ALU Res register but the wire signal is not updated");
-        }
-    }
-
-    /// Prepare the dmem interface for memory operations based on AGU's mode setting and AguTrigger.
-    /// AGU has already set the mode and address on the dmem_interface.
-    /// This function:
-    /// - Errors if PE opcode is LOAD/STORE (deprecated in new design)
-    /// - If AguTrigger is LOW, invalidates mode to NOP
-    /// - If mode is STORE, sets wire_dmem_data = reg_op1
-    pub fn prepare_dmem_interface(
-        &mut self,
-        op: &Operation,
-        dmem_interface: &mut DMemInterface,
-        agu_trigger: bool,
-    ) {
-        // Error on PE LOAD/STORE opcodes - these are deprecated
-        if op.is_load() || op.is_store() {
-            panic!(
-                "PE LOAD/STORE opcodes are deprecated. Memory operations are now controlled by AGU. \
-                Found opcode: {:?}",
-                op.op_code
-            );
-        }
-
-        // If AguTrigger is LOW, invalidate the mode set by AGU
-        if !agu_trigger {
-            dmem_interface.mode = DMemMode::NOP;
-            dmem_interface.wire_dmem_addr = None;
-            dmem_interface.wire_dmem_data = None;
-            return;
-        }
-
-        // If mode is STORE, set wire_dmem_data from reg_op1
-        if dmem_interface.mode.is_store() {
-            dmem_interface.wire_dmem_data = Some(self.regs.reg_op1);
-        } else {
-            dmem_interface.wire_dmem_data = None;
         }
     }
 }

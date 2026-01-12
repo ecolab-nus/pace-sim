@@ -32,4 +32,5 @@ switch_config: {
 };
 input_register_used: {};
 input_register_write: {};
-Previous op is load: Some(false)
+AGU CM (1 cycle ago): None
+AGU CM (2 cycles ago): None

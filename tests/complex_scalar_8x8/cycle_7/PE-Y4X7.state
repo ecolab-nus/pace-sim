@@ -1,6 +1,6 @@
 PC: 2
 Reg:
-reg_op1: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+reg_op1: 0x64aa|SIMD[10101010/-0.3125 01100100/48 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 reg_op2: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 reg_res: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 reg_north_in: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
@@ -20,7 +20,7 @@ wire_north_out: None
 wire_south_out: None
 wire_west_out: 0x64aa|SIMD[10101010/-0.3125 01100100/48 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 wire_east_out: None
-Conf: operation: NOP? 
+Conf: operation: ADD? 0
 switch_config: {
     Open -> predicate,
     Open -> south_out,
@@ -32,4 +32,5 @@ switch_config: {
 };
 input_register_used: {};
 input_register_write: {};
-Previous op is load: Some(true)
+AGU CM (1 cycle ago): Some(Instruction { inst_type: LOAD, inst_mode: STRIDED, data_width: B16, stride: 1 })
+AGU CM (2 cycles ago): Some(Instruction { inst_type: LOAD, inst_mode: STRIDED, data_width: B16, stride: 1 })

@@ -11,14 +11,14 @@ reg_predicate: false
 reg_loop_start: 6
 reg_loop_end: 6
 Sig:
-wire_alu_out: 0x2a1c|SIMD[00011100/0.09375 00101010/0.3125 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+wire_alu_out: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 wire_north_in: 0xf303|SIMD[00000011/0 11110011/-176 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 wire_south_in: None
 wire_west_in: None
 wire_east_in: None
 wire_north_out: None
 wire_south_out: None
-wire_west_out: 0x2a1c|SIMD[00011100/0.09375 00101010/0.3125 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+wire_west_out: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 wire_east_out: None
 Conf: operation: DIV 6
 switch_config: {
@@ -32,4 +32,3 @@ switch_config: {
 };
 input_register_used: {};
 input_register_write: {};
-Previous op is load: None

@@ -1,9 +1,10 @@
 use crate::{
+    agu::instruction::{DataWidth, InstType, Instruction},
     isa::{
         operation::{OpCode, Operation},
         value::SIMDValue,
     },
-    sim::dmem::DMemInterface,
+    sim::dmem::{DMemInterface, DMemMode},
 };
 use std::fmt::Debug;
 
@@ -106,7 +107,12 @@ pub struct PE {
     pub signals: PESignals,
     pub pc: usize,
     pub configurations: Vec<Configuration>,
-    pub previous_op_is_load: Option<bool>,
+    /// Whether this PE is connected to memory (edge PE)
+    pub is_mem_pe_flag: bool,
+    /// AGU CM executed in the previous cycle (1 cycle ago). None if AGU was not triggered.
+    pub agu_cm_s: Option<Instruction>,
+    /// AGU CM executed 2 cycles ago. None if AGU was not triggered 2 cycles ago.
+    pub agu_cm_ss: Option<Instruction>,
     pub previous_op: Option<Operation>,
 }
 
@@ -117,7 +123,9 @@ impl PE {
             signals: PESignals::default(),
             pc: 0,
             configurations: program.configurations,
-            previous_op_is_load: None,
+            is_mem_pe_flag: false,
+            agu_cm_s: None,
+            agu_cm_ss: None,
             previous_op: None,
         }
     }
@@ -128,7 +136,9 @@ impl PE {
             signals: PESignals::default(),
             pc: 0,
             configurations: program.configurations,
-            previous_op_is_load: Some(false),
+            is_mem_pe_flag: true,
+            agu_cm_s: None,
+            agu_cm_ss: None,
             previous_op: None,
         }
     }
@@ -138,7 +148,7 @@ impl PE {
     }
 
     pub fn is_mem_pe(&self) -> bool {
-        self.previous_op_is_load.is_some()
+        self.is_mem_pe_flag
     }
 
     pub fn is_initialized(&self) -> bool {
@@ -155,36 +165,69 @@ impl PE {
         }
     }
 
-    /// Update the dmem_interface for memory operations
-    /// Also update the alu_out signal for previous LOAD operation
-    /// For the memory PEs, if previous cycle was a load, the current cycle should not be an ALU operation because its output is overridden by the data from dmem
-    /// AGU has already set the mode and address on dmem_interface before this is called.
+    /// Receive data from memory for LOAD operations that completed 2 cycles ago.
+    /// This MUST be called BEFORE update_alu_out() so that ALU can use the loaded data.
+    ///
+    /// With 2-cycle memory latency:
+    /// - agu_cm_ss contains the AGU instruction from 2 cycles ago
+    /// - If agu_cm_ss was a LOAD, data is now available in reg_dmem_data
+    /// - We update reg_op1 with the data (masked by data width)
+    pub fn receive_mem_data(&mut self, dmem_interface: &DMemInterface) {
+        if !self.is_mem_pe() {
+            return;
+        }
+
+        if let Some(agu_cm_ss) = &self.agu_cm_ss {
+            if agu_cm_ss.inst_type == InstType::LOAD {
+                if dmem_interface.reg_dmem_data.is_none() {
+                    log::error!(
+                        "AGU instruction 2 cycles ago was LOAD, but no data is available. \
+                        Most likely you have setup memories wrong"
+                    );
+                    panic!("Simulator stops. Fatal Error.");
+                }
+                // Extract meaningful bits according to data width
+                let raw_data = dmem_interface.reg_dmem_data.unwrap();
+                let masked_data = match agu_cm_ss.data_width {
+                    DataWidth::B8 => raw_data & 0xFF,
+                    DataWidth::B16 => raw_data & 0xFFFF,
+                    DataWidth::B64 => raw_data,
+                };
+                // Update reg_op1 with the loaded data
+                self.regs.reg_op1 = masked_data;
+            }
+        }
+    }
+
+    /// Update the dmem_interface for STORE operations.
+    /// AGU has already set the mode and address on dmem_interface before this is called (if agu_trigger).
     pub fn update_mem(&mut self, dmem_interface: &mut DMemInterface) {
         let configuration = self.configurations[self.pc].clone();
         let operation = configuration.operation.clone();
         let agu_trigger = configuration.agu_trigger;
 
-        // prepare the dmem_interface for memory operations (validates AguTrigger, sets wire_dmem_data for STORE)
-        self.prepare_dmem_interface(&operation, dmem_interface, agu_trigger);
+        // Error on PE LOAD/STORE opcodes - these are deprecated
+        if operation.is_load() || operation.is_store() {
+            panic!(
+                "PE LOAD/STORE opcodes are deprecated. Memory operations are now controlled by AGU. \
+                Found opcode: {:?}",
+                operation.op_code
+            );
+        }
 
-        // update the alu_out signal for previous LOAD operation
-        if self.is_mem_pe() {
-            if self.previous_op_is_load.unwrap() {
-                if operation.is_arith_logic() || operation.is_simd() {
-                    log::warn!(
-                        "Previous op is LOAD, but you are executing an ALU or SIMD operation. 
-                        Knowing that the data coming back from memory has priority, you ALU result is overritten. 
-                        This is not a critical error, but you should check your memory setup."
-                    );
-                }
-                if dmem_interface.reg_dmem_data.is_none() {
-                    log::error!(
-                        "Previous op is LOAD, but no data is back next cycle. Most likely you have setup memories wrong"
-                    );
-                    panic!("Simulator stops. Fatal Error.");
-                }
-                self.signals.wire_alu_out = dmem_interface.reg_dmem_data;
-            }
+        // If AguTrigger is LOW, invalidate the mode set by AGU
+        if !agu_trigger {
+            dmem_interface.mode = DMemMode::NOP;
+            dmem_interface.wire_dmem_addr = None;
+            dmem_interface.wire_dmem_data = None;
+            return;
+        }
+
+        // If mode is STORE, set wire_dmem_data from reg_op1
+        if dmem_interface.mode.is_store() {
+            dmem_interface.wire_dmem_data = Some(self.regs.reg_op1);
+        } else {
+            dmem_interface.wire_dmem_data = None;
         }
     }
 
@@ -196,9 +239,17 @@ impl PE {
         Ok(())
     }
 
-    pub fn update_registers(&mut self, dmem_interface: Option<&DMemInterface>) -> Result<(), String> {
+    /// Update registers at the end of the cycle.
+    /// For memory PEs, also update the AGU CM pipeline state:
+    /// - `agu_cm_ss` is shifted from `agu_cm_s`
+    /// - `agu_cm_s` is updated based on current agu_trigger and the AGU instruction
+    ///
+    /// # Arguments
+    /// * `current_agu_cm` - The AGU's current CM instruction (if AGU is triggered this cycle)
+    pub fn update_registers(&mut self, current_agu_cm: Option<&Instruction>) -> Result<(), String> {
         let configuration = self.configurations[self.pc].clone();
         let operation = configuration.operation.clone();
+        let agu_trigger = configuration.agu_trigger;
 
         // Update res register considering the update_res flag in the operation
         self.update_res(&operation);
@@ -206,18 +257,22 @@ impl PE {
         self.update_router_input_registers(&configuration.router_config)?;
         // Update operands registers
         self.update_operands_registers(&configuration.router_config)?;
-        // Update previous_op_is_load based on dmem_interface.mode (set by AGU)
+
+        // Update AGU CM pipeline for memory PEs
         if self.is_mem_pe() {
-            if let Some(dmem) = dmem_interface {
-                // Use the mode set by AGU (and potentially invalidated by AguTrigger) to determine if this was a load
-                if dmem.mode.is_load() {
-                    self.previous_op_is_load = Some(true);
-                } else {
-                    // STORE or NOP: clear previous_op_is_load
-                    self.previous_op_is_load = Some(false);
-                }
+            // Shift the pipeline: agu_cm_ss gets the previous agu_cm_s
+            self.agu_cm_ss = self.agu_cm_s;
+
+            // Update agu_cm_s based on current AGU trigger
+            if agu_trigger {
+                // AGU was triggered this cycle, record the current AGU CM
+                self.agu_cm_s = current_agu_cm.copied();
+            } else {
+                // AGU was not triggered, clear agu_cm_s
+                self.agu_cm_s = None;
             }
         }
+
         // update the loop registers
         if operation.is_control() {
             if operation.op_code == OpCode::JUMP {
@@ -263,10 +318,16 @@ impl PE {
             "Conf: {}\n",
             self.configurations[self.pc].to_mnemonics()
         ));
-        result.push_str(&format!(
-            "Previous op is load: {:?}\n",
-            self.previous_op_is_load
-        ));
+        if self.is_mem_pe() {
+            result.push_str(&format!(
+                "AGU CM (1 cycle ago): {:?}\n",
+                self.agu_cm_s
+            ));
+            result.push_str(&format!(
+                "AGU CM (2 cycles ago): {:?}\n",
+                self.agu_cm_ss
+            ));
+        }
         result
     }
 }

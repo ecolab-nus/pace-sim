@@ -141,7 +141,9 @@ fn test_single_pe_alu() {
         pc: 0,
         regs: PERegisters::default(),
         signals: PESignals::default(),
-        previous_op_is_load: None, // Not a memory PE
+        is_mem_pe_flag: false, // Not a memory PE
+        agu_cm_s: None,
+        agu_cm_ss: None,
         previous_op: None,
     };
 

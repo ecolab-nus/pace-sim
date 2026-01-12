@@ -11,7 +11,7 @@ reg_predicate: false
 reg_loop_start: 7
 reg_loop_end: 7
 Sig:
-wire_alu_out: 0x834d|SIMD[01001101/6.5 10000011/-0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+wire_alu_out: 0xaaaa|SIMD[10101010/-0.3125 10101010/-0.3125 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 wire_north_in: None
 wire_south_in: None
 wire_west_in: 0x29d5|SIMD[11010101/-13 00101001/0.28125 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
@@ -19,7 +19,7 @@ wire_east_in: None
 wire_north_out: None
 wire_south_out: None
 wire_west_out: None
-wire_east_out: 0x834d|SIMD[01001101/6.5 10000011/-0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+wire_east_out: 0xaaaa|SIMD[10101010/-0.3125 10101010/-0.3125 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 Conf: operation: XOR 43690
 switch_config: {
     Open -> predicate,
@@ -32,4 +32,3 @@ switch_config: {
 };
 input_register_used: {};
 input_register_write: {};
-Previous op is load: None

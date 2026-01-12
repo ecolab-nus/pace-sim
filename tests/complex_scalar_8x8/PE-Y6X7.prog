@@ -24,7 +24,7 @@ switch_config: {
 input_register_used: {};
 input_register_write: {};
 
-operation: NOP?
+operation: ADD? 0
 switch_config: {
     Open -> predicate,
     Open -> south_out,

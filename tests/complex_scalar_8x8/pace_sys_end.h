@@ -1,5 +1,5 @@
 uint32_t dmem0_data[8]  = {
-	0x81298115,
+	0x8129a9ab,
 	0xaa83aa15,
 	0xaa0b7fee,
 	0xaa7d82f0,
@@ -21,7 +21,7 @@ uint32_t dmem0_addr[8]  = {
 };
 
 uint32_t dmem1_data[8]  = {
-	0xaa5c8277,
+	0xaa5ca9ab,
 	0xa98a81f7,
 	0xa79b7fb8,
 	0xa7b2a9e1,
@@ -43,7 +43,7 @@ uint32_t dmem1_addr[8]  = {
 };
 
 uint32_t dmem2_data[8]  = {
-	0x812b7fb7,
+	0x812ba9ab,
 	0x8213a7fc,
 	0xa9d38107,
 	0x7fda824a,
@@ -65,7 +65,7 @@ uint32_t dmem2_addr[8]  = {
 };
 
 uint32_t dmem3_data[8]  = {
-	0x827482b9,
+	0x8274a9ab,
 	0xa7b98152,
 	0x7fa18217,
 	0xaac4a7ad,
@@ -87,7 +87,7 @@ uint32_t dmem3_addr[8]  = {
 };
 
 uint32_t dmem4_data[8]  = {
-	0xaaedaa36,
+	0xaaeda9ab,
 	0xaa97a9df,
 	0x827c7f86,
 	0x817382fb,
@@ -109,7 +109,7 @@ uint32_t dmem4_addr[8]  = {
 };
 
 uint32_t dmem5_data[8]  = {
-	0x8280824e,
+	0x8280a9ab,
 	0x7ffb7fba,
 	0xaa98aa6c,
 	0xa954a97f,
@@ -131,7 +131,7 @@ uint32_t dmem5_addr[8]  = {
 };
 
 uint32_t dmem6_data[8]  = {
-	0xaa11aa78,
+	0xaa11a9ab,
 	0x82318227,
 	0x81137ff1,
 	0xa9078152,
@@ -153,7 +153,7 @@ uint32_t dmem6_addr[8]  = {
 };
 
 uint32_t dmem7_data[8]  = {
-	0xaa4e7f9c,
+	0xaa4ea9ab,
 	0x817d81da,
 	0xa92da91f,
 	0xa9f6a78a,
@@ -177,7 +177,7 @@ uint32_t dmem7_addr[8]  = {
 uint32_t pe0_cm_data[6] = {
 	0x801fffff, 0x00002217,
 	0x001fffff, 0x08000000,
-	0x001ffffc, 0x08000000
+	0x401ffffc, 0x48000000
 };
 
 uint32_t pe0_cm_addr[6] = {
@@ -318,7 +318,7 @@ uint32_t pe6_cm_addr[8] = {
 uint32_t pe7_cm_data[6] = {
 	0x801fffff, 0x00002217,
 	0x001fffff, 0x08000000,
-	0x001fff3f, 0x08000000
+	0x401fff3f, 0x48000000
 };
 
 uint32_t pe7_cm_addr[6] = {
@@ -585,7 +585,7 @@ uint32_t pe15_cm_addr[20] = {
 uint32_t pe16_cm_data[6] = {
 	0x801fffff, 0x00002217,
 	0x001fffff, 0x08000000,
-	0x001ffffc, 0x08000000
+	0x401ffffc, 0x48000000
 };
 
 uint32_t pe16_cm_addr[6] = {
@@ -726,7 +726,7 @@ uint32_t pe22_cm_addr[8] = {
 uint32_t pe23_cm_data[6] = {
 	0x801fffff, 0x00002217,
 	0x001fffff, 0x08000000,
-	0x001fff3f, 0x08000000
+	0x401fff3f, 0x48000000
 };
 
 uint32_t pe23_cm_addr[6] = {
@@ -993,7 +993,7 @@ uint32_t pe31_cm_addr[20] = {
 uint32_t pe32_cm_data[6] = {
 	0x801fffff, 0x00002217,
 	0x001fffff, 0x08000000,
-	0x001ffffc, 0x08000000
+	0x401ffffc, 0x48000000
 };
 
 uint32_t pe32_cm_addr[6] = {
@@ -1134,7 +1134,7 @@ uint32_t pe38_cm_addr[8] = {
 uint32_t pe39_cm_data[6] = {
 	0x801fffff, 0x00002217,
 	0x001fffff, 0x08000000,
-	0x001fff3f, 0x08000000
+	0x401fff3f, 0x48000000
 };
 
 uint32_t pe39_cm_addr[6] = {
@@ -1401,7 +1401,7 @@ uint32_t pe47_cm_addr[20] = {
 uint32_t pe48_cm_data[6] = {
 	0x801fffff, 0x00002217,
 	0x001fffff, 0x08000000,
-	0x001ffffc, 0x08000000
+	0x401ffffc, 0x48000000
 };
 
 uint32_t pe48_cm_addr[6] = {
@@ -1542,7 +1542,7 @@ uint32_t pe54_cm_addr[8] = {
 uint32_t pe55_cm_data[6] = {
 	0x801fffff, 0x00002217,
 	0x001fffff, 0x08000000,
-	0x001fff3f, 0x08000000
+	0x401fff3f, 0x48000000
 };
 
 uint32_t pe55_cm_addr[6] = {

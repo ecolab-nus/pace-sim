@@ -32,6 +32,11 @@ impl AGU {
         self.max_count > 0
     }
 
+    /// Get the current instruction from the control memory
+    pub fn current_instruction(&self) -> &Instruction {
+        &self.cm[self.pc as usize]
+    }
+
     /// Update the given dmem interface with the current instruction (i.e. set the address and mode)
     pub fn update(&mut self, dmem: &mut DMemInterface) {
         assert!(
