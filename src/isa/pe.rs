@@ -170,7 +170,7 @@ impl PE {
     ///
     /// With 2-cycle memory latency:
     /// - agu_cm_ss contains the AGU instruction from 2 cycles ago
-    /// - If agu_cm_ss was a LOAD, data is now available in reg_dmem_data
+    /// - If agu_cm_ss was a LOAD, data is now available in reg_dmem_data_s (the shifted register)
     /// - We update reg_op1 with the data (masked by data width)
     pub fn receive_mem_data(&mut self, dmem_interface: &DMemInterface) {
         if !self.is_mem_pe() {
@@ -179,15 +179,15 @@ impl PE {
 
         if let Some(agu_cm_ss) = &self.agu_cm_ss {
             if agu_cm_ss.inst_type == InstType::LOAD {
-                if dmem_interface.reg_dmem_data.is_none() {
+                if dmem_interface.reg_dmem_data_s.is_none() {
                     log::error!(
-                        "AGU instruction 2 cycles ago was LOAD, but no data is available. \
+                        "AGU instruction 2 cycles ago was LOAD, but no data is available in reg_dmem_data_s. \
                         Most likely you have setup memories wrong"
                     );
                     panic!("Simulator stops. Fatal Error.");
                 }
-                // Extract meaningful bits according to data width
-                let raw_data = dmem_interface.reg_dmem_data.unwrap();
+                // Extract meaningful bits according to data width from the shifted register
+                let raw_data = dmem_interface.reg_dmem_data_s.unwrap();
                 let masked_data = match agu_cm_ss.data_width {
                     DataWidth::B8 => raw_data & 0xFF,
                     DataWidth::B16 => raw_data & 0xFFFF,

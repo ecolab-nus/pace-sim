@@ -257,24 +257,24 @@ impl PE {
         }
     }
 
-    pub fn execute_jump(&mut self, op: &Operation) {
-        assert!(
-            op.is_control(),
-            "Operation {:?} is not a control operation",
-            op.op_code
-        );
-        assert!(
-            op.op_code == OpCode::JUMP,
-            "Operation {:?} is not a JUMP operation",
-            op.op_code
-        );
-        assert!(
-            op.immediate.is_none(),
-            "Jump to immediate destination is not implemented"
-        );
-        self.regs.reg_loop_start = op.loop_start.unwrap();
-        self.regs.reg_loop_end = op.loop_end.unwrap();
-    }
+    // pub fn execute_jump(&mut self, op: &Operation) {
+    //     assert!(
+    //         op.is_control(),
+    //         "Operation {:?} is not a control operation",
+    //         op.op_code
+    //     );
+    //     assert!(
+    //         op.op_code == OpCode::JUMP,
+    //         "Operation {:?} is not a JUMP operation",
+    //         op.op_code
+    //     );
+    //     assert!(
+    //         op.immediate.is_none(),
+    //         "Jump to immediate destination is not implemented"
+    //     );
+    //     self.regs.reg_loop_start = op.loop_start.unwrap();
+    //     self.regs.reg_loop_end = op.loop_end.unwrap();
+    // }
 
     /// Update the res register, this is the only register updated by ALU
     /// You should call this function by very end if the cycle

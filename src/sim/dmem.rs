@@ -37,7 +37,8 @@ impl Default for DMemMode {
 pub struct DMemInterface {
     pub wire_dmem_addr: Option<u64>,
     pub wire_dmem_data: Option<u64>, // This wire is used to send the data to the dmem
-    pub reg_dmem_data: Option<u64>, // This register is used to capture the loaded data from dmem (at the next cycle of LOAD)
+    pub reg_dmem_data: Option<u64>,  // This register captures the loaded data from dmem (1 cycle after LOAD)
+    pub reg_dmem_data_s: Option<u64>, // Shifted register: holds reg_dmem_data from previous cycle (2 cycles after LOAD)
     pub mode: DMemMode,
 }
 
@@ -61,6 +62,15 @@ impl std::fmt::Display for DMemInterface {
             ))?;
         } else {
             f.write_str("reg_dmem_data: None,\n")?;
+        }
+        if let Some(v) = self.reg_dmem_data_s {
+            f.write_str(&format!(
+                "reg_dmem_data_s: 0x{:016x}|{:?},\n",
+                v,
+                SIMDValue::from(v)
+            ))?;
+        } else {
+            f.write_str("reg_dmem_data_s: None,\n")?;
         }
         f.write_str(&format!("mode: {}", self.mode))?;
         Ok(())
@@ -217,33 +227,69 @@ impl DataMemory {
             | (self.data[addr as usize + 7] as u64) << 56
     }
 
-    fn update_port(&mut self, port: &mut DMemInterface) {
-        match port.mode {
+    fn update_port(&mut self) {
+        // Shift register: reg_dmem_data_s always takes the previous reg_dmem_data value
+        // This implements the 2-cycle memory latency pipeline
+        self.port1.reg_dmem_data_s = self.port1.reg_dmem_data;
+        self.port2.reg_dmem_data_s = self.port2.reg_dmem_data;
+
+        match self.port1.mode {
             DMemMode::Read8 => {
-                port.reg_dmem_data = Some(self.read8(port.wire_dmem_addr.unwrap()) as u64);
+                self.port1.reg_dmem_data = Some(self.read8(self.port1.wire_dmem_addr.unwrap()) as u64);
             }
             DMemMode::Read16 => {
-                port.reg_dmem_data = Some(self.read16(port.wire_dmem_addr.unwrap()) as u64);
+                self.port1.reg_dmem_data = Some(self.read16(self.port1.wire_dmem_addr.unwrap()) as u64);
             }
             DMemMode::Read64 => {
-                port.reg_dmem_data = Some(self.read64(port.wire_dmem_addr.unwrap()));
+                self.port1.reg_dmem_data = Some(self.read64(self.port1.wire_dmem_addr.unwrap()));
             }
             DMemMode::Write8 => {
                 self.write8(
-                    port.wire_dmem_addr.unwrap(),
-                    port.wire_dmem_data.unwrap() as u8,
+                    self.port1.wire_dmem_addr.unwrap(),
+                    self.port1.wire_dmem_data.unwrap() as u8,
                 );
             }
             DMemMode::Write16 => {
                 self.write16(
-                    port.wire_dmem_addr.unwrap(),
-                    port.wire_dmem_data.unwrap() as u16,
+                    self.port1.wire_dmem_addr.unwrap(),
+                    self.port1.wire_dmem_data.unwrap() as u16,
                 );
             }
             DMemMode::Write64 => {
                 self.write64(
-                    port.wire_dmem_addr.unwrap(),
-                    port.wire_dmem_data.unwrap() as u64,
+                    self.port1.wire_dmem_addr.unwrap(),
+                    self.port1.wire_dmem_data.unwrap() as u64,
+                );
+            }
+            DMemMode::NOP => {}
+        }
+
+        match self.port2.mode {
+            DMemMode::Read8 => {
+                self.port2.reg_dmem_data = Some(self.read8(self.port2.wire_dmem_addr.unwrap()) as u64);
+            }
+            DMemMode::Read16 => {
+                self.port2.reg_dmem_data = Some(self.read16(self.port2.wire_dmem_addr.unwrap()) as u64);
+            }
+            DMemMode::Read64 => {
+                self.port2.reg_dmem_data = Some(self.read64(self.port2.wire_dmem_addr.unwrap()));
+            }
+            DMemMode::Write8 => {
+                self.write8(
+                    self.port2.wire_dmem_addr.unwrap(),
+                    self.port2.wire_dmem_data.unwrap() as u8,
+                );
+            }
+            DMemMode::Write16 => {
+                self.write16(
+                    self.port2.wire_dmem_addr.unwrap(),
+                    self.port2.wire_dmem_data.unwrap() as u16,
+                );
+            }
+            DMemMode::Write64 => {
+                self.write64(
+                    self.port2.wire_dmem_addr.unwrap(),
+                    self.port2.wire_dmem_data.unwrap() as u64,
                 );
             }
             DMemMode::NOP => {}
@@ -257,12 +303,7 @@ impl DataMemory {
                 && self.port1.wire_dmem_addr == self.port2.wire_dmem_addr),
             "Two ports of the data memory cannot be in store mode and have the same address"
         );
-        let mut port1 = std::mem::take(&mut self.port1);
-        let mut port2 = std::mem::take(&mut self.port2);
-        self.update_port(&mut port1);
-        self.update_port(&mut port2);
-        self.port1 = port1;
-        self.port2 = port2;
+        self.update_port();
     }
 
     pub fn dump(&self) -> String {

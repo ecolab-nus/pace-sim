@@ -112,7 +112,11 @@ impl DoubleSidedMemoryGrid {
                     .map_err(|_| SimulationError::SimulationEnd)?;
             }
 
-            self.dmems[mem_idx].update_interface();
+            // Only call update_interface() after both ports have been set up
+            // (port 1 is processed when y is even, port 2 when y is odd)
+            if y % 2 == 1 {
+                self.dmems[mem_idx].update_interface();
+            }
         }
 
         // for the last column, update the memory interface
@@ -154,7 +158,11 @@ impl DoubleSidedMemoryGrid {
                     .map_err(|_| SimulationError::SimulationEnd)?;
             }
 
-            self.dmems[mem_idx].update_interface();
+            // Only call update_interface() after both ports have been set up
+            // (port 1 is processed when y is even, port 2 when y is odd)
+            if y % 2 == 1 {
+                self.dmems[mem_idx].update_interface();
+            }
         }
 
         // For each PE, if it is a source of a multi-hop path, update the router outputs all along
@@ -615,7 +623,11 @@ impl SingleSidedMemoryGrid {
                     .map_err(|_| SimulationError::SimulationEnd)?;
             }
 
-            mem.update_interface();
+            // Only call update_interface() after both ports have been set up
+            // (port 1 is processed when y is even, port 2 when y is odd)
+            if y % 2 == 1 {
+                self.dmems[mem_idx].update_interface();
+            }
         }
 
         // 3) Router propagation
