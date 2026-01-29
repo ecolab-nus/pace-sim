@@ -93,8 +93,10 @@ impl DataMemory {
         }
     }
 
-    /// Load the data memory content from binary string, each line is 64 bits from MSB to LSB
-    /// This allow you to create an empty DM and use this function to load the content from a binary string
+    /// Load the data memory content from binary string.
+    /// Each line is 8 bytes (64 bits). Within each byte, bits are MSB to LSB (leftmost is bit 7).
+    /// Bytes are in little-endian order: the first 8 characters represent the least significant byte of the u64.
+    /// This allows you to create an empty DM and use this function to load the content from a binary string.
     pub fn load_binary_str(&mut self, s: &str) {
         let lines = s.lines();
         // remove spaces
@@ -121,7 +123,9 @@ impl DataMemory {
         }
     }
 
-    /// Load the data memory content from binary string, each line is 64 bits from MSB to LSB
+    /// Load the data memory content from binary string.
+    /// Each line is 8 bytes (64 bits). Within each byte, bits are MSB to LSB (leftmost is bit 7).
+    /// Bytes are in little-endian order: the first 8 characters represent the least significant byte of the u64.
     pub fn from_binary_str(s: &str) -> Self {
         let lines = s.lines();
         // check the format
@@ -146,10 +150,11 @@ impl DataMemory {
         dmem
     }
 
-    /// Convert the data memory to a binary string
-    /// The file format is :
-    /// 64 bits per line, one bit per character
-    /// From left to right is from most significant bit to least significant bit
+    /// Convert the data memory to a binary string.
+    /// The file format is:
+    /// - 64 bits (8 bytes) per line, one bit per character
+    /// - Within each byte: MSB to LSB (leftmost character is bit 7)
+    /// - Bytes are in little-endian order: first 8 characters = least significant byte of the u64
     pub fn to_binary_str(&self) -> String {
         assert_eq!(
             self.data.len() % 8,
@@ -215,7 +220,7 @@ impl DataMemory {
         self.data[addr as usize + 7] = (data >> 56) as u8;
     }
 
-    /// Read 64 bits in big endian
+    /// Read 64 bits in little endian
     pub fn read64(&self, addr: u64) -> u64 {
         self.data[addr as usize] as u64
             | (self.data[addr as usize + 1] as u64) << 8

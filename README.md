@@ -46,23 +46,24 @@ The DM files use a text-based binary representation:
 
 - **64 bits per line**, represented as ASCII characters ('0' and '1')
 - **One character per bit** (each line is exactly 64 characters)
-- **Bit ordering**: Left to right = Most Significant Bit (MSB) to Least Significant Bit (LSB)
+- **Bit ordering within each byte**: MSB to LSB (leftmost character is bit 7, rightmost is bit 0)
+- **Byte ordering**: Little-endian (first 8 characters = least significant byte of the u64)
 - **Spaces are allowed** and are stripped during parsing
 
 **Memory mapping:**
 
-Each 64-character line represents 8 bytes of memory. The line is divided into 8 chunks of 8 bits:
+Each 64-character line represents 8 bytes of memory (one u64). The line is divided into 8 chunks of 8 bits:
 
-| Characters | Byte offset within line |
-|------------|-------------------------|
-| 0-7        | 0                       |
-| 8-15       | 1                       |
-| 16-23      | 2                       |
-| 24-31      | 3                       |
-| 32-39      | 4                       |
-| 40-47      | 5                       |
-| 48-55      | 6                       |
-| 56-63      | 7                       |
+| Characters | Byte offset | Significance in u64 |
+|------------|-------------|---------------------|
+| 0-7        | 0           | Least significant   |
+| 8-15       | 1           |                     |
+| 16-23      | 2           |                     |
+| 24-31      | 3           |                     |
+| 32-39      | 4           |                     |
+| 40-47      | 5           |                     |
+| 48-55      | 6           |                     |
+| 56-63      | 7           | Most significant    |
 
 **Example:**
 
@@ -70,18 +71,20 @@ Each 64-character line represents 8 bytes of memory. The line is divided into 8 
 1011010111010100010011101011110011111110100100101111110000000001
 ```
 
-This line breaks down into 8 bytes:
+This line breaks down into 8 bytes (little-endian order):
 
-| Bits (MSB→LSB) | Hex   |
-|----------------|-------|
-| `10110101`     | 0xB5  |
-| `11010100`     | 0xD4  |
-| `01001110`     | 0x4E  |
-| `10111100`     | 0xBC  |
-| `11111110`     | 0xFE  |
-| `10010010`     | 0x92  |
-| `11111100`     | 0xFC  |
-| `00000001`     | 0x01  |
+| Bits (MSB→LSB) | Hex   | u64 bits |
+|----------------|-------|----------|
+| `10110101`     | 0xB5  | 7:0      |
+| `11010100`     | 0xD4  | 15:8     |
+| `01001110`     | 0x4E  | 23:16    |
+| `10111100`     | 0xBC  | 31:24    |
+| `11111110`     | 0xFE  | 39:32    |
+| `10010010`     | 0x92  | 47:40    |
+| `11111100`     | 0xFC  | 55:48    |
+| `00000001`     | 0x01  | 63:56    |
+
+When read as a u64: `0x01FC92FEBC4ED4B5`
 
 # ISA
 Configuration (or the instruction) can be divided into the opration and the routing configuration :**Configuration** = **Operation** + **RoutingConfig**. You find the semantics of ISA in **src/isa/ **. You find the syntax of ISA in mnemonic in **src/isa/mnemonic/ **, you find the syntax of ISA in binary in **src/isa/binary/**.
