@@ -20,7 +20,7 @@ wire_north_out: None
 wire_south_out: None
 wire_west_out: None
 wire_east_out: None
-Conf: operation: NOP 
+Conf: operation: NOP? 
 switch_config: {
     Open -> predicate,
     Open -> south_out,
@@ -32,5 +32,5 @@ switch_config: {
 };
 input_register_used: {};
 input_register_write: {};
-AGU CM (1 cycle ago): None
+AGU CM (1 cycle ago): Some(Instruction { inst_type: LOAD, inst_mode: STRIDED, data_width: B16, stride: 1 })
 AGU CM (2 cycles ago): None

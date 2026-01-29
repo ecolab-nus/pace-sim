@@ -1,4 +1,9 @@
-use nom::{IResult, Parser, character::complete::multispace0, multi::separated_list0};
+use nom::{
+    IResult, Parser,
+    character::complete::multispace0,
+    bytes::complete::tag,
+    multi::separated_list0,
+};
 
 use crate::isa::{
     configuration::{Configuration, Program},
@@ -7,13 +12,56 @@ use crate::isa::{
     router::RouterConfig,
 };
 
+/// Parse a comment line starting with "//" (with optional leading whitespace)
+fn parse_comment(s: &str) -> IResult<&str, ()> {
+    use nom::bytes::complete::take_till;
+    
+    let (input, _) = multispace0(s)?;
+    let (input, _) = tag("//")(input)?;
+    // Consume everything until end of line or end of input
+    let (input, _) = take_till(|c| c == '\n' || c == '\r')(input)?;
+    // Optionally consume the newline character(s)
+    let input = if input.starts_with("\r\n") {
+        &input[2..]
+    } else if input.starts_with('\n') {
+        &input[1..]
+    } else {
+        input
+    };
+    Ok((input, ()))
+}
+
+/// Skip whitespace and comments (lines starting with "//")
+/// This handles multiple consecutive comments and whitespace
+fn skip_whitespace_and_comments(s: &str) -> IResult<&str, ()> {
+    let mut input = s;
+    loop {
+        // Skip whitespace
+        let (new_input, _) = multispace0(input)?;
+        
+        // Try to parse a comment
+        match parse_comment(new_input) {
+            Ok((remaining, _)) => {
+                // Comment was parsed, continue loop
+                input = remaining;
+            }
+            Err(_) => {
+                // No comment found, we're done
+                input = new_input;
+                break;
+            }
+        }
+    }
+    Ok((input, ()))
+}
+
 impl Configuration {
     fn parse_configuration(s: &str) -> IResult<&str, Configuration> {
-        let (input, _) = multispace0(s)?;
+        let (input, _) = skip_whitespace_and_comments(s)?;
         let (input, (operation, agu_trigger)) = operation::parse_operation_with_trigger(input)?;
-        let (input, _) = multispace0(input)?;
+        let (input, _) = skip_whitespace_and_comments(input)?;
         let (input, router_config) = RouterConfig::parse_router_config(input)?;
-        let (input, _) = multispace0(input)?;
+        let (input, _) = skip_whitespace_and_comments(input)?;
         Ok((
             input,
             Configuration {
@@ -76,9 +124,9 @@ impl Configuration {
 
 impl Program {
     fn parse_program(s: &str) -> IResult<&str, Program> {
-        let (input, _) = multispace0(s)?;
+        let (input, _) = skip_whitespace_and_comments(s)?;
         let (input, configurations) =
-            separated_list0(multispace0, Configuration::parse_configuration).parse(input)?;
+            separated_list0(skip_whitespace_and_comments, Configuration::parse_configuration).parse(input)?;
         Ok((input, Program { configurations }))
     }
 
@@ -323,5 +371,44 @@ input_register_write: {};";
         let program = Program::from_mnemonics(input).unwrap();
         let mnemonic = program.to_mnemonics();
         assert_eq!(mnemonic, input);
+    }
+
+    #[test]
+    fn test_parse_program_with_comments() {
+        // Test that comments (lines starting with "//") are ignored
+        let input = r"// This is a comment
+operation: NOP
+// Another comment
+switch_config: {
+    Open -> predicate,
+    Open -> south_out,
+    Open -> west_out,
+    Open -> north_out,
+    Open -> east_out,
+    Open -> alu_op2,
+    Open -> alu_op1,
+};
+input_register_used: {};
+input_register_write: {};
+
+// Comment between configurations
+operation: ADD! 15
+switch_config: {
+    Open -> predicate,
+    SouthIn -> south_out,
+    WestIn -> west_out,
+    NorthIn -> north_out,
+    EastIn -> east_out,
+    ALURes -> alu_op2,
+    ALUOut -> alu_op1,
+};
+input_register_used: {north, south};
+input_register_write: {east, west};
+// Trailing comment";
+        let program = Program::from_mnemonics(input).unwrap();
+        assert_eq!(program.configurations.len(), 2);
+        assert_eq!(program.configurations[0].operation.op_code, OpCode::NOP);
+        assert_eq!(program.configurations[1].operation.op_code, OpCode::ADD);
+        assert_eq!(program.configurations[1].operation.immediate, Some(15));
     }
 }

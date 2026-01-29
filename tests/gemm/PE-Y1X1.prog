@@ -30,39 +30,41 @@ switch_config: {
     Open -> south_out,
     Open -> west_out,
     Open -> north_out,
+    WestIn -> east_out,
+    Open -> alu_op2,
+    Open -> alu_op1,
+};
+input_register_used: {};
+input_register_write: {};
+
+operation: NOP
+switch_config: {
+    Open -> predicate,
+    Open -> south_out,
+    Open -> west_out,
+    Open -> north_out,
+    WestIn -> east_out,
+    Open -> alu_op2,
+    Open -> alu_op1,
+};
+input_register_used: {};
+input_register_write: {};
+
+// send the weight to the ALU
+operation: NOP
+switch_config: {
+    Open -> predicate,
+    Open -> south_out,
+    Open -> west_out,
+    Open -> north_out,
     Open -> east_out,
     Open -> alu_op2,
-    Open -> alu_op1,
+    WestIn -> alu_op1,
 };
 input_register_used: {};
 input_register_write: {};
 
-operation: NOP
-switch_config: {
-    Open -> predicate,
-    Open -> south_out,
-    Open -> west_out,
-    Open -> north_out,
-    WestIn -> east_out,
-    Open -> alu_op2,
-    Open -> alu_op1,
-};
-input_register_used: {};
-input_register_write: {};
-
-operation: NOP
-switch_config: {
-    Open -> predicate,
-    Open -> south_out,
-    Open -> west_out,
-    Open -> north_out,
-    WestIn -> east_out,
-    Open -> alu_op2,
-    Open -> alu_op1,
-};
-input_register_used: {};
-input_register_write: {};
-
+// ADD 0, just to store the weight to alu_res
 operation: ADD! 0
 switch_config: {
     Open -> predicate,
@@ -70,13 +72,14 @@ switch_config: {
     Open -> west_out,
     Open -> north_out,
     Open -> east_out,
-    WestIn-> alu_op2,
+    Open -> alu_op2,
     Open -> alu_op1,
 };
 input_register_used: {};
 input_register_write: {};
 
-operation: JUMP? [7, 8]
+// One extra cycle of waiting because this is row 1
+operation: NOP
 switch_config: {
     Open -> predicate,
     Open -> south_out,
@@ -84,11 +87,26 @@ switch_config: {
     Open -> north_out,
     WestIn -> east_out,
     Open -> alu_op2,
-    WestIn -> alu_op1,
+    Open -> alu_op1,
 };
 input_register_used: {};
 input_register_write: {};
 
+// ALU Res = weight, WestIn = activation
+operation: JUMP [8, 9]
+switch_config: {
+    Open -> predicate,
+    Open -> south_out,
+    Open -> west_out,
+    Open -> north_out,
+    WestIn -> east_out,
+    WestIn -> alu_op2,
+    ALURes -> alu_op1,
+};
+input_register_used: {};
+input_register_write: {};
+
+// Multiply weight x activation, prepare accumulation from top and the result of MULT
 operation: MULT
 switch_config: {
     Open -> predicate,
@@ -97,20 +115,21 @@ switch_config: {
     Open -> north_out,
     Open -> east_out,
     ALUOut -> alu_op2,
-    ALURes -> alu_op1,
+    NorthIn -> alu_op1,
 };
 input_register_used: {};
 input_register_write: {};
 
-operation: ADD!
+// Send the accumulation down, prepare the next activation to op2 and sent to next (east)
+operation: ADD
 switch_config: {
     Open -> predicate,
-    Open -> south_out,
+    ALUOut -> south_out,
     Open -> west_out,
     Open -> north_out,
     WestIn -> east_out,
-    Open -> alu_op2,
-    WestIn -> alu_op1,
+    WestIn -> alu_op2,
+    ALURes -> alu_op1,
 };
 input_register_used: {};
 input_register_write: {};
