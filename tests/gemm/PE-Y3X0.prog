@@ -1,4 +1,4 @@
-operation: JUMP? 1 [2, 2]
+operation: NOP?
 switch_config: {
     Open -> predicate,
     Open -> south_out,
@@ -11,7 +11,7 @@ switch_config: {
 input_register_used: {};
 input_register_write: {};
 
-operation: NOP?
+operation: JUMP? [2, 2]
 switch_config: {
     Open -> predicate,
     Open -> south_out,

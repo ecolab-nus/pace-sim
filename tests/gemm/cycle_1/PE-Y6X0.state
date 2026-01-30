@@ -8,8 +8,8 @@ reg_south_in: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0
 reg_west_in: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 reg_east_in: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 reg_predicate: false
-reg_loop_start: 1
-reg_loop_end: 1
+reg_loop_start: 0
+reg_loop_end: 15
 Sig:
 wire_alu_out: None
 wire_north_in: None
@@ -33,4 +33,4 @@ switch_config: {
 input_register_used: {};
 input_register_write: {};
 AGU CM (1 cycle ago): None
-AGU CM (2 cycles ago): Some(Instruction { inst_type: LOAD, inst_mode: STRIDED, data_width: B16, stride: 1 })
+AGU CM (2 cycles ago): None

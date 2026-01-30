@@ -100,14 +100,14 @@ switch_config: {
     Open -> west_out,
     Open -> north_out,
     Open -> east_out,
-    ALUOut -> alu_op2,
-    Open -> alu_op1,
+    Open -> alu_op2,
+    ALUOut -> alu_op1,
 };
 input_register_used: {};
 input_register_write: {};
 
 // Send the accumulation down, prepare the next activation to op2 and sent to next (east)
-operation: ADD
+operation: ADD 0
 switch_config: {
     Open -> predicate,
     ALUOut -> south_out,

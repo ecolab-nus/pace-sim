@@ -12,7 +12,7 @@ reg_loop_start: 1
 reg_loop_end: 1
 Sig:
 wire_alu_out: None
-wire_north_in: None
+wire_north_in: 0x020d|SIMD[00001101/0.025390625 00000010/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 wire_south_in: None
 wire_west_in: None
 wire_east_in: None

@@ -1,3 +1,1 @@
-    // for (dm_idx, dm_content) in dm_contents.iter().enumerate() {
-    //     println!("\nDM{} content:\n{}", dm_idx, dm_content);
-    // }
+u_out: 0x0003|SIMD[0

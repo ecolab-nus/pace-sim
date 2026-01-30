@@ -81,36 +81,36 @@ fn matmul_weight_transposed(weight: &[u16], activation: &[u16], m: usize, k: usi
 #[test]
 #[ignore] // Run with: cargo test --test test_gemm generate_dm_files -- --ignored --nocapture
 fn generate_dm_files() {
-    // PE array: 3x4 (pe_x=3, pe_y=4)
-    // - pe_y = 4 is K (reduction dimension, number of sections)
+    // PE array: 3x5 (pe_x=3, pe_y=5)
+    // - pe_y = 5 is K (reduction dimension, number of sections)
     // - pe_x = 3 is M (output dimension, number of weights per section)
     //
-    // Weight matrix (K x M = 4x3 = 12 values): one row per section, pe_x weights per row
-    // Activation matrix (K x N = 4x16 = 64 values): one row per section, 16 activations per row
+    // Weight matrix (K x M = 5x3 = 15 values): one row per section, pe_x weights per row
+    // Activation matrix (K x N = 5x4 = 20 values): one row per section, 4 activations per row
     //
-    // Weight (4x3):       Activation (4x16):
-    // [ 0,  1,  2]        [ 0,  1,  2, ..., 15]
-    // [ 3,  4,  5]        [16, 17, 18, ..., 31]
-    // [ 6,  7,  8]        [32, 33, 34, ..., 47]
-    // [ 9, 10, 11]        [48, 49, 50, ..., 63]
+    // Weight (5x3):       Activation (5x4):
+    // [ 1,  2,  3]        [ 1,  2,  3,  4]
+    // [ 4,  5,  6]        [ 5,  6,  7,  8]
+    // [ 7,  8,  9]        [ 9, 10, 11, 12]
+    // [10, 11, 12]        [13, 14, 15, 16]
+    // [13, 14, 15]        [17, 18, 19, 20]
     //
-    // Output = Weight^T × Activation (M x N = 3x16)
+    // Output = Weight^T × Activation (M x N = 3x4)
     // output[m][n] = sum over k: weight[k][m] × activation[k][n]
     //
-    // DM packing (sections_per_dm=2, num_dms=2):
-    // DM0:
-    //   Section 0 (y=0): weights[0..3] + 0 padding + activations[0..16]
-    //   Section 1 (y=1): weights[3..6] + 1 padding + activations[16..32]
-    // DM1:
-    //   Section 0 (y=2): weights[6..9] + 2 padding + activations[32..48]
-    //   Section 1 (y=3): weights[9..12] + 3 padding + activations[48..64]
+    // DM packing (sections_per_dm=2, num_dms=3):
+    // DM0: Section 0 (y=0): weights[1,2,3] + activations[1,2,3,4]
+    //      Section 1 (y=1): weights[4,5,6] + activations[5,6,7,8]
+    // DM1: Section 0 (y=2): weights[7,8,9] + activations[9,10,11,12]
+    //      Section 1 (y=3): weights[10,11,12] + activations[13,14,15,16]
+    // DM2: Section 0 (y=4): weights[13,14,15] + activations[17,18,19,20]
 
     let pe_x = 3;  // M (output dimension)
-    let pe_y = 4;  // K (reduction dimension)
-    let n = 16;    // N (activation columns)
+    let pe_y = 5;  // K (reduction dimension)
+    let n = 4;     // N (activation columns)
 
-    let weight_matrix: Vec<u16> = (0..(pe_y * pe_x) as u16).collect();      // K x M = 4 x 3
-    let activation_matrix: Vec<u16> = (0..(pe_y * n) as u16).collect();     // K x N = 4 x 16
+    let weight_matrix: Vec<u16> = (1..=(pe_y * pe_x) as u16).collect();     // K x M = 5 x 3
+    let activation_matrix: Vec<u16> = (1..=(pe_y * n) as u16).collect();    // K x N = 5 x 4
 
     // Reference matrix multiplication: Weight^T (M x K) × Activation (K x N) = Output (M x N)
     // output[m][n] = sum over k: weight[k][m] × activation[k][n]
@@ -136,7 +136,7 @@ fn generate_dm_files() {
     let config = DmLayoutConfig {
         dm_size_bytes: 512,   // 512 bytes = 256 u16 elements
         data_size_bytes: 2,   // u16
-        sections_per_dm: 2,   // 2 sections per DM file
+        sections_per_dm: 2,   // 2 sections per DM file (3 DMs total for 5 sections)
     };
     let helper = MatrixLayoutHelper::new(pe_layout, config);
     helper.print_layout_info();

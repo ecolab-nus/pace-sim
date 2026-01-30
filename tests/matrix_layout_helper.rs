@@ -21,7 +21,8 @@ pub struct DmLayoutConfig {
     /// Size of each data element in bytes (e.g., 2 for u16)
     pub data_size_bytes: usize,
     /// Number of sections per DM (default 2: every 2 consecutive sections go into one DM)
-    /// Number of DM files = pe_y / sections_per_dm
+    /// Number of DM files = ceil(pe_y / sections_per_dm)
+    /// Last DM may not be fully utilized if pe_y is not divisible by sections_per_dm
     pub sections_per_dm: usize,
 }
 
@@ -40,8 +41,10 @@ impl Default for DmLayoutConfig {
 /// Terminology:
 /// - Total sections = pe_y (K, reduction dimension)
 /// - Sections per DM = sections_per_dm (typically 2)
-/// - Number of DM files = pe_y / sections_per_dm
+/// - Number of DM files = ceil(pe_y / sections_per_dm)
 /// - Section size = dm_size / sections_per_dm (in bytes or elements)
+/// 
+/// Note: The last DM may not be fully utilized if pe_y is not divisible by sections_per_dm.
 /// 
 /// Sections are packed into DM files:
 /// - DM0 contains sections y=0, 1, ..., (sections_per_dm - 1)
@@ -69,25 +72,19 @@ pub struct MatrixLayoutHelper {
     pub config: DmLayoutConfig,
     /// Section size in number of data elements (= dm_size_bytes / data_size_bytes / sections_per_dm)
     pub section_size_elements: usize,
-    /// Number of DM files (= pe_y / sections_per_dm)
+    /// Number of DM files (= ceil(pe_y / sections_per_dm))
     pub num_dms: usize,
 }
 
 impl MatrixLayoutHelper {
     pub fn new(pe_layout: PELayout, config: DmLayoutConfig) -> Self {
-        assert!(
-            pe_layout.pe_y % config.sections_per_dm == 0,
-            "pe_y ({}) must be divisible by sections_per_dm ({})",
-            pe_layout.pe_y,
-            config.sections_per_dm
-        );
-
         // Total elements per DM = dm_size_bytes / data_size_bytes
         let total_elements_per_dm = config.dm_size_bytes / config.data_size_bytes;
         // Section size = total elements per DM / sections per DM
         let section_size_elements = total_elements_per_dm / config.sections_per_dm;
-        // Number of DM files = total sections (pe_y) / sections per DM
-        let num_dms = pe_layout.pe_y / config.sections_per_dm;
+        // Number of DM files = ceil(pe_y / sections_per_dm)
+        // Last DM may not be fully utilized if pe_y is not divisible by sections_per_dm
+        let num_dms = (pe_layout.pe_y + config.sections_per_dm - 1) / config.sections_per_dm;
 
         Self {
             pe_layout,
@@ -203,6 +200,12 @@ impl MatrixLayoutHelper {
 
         for section_in_dm in 0..self.config.sections_per_dm {
             let y = start_y + section_in_dm; // Global section index
+            
+            // Skip if this section doesn't exist (last DM may not be fully utilized)
+            if y >= self.pe_layout.pe_y {
+                break;
+            }
+            
             let section_start = self.section_offset_in_dm(section_in_dm);
 
             // Write weights
@@ -242,6 +245,10 @@ impl MatrixLayoutHelper {
             println!("  DM{}:", dm_idx);
             for section_in_dm in 0..self.config.sections_per_dm {
                 let y = dm_idx * self.config.sections_per_dm + section_in_dm;
+                // Skip if this section doesn't exist (last DM may not be fully utilized)
+                if y >= self.pe_layout.pe_y {
+                    break;
+                }
                 let offset_elements = self.section_offset_in_dm(section_in_dm);
                 let offset_bytes = offset_elements * self.config.data_size_bytes;
                 println!(
