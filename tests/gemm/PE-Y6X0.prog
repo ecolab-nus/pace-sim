@@ -115,9 +115,7 @@ switch_config: {
 input_register_used: {};
 input_register_write: {};
 
-
-// TODO fix the loop_start according to the number of NOP inserted
-operation: JUMP? 1 [1, 1]
+operation: NOP
 switch_config: {
     Open -> predicate,
     Open -> south_out,
@@ -130,6 +128,48 @@ switch_config: {
 input_register_used: {};
 input_register_write: {};
 
+operation: NOP
+switch_config: {
+    Open -> predicate,
+    Open -> south_out,
+    Open -> west_out,
+    Open -> north_out,
+    Open -> east_out,
+    Open -> alu_op2,
+    Open -> alu_op1,
+};
+input_register_used: {};
+input_register_write: {};
+
+// The 11th cycle
+operation: JUMP? [12, 13]
+switch_config: {
+    Open -> predicate,
+    Open -> south_out,
+    Open -> west_out,
+    Open -> north_out,
+    Open -> east_out,
+    Open -> alu_op2,
+    Open -> alu_op1,
+};
+input_register_used: {};
+input_register_write: {};
+
+// Every two cycle one data is out
+// Cycle 12
+operation: NOP
+switch_config: {
+    Open -> predicate,
+    Open -> south_out,
+    Open -> west_out,
+    Open -> north_out,
+    Open -> east_out,
+    Open -> alu_op2,
+    EastIn -> alu_op1,
+};
+input_register_used: {};
+input_register_write: {};
+
 operation: NOP?
 switch_config: {
     Open -> predicate,
@@ -137,8 +177,9 @@ switch_config: {
     Open -> west_out,
     Open -> north_out,
     Open -> east_out,
-    EastIn -> alu_op2,
+    Open -> alu_op2,
     Open -> alu_op1,
 };
 input_register_used: {};
 input_register_write: {};
+

@@ -1,5 +1,5 @@
 PC: 0
 CM: [Instruction { inst_type: LOAD, inst_mode: STRIDED, data_width: B16, stride: 1 }]
-ARF: [2]
+ARF: [10]
 MAX COUNT: 32
-COUNT: 1
+COUNT: 5
