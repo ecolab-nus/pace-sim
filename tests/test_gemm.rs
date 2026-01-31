@@ -5,7 +5,10 @@ use pace_sim::sim::grid::SimulationError;
 use pace_sim::sim::pace::PACESystem;
 
 mod matrix_layout_helper;
-use matrix_layout_helper::{DmLayoutConfig, InputDmGenerator, OutputDmExtractor, PELayout};
+use matrix_layout_helper::{
+    compare_matrices, matmul_ref, print_activation_matrix, print_output_matrix,
+    print_weight_matrix, DmLayoutConfig, InputDmGenerator, OutputDmExtractor, PELayout,
+};
 
 /// Configuration for the GEMM test
 struct GemmTestConfig {
@@ -121,24 +124,13 @@ fn generate_dm_files_for_config(config: &GemmTestConfig) {
     let weight_matrix = config.weight_matrix();
     let activation_matrix = config.activation_matrix();
 
-    // Reference output for logging
-    let output_matrix = matmul_ref(&weight_matrix, &activation_matrix, config.m, config.k, config.n);
+    // Print input matrices
+    print_weight_matrix(&weight_matrix, config.k, config.n);
+    print_activation_matrix(&activation_matrix, config.m, config.k);
 
-    info!("Weight matrix (K={} x N={}):", config.k, config.n);
-    for ki in 0..config.k {
-        info!("  {:?}", &weight_matrix[ki * config.n..(ki + 1) * config.n]);
-    }
-
-    info!("Activation matrix (M={} x K={}):", config.m, config.k);
-    for mi in 0..config.m {
-        let row: Vec<u16> = (0..config.k).map(|ki| activation_matrix[ki * config.m + mi]).collect();
-        info!("  {:?}", row);
-    }
-
-    info!("Expected output matrix (M={} x N={}):", config.m, config.n);
-    for mi in 0..config.m {
-        info!("  {:?}", &output_matrix[mi * config.n..(mi + 1) * config.n]);
-    }
+    // Compute and print expected output
+    let expected_output = matmul_ref(&weight_matrix, &activation_matrix, config.m, config.k, config.n);
+    print_output_matrix(&expected_output, config.m, config.n, "Expected output matrix");
 
     // Generate DM files
     let generator = InputDmGenerator::new(config.pe_layout(), config.dm_layout_config(), config.m);
@@ -185,48 +177,13 @@ fn validate_output_matrix(config: &GemmTestConfig, cycle_folder: &str) {
     let activation_matrix = config.activation_matrix();
     let expected_output = matmul_ref(&weight_matrix, &activation_matrix, config.m, config.k, config.n);
 
-    info!("Extracted output matrix (M={} x N={}):", config.m, config.n);
-    for mi in 0..config.m {
-        info!("  {:?}", &output_matrix[mi * config.n..(mi + 1) * config.n]);
-    }
+    // Print extracted and expected outputs
+    print_output_matrix(&output_matrix, config.m, config.n, "Extracted output matrix");
+    print_output_matrix(&expected_output, config.m, config.n, "Expected output matrix");
 
-    info!("Expected output matrix (M={} x N={}):", config.m, config.n);
-    for mi in 0..config.m {
-        info!("  {:?}", &expected_output[mi * config.n..(mi + 1) * config.n]);
-    }
-
-    // Assert equality
-    assert_eq!(
-        output_matrix, expected_output,
-        "Output matrix does not match expected result!\nGot: {:?}\nExpected: {:?}",
-        output_matrix, expected_output
-    );
+    // Compare and assert
+    let matches = compare_matrices(&output_matrix, &expected_output, config.m, config.n);
+    assert!(matches, "Output matrix does not match expected result!");
 
     info!("Output matrix validation successful!");
 }
-
-/// Reference matrix multiplication: Output = Activation × Weight
-/// - Activation: M × K (column-major storage: act[m][k] = activation[k * M + m])
-/// - Weight: K × N (row-major storage: w[k][n] = weight[k * N + n])
-/// - Output: M × N (row-major storage: out[m][n] = output[m * N + n])
-fn matmul_ref(weight: &[u16], activation: &[u16], m: usize, k: usize, n: usize) -> Vec<u16> {
-    assert_eq!(weight.len(), k * n, "Weight matrix size mismatch: expected K×N = {}×{} = {}", k, n, k * n);
-    assert_eq!(activation.len(), m * k, "Activation matrix size mismatch: expected M×K = {}×{} = {}", m, k, m * k);
-
-    let mut output = vec![0u16; m * n];
-    for mi in 0..m {
-        for ni in 0..n {
-            let mut sum: u32 = 0;
-            for ki in 0..k {
-                // activation[mi][ki] in column-major: activation[ki * m + mi]
-                // weight[ki][ni] in row-major: weight[ki * n + ni]
-                let act_val = activation[ki * m + mi] as u32;
-                let weight_val = weight[ki * n + ni] as u32;
-                sum += act_val * weight_val;
-            }
-            output[mi * n + ni] = sum as u16; // truncate to 16 bits
-        }
-    }
-    output
-}
-

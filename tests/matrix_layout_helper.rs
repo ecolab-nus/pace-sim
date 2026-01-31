@@ -614,6 +614,81 @@ impl OutputDmExtractor {
 }
 
 // ============================================================================
+// MATRIX PRINTING UTILITIES
+// ============================================================================
+
+/// Print weight matrix (K × N, row-major)
+pub fn print_weight_matrix(weight: &[u16], k: usize, n: usize) {
+    println!("\nWeight matrix (K={} x N={}):", k, n);
+    for ki in 0..k {
+        println!("  {:?}", &weight[ki * n..(ki + 1) * n]);
+    }
+}
+
+/// Print activation matrix (M × K, stored column-major)
+/// Display shows row-major view for readability
+pub fn print_activation_matrix(activation: &[u16], m: usize, k: usize) {
+    println!("\nActivation matrix (M={} x K={}, stored column-major):", m, k);
+    for mi in 0..m {
+        let row: Vec<u16> = (0..k).map(|ki| activation[ki * m + mi]).collect();
+        println!("  {:?}", row);
+    }
+}
+
+/// Print output matrix (M × N, row-major)
+pub fn print_output_matrix(output: &[u16], m: usize, n: usize, label: &str) {
+    println!("\n{} (M={} x N={}):", label, m, n);
+    for mi in 0..m {
+        println!("  {:?}", &output[mi * n..(mi + 1) * n]);
+    }
+}
+
+/// Compare two output matrices and print differences
+pub fn compare_matrices(actual: &[u16], expected: &[u16], m: usize, n: usize) -> bool {
+    if actual == expected {
+        println!("\n[PASS] Output matches expected!");
+        true
+    } else {
+        println!("\n[FAIL] Output does NOT match expected!");
+        println!("Differences:");
+        for mi in 0..m {
+            for ni in 0..n {
+                let idx = mi * n + ni;
+                if actual[idx] != expected[idx] {
+                    println!("  [{},{}]: got {}, expected {}", mi, ni, actual[idx], expected[idx]);
+                }
+            }
+        }
+        false
+    }
+}
+
+/// Reference matrix multiplication: Output = Activation × Weight
+/// - Activation: M × K (column-major storage: act[m][k] = activation[k * M + m])
+/// - Weight: K × N (row-major storage: w[k][n] = weight[k * N + n])
+/// - Output: M × N (row-major storage: out[m][n] = output[m * N + n])
+pub fn matmul_ref(weight: &[u16], activation: &[u16], m: usize, k: usize, n: usize) -> Vec<u16> {
+    assert_eq!(weight.len(), k * n, "Weight matrix size mismatch: expected K×N = {}×{} = {}", k, n, k * n);
+    assert_eq!(activation.len(), m * k, "Activation matrix size mismatch: expected M×K = {}×{} = {}", m, k, m * k);
+
+    let mut output = vec![0u16; m * n];
+    for mi in 0..m {
+        for ni in 0..n {
+            let mut sum: u32 = 0;
+            for ki in 0..k {
+                // activation[mi][ki] in column-major: activation[ki * m + mi]
+                // weight[ki][ni] in row-major: weight[ki * n + ni]
+                let act_val = activation[ki * m + mi] as u32;
+                let weight_val = weight[ki * n + ni] as u32;
+                sum += act_val * weight_val;
+            }
+            output[mi * n + ni] = sum as u16; // truncate to 16 bits
+        }
+    }
+    output
+}
+
+// ============================================================================
 // BACKWARD COMPATIBILITY (deprecated)
 // ============================================================================
 
