@@ -45,16 +45,6 @@ impl PELayout {
     pub fn new(pe_x: usize, input_pe_y: usize) -> Self {
         Self { pe_x, input_pe_y }
     }
-
-    /// Number of output PE rows / output sections (= pe_x = N)
-    pub fn output_pe_y(&self) -> usize {
-        self.pe_x
-    }
-
-    /// Total number of physical PE rows (input + output = K + N)
-    pub fn total_pe_y(&self) -> usize {
-        self.input_pe_y + self.pe_x
-    }
 }
 
 /// DM memory layout configuration
@@ -108,11 +98,6 @@ fn section_offset_in_dm(section_in_dm: usize, section_size_elements: usize) -> u
 /// Get the DM index that contains a given global section y
 fn dm_index_for_section(y: usize, sections_per_dm: usize) -> usize {
     y / sections_per_dm
-}
-
-/// Get the section index within DM for a given global section y
-fn section_in_dm_for_section(y: usize, sections_per_dm: usize) -> usize {
-    y % sections_per_dm
 }
 
 // ============================================================================
@@ -178,11 +163,6 @@ impl InputDmGenerator {
     /// Get the weight section size (in elements) = pe_x = N
     pub fn weight_size(&self) -> usize {
         self.pe_layout.pe_x
-    }
-    
-    /// Get the activation count = M
-    pub fn activation_size(&self) -> usize {
-        self.m
     }
     
     /// Get the activation storage size (in elements) with inter-activation padding
@@ -545,6 +525,7 @@ impl OutputDmExtractor {
     }
 
     /// Debug function: print raw content of all output sections
+    #[allow(dead_code)]
     pub fn debug_print_output_sections(&self, dm_contents: &[String]) {
         println!("\n=== DEBUG: Output Section Contents ===");
         println!("Configuration: M={}, N={} (pe_x), K={} (input_pe_y)", 

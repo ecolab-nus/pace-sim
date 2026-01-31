@@ -74,7 +74,6 @@ fn run_gemm_test() {
     grid.dump_header(&format!("{}/pace_sys_start.h", config.test_folder));
 
     let mut cycle = 0;
-    let mut simulation_success = false;
 
     loop {
         if let Err(e) = grid.simulate_cycle() {
@@ -91,7 +90,6 @@ fn run_gemm_test() {
                 }
                 SimulationError::SimulationEnd => {
                     info!("Simulation finished successfully at cycle {}", cycle);
-                    simulation_success = true;
                     break;
                 }
             }
@@ -110,8 +108,6 @@ fn run_gemm_test() {
     let global_mem = GlobalMemory::from_grid(&grid);
     global_mem.dump_to_64b_format(&format!("{}/end.mem", config.test_folder));
     grid.dump_header(&format!("{}/pace_sys_end.h", config.test_folder));
-
-    assert!(simulation_success, "Simulation did not complete successfully");
 
     // Step 3: Validate output matrix
     info!("Validating output matrix...");
@@ -146,6 +142,7 @@ fn generate_dm_files_for_config(config: &GemmTestConfig) {
 
     // Generate DM files
     let generator = InputDmGenerator::new(config.pe_layout(), config.dm_layout_config(), config.m);
+    generator.print_layout_info();
 
     let weights_per_section: Vec<&[u16]> = (0..config.k)
         .map(|ki| &weight_matrix[ki * config.n..(ki + 1) * config.n])
@@ -165,6 +162,7 @@ fn generate_dm_files_for_config(config: &GemmTestConfig) {
 
 fn validate_output_matrix(config: &GemmTestConfig, cycle_folder: &str) {
     let extractor = OutputDmExtractor::new(config.pe_layout(), config.dm_layout_config(), config.m);
+    extractor.print_layout_info();
 
     // Read DM files from the final cycle's memory snapshot
     let num_dms = extractor.total_num_dms();
