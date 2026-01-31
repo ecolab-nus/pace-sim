@@ -310,32 +310,28 @@ impl PE {
                 if router_config.input_register_used.east {
                     self.signals.wire_east_out = Some(self.regs.reg_east_in);
                 } else {
-                    self.signals.wire_east_out =
-                        Some(self.signals.wire_east_in.ok_or("EastIn is not updated")?);
+                    self.signals.wire_east_out = self.signals.wire_east_in;
                 }
             }
             RouterInDir::SouthIn => {
                 if router_config.input_register_used.south {
                     self.signals.wire_east_out = Some(self.regs.reg_south_in);
                 } else {
-                    self.signals.wire_east_out =
-                        Some(self.signals.wire_south_in.ok_or("SouthIn is not updated")?);
+                    self.signals.wire_east_out = self.signals.wire_south_in;
                 }
             }
             RouterInDir::WestIn => {
                 if router_config.input_register_used.west {
                     self.signals.wire_east_out = Some(self.regs.reg_west_in);
                 } else {
-                    self.signals.wire_east_out =
-                        Some(self.signals.wire_west_in.ok_or("WestIn is not updated")?);
+                    self.signals.wire_east_out = self.signals.wire_west_in;
                 }
             }
             RouterInDir::NorthIn => {
                 if router_config.input_register_used.north {
                     self.signals.wire_east_out = Some(self.regs.reg_north_in);
                 } else {
-                    self.signals.wire_east_out =
-                        Some(self.signals.wire_north_in.ok_or("NorthIn is not updated")?);
+                    self.signals.wire_east_out = self.signals.wire_north_in;
                 }
             }
             RouterInDir::ALUOut => {
@@ -352,20 +348,16 @@ impl PE {
         }
         match router_config.switch_config.south_out {
             RouterInDir::EastIn => {
-                self.signals.wire_south_out =
-                    Some(self.signals.wire_east_in.ok_or("EastIn is not updated")?);
+                self.signals.wire_south_out = self.signals.wire_east_in;
             }
             RouterInDir::SouthIn => {
-                self.signals.wire_south_out =
-                    Some(self.signals.wire_south_in.ok_or("SouthIn is not updated")?);
+                self.signals.wire_south_out = self.signals.wire_south_in;
             }
             RouterInDir::WestIn => {
-                self.signals.wire_south_out =
-                    Some(self.signals.wire_west_in.ok_or("WestIn is not updated")?);
+                self.signals.wire_south_out = self.signals.wire_west_in;
             }
             RouterInDir::NorthIn => {
-                self.signals.wire_south_out =
-                    Some(self.signals.wire_north_in.ok_or("NorthIn is not updated")?);
+                self.signals.wire_south_out = self.signals.wire_north_in;
             }
             RouterInDir::ALUOut => {
                 self.signals.wire_south_out =
@@ -381,19 +373,20 @@ impl PE {
         }
         match router_config.switch_config.west_out {
             RouterInDir::EastIn => {
-                self.signals.wire_west_out = Some(self.signals.wire_east_in.unwrap());
+                self.signals.wire_west_out = self.signals.wire_east_in;
             }
             RouterInDir::SouthIn => {
-                self.signals.wire_west_out = Some(self.signals.wire_south_in.unwrap());
+                self.signals.wire_west_out = self.signals.wire_south_in;
             }
             RouterInDir::WestIn => {
-                self.signals.wire_west_out = Some(self.signals.wire_west_in.unwrap());
+                self.signals.wire_west_out = self.signals.wire_west_in;
             }
             RouterInDir::NorthIn => {
-                self.signals.wire_west_out = Some(self.signals.wire_north_in.unwrap());
+                self.signals.wire_west_out = self.signals.wire_north_in;
             }
             RouterInDir::ALUOut => {
-                self.signals.wire_west_out = Some(self.signals.wire_alu_out.unwrap());
+                self.signals.wire_west_out =
+                    Some(self.signals.wire_alu_out.ok_or("ALUOut is not updated")?);
             }
             RouterInDir::ALURes => {
                 self.signals.wire_west_out = Some(self.regs.reg_res);
@@ -405,20 +398,16 @@ impl PE {
         }
         match router_config.switch_config.north_out {
             RouterInDir::EastIn => {
-                self.signals.wire_north_out =
-                    Some(self.signals.wire_east_in.ok_or("EastIn is not updated")?);
+                self.signals.wire_north_out = self.signals.wire_east_in;
             }
             RouterInDir::SouthIn => {
-                self.signals.wire_north_out =
-                    Some(self.signals.wire_south_in.ok_or("SouthIn is not updated")?);
+                self.signals.wire_north_out = self.signals.wire_south_in;
             }
             RouterInDir::WestIn => {
-                self.signals.wire_north_out =
-                    Some(self.signals.wire_west_in.ok_or("WestIn is not updated")?);
+                self.signals.wire_north_out = self.signals.wire_west_in;
             }
             RouterInDir::NorthIn => {
-                self.signals.wire_north_out =
-                    Some(self.signals.wire_north_in.ok_or("NorthIn is not updated")?);
+                self.signals.wire_north_out = self.signals.wire_north_in;
             }
             RouterInDir::ALUOut => {
                 self.signals.wire_north_out =

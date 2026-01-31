@@ -19,14 +19,14 @@ wire_east_in: None
 wire_north_out: None
 wire_south_out: 0x0054|SIMD[01010100/12 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 wire_west_out: None
-wire_east_out: 0x000a|SIMD[00001010/0.01953125 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+wire_east_out: None
 Conf: operation: ADD 
 switch_config: {
     Open -> predicate,
     ALUOut -> south_out,
     Open -> west_out,
     Open -> north_out,
-    WestIn -> east_out,
+    Open -> east_out,
     WestIn -> alu_op2,
     ALURes -> alu_op1,
 };

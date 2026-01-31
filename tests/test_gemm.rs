@@ -31,12 +31,26 @@ impl GemmTestConfig {
         }
     }
 
-    fn weight_matrix(&self) -> Vec<u16> {
-        (1..=(self.k * self.n) as u16).collect()  // K x N
+    // Left half (DM0-3) weight matrix
+    fn weight_matrix_left(&self) -> Vec<u16> {
+        (1..=(self.k * self.n) as u16).collect()  // K x N, values 1..15
     }
 
-    fn activation_matrix(&self) -> Vec<u16> {
-        (1..=(self.m * self.k) as u16).collect()  // M x K (stored column-major)
+    // Left half (DM0-3) activation matrix
+    fn activation_matrix_left(&self) -> Vec<u16> {
+        (1..=(self.m * self.k) as u16).collect()  // M x K (stored column-major), values 1..20
+    }
+
+    // Right half (DM4-7) weight matrix - different values
+    fn weight_matrix_right(&self) -> Vec<u16> {
+        // Use values starting from 100 to differentiate from left half
+        (100..100 + (self.k * self.n) as u16).collect()  // K x N, values 100..114
+    }
+
+    // Right half (DM4-7) activation matrix - different values
+    fn activation_matrix_right(&self) -> Vec<u16> {
+        // Use values starting from 200 to differentiate from left half
+        (200..200 + (self.m * self.k) as u16).collect()  // M x K (stored column-major), values 200..219
     }
 }
 
@@ -121,33 +135,67 @@ fn run_gemm_test() {
 }
 
 fn generate_dm_files_for_config(config: &GemmTestConfig) {
-    let weight_matrix = config.weight_matrix();
-    let activation_matrix = config.activation_matrix();
+    // ========== Left half (DM0-3) ==========
+    let weight_matrix_left = config.weight_matrix_left();
+    let activation_matrix_left = config.activation_matrix_left();
 
-    // Print input matrices
-    print_weight_matrix(&weight_matrix, config.k, config.n);
-    print_activation_matrix(&activation_matrix, config.m, config.k);
+    // Print left half input matrices
+    info!("=== Left Half (DM0-3) ===");
+    print_weight_matrix(&weight_matrix_left, config.k, config.n);
+    print_activation_matrix(&activation_matrix_left, config.m, config.k);
 
-    // Compute and print expected output
-    let expected_output = matmul_ref(&weight_matrix, &activation_matrix, config.m, config.k, config.n);
-    print_output_matrix(&expected_output, config.m, config.n, "Expected output matrix");
+    // Compute and print expected output for left half
+    let expected_output_left = matmul_ref(&weight_matrix_left, &activation_matrix_left, config.m, config.k, config.n);
+    print_output_matrix(&expected_output_left, config.m, config.n, "Expected output matrix (left half)");
 
-    // Generate DM files
+    // Generate left half DM files
     let generator = InputDmGenerator::new(config.pe_layout(), config.dm_layout_config(), config.m);
     generator.print_layout_info();
 
-    let weights_per_section: Vec<&[u16]> = (0..config.k)
-        .map(|ki| &weight_matrix[ki * config.n..(ki + 1) * config.n])
+    let weights_per_section_left: Vec<&[u16]> = (0..config.k)
+        .map(|ki| &weight_matrix_left[ki * config.n..(ki + 1) * config.n])
         .collect();
-    let activations_per_section: Vec<&[u16]> = (0..config.k)
-        .map(|ki| &activation_matrix[ki * config.m..(ki + 1) * config.m])
+    let activations_per_section_left: Vec<&[u16]> = (0..config.k)
+        .map(|ki| &activation_matrix_left[ki * config.m..(ki + 1) * config.m])
         .collect();
 
-    let dm_contents = generator.generate_all_dm_contents(&weights_per_section, &activations_per_section);
+    let dm_contents_left = generator.generate_all_dm_contents(&weights_per_section_left, &activations_per_section_left);
 
-    for (dm_idx, dm_content) in dm_contents.iter().enumerate() {
+    for (dm_idx, dm_content) in dm_contents_left.iter().enumerate() {
         let path = format!("{}/dm{}", config.test_folder, dm_idx);
-        info!("Writing DM{} to file {}", dm_idx, path);
+        info!("Writing DM{} (left half) to file {}", dm_idx, path);
+        std::fs::write(&path, dm_content).unwrap();
+    }
+
+    // ========== Right half (DM4-7) ==========
+    let weight_matrix_right = config.weight_matrix_right();
+    let activation_matrix_right = config.activation_matrix_right();
+
+    // Print right half input matrices
+    info!("=== Right Half (DM4-7) ===");
+    print_weight_matrix(&weight_matrix_right, config.k, config.n);
+    print_activation_matrix(&activation_matrix_right, config.m, config.k);
+
+    // Compute and print expected output for right half
+    let expected_output_right = matmul_ref(&weight_matrix_right, &activation_matrix_right, config.m, config.k, config.n);
+    print_output_matrix(&expected_output_right, config.m, config.n, "Expected output matrix (right half)");
+
+    // Generate right half DM files (DM4-7 mirrored from DM0-3)
+    let weights_per_section_right: Vec<&[u16]> = (0..config.k)
+        .map(|ki| &weight_matrix_right[ki * config.n..(ki + 1) * config.n])
+        .collect();
+    let activations_per_section_right: Vec<&[u16]> = (0..config.k)
+        .map(|ki| &activation_matrix_right[ki * config.m..(ki + 1) * config.m])
+        .collect();
+
+    let dm_contents_right = generator.generate_all_dm_contents(&weights_per_section_right, &activations_per_section_right);
+
+    // Write DM4-7 (same structure as DM0-3 but offset by 4)
+    let dm_offset = dm_contents_left.len();
+    for (dm_idx, dm_content) in dm_contents_right.iter().enumerate() {
+        let actual_dm_idx = dm_offset + dm_idx;
+        let path = format!("{}/dm{}", config.test_folder, actual_dm_idx);
+        info!("Writing DM{} (right half, mirrored from DM{}) to file {}", actual_dm_idx, dm_idx, path);
         std::fs::write(&path, dm_content).unwrap();
     }
 }
@@ -156,11 +204,13 @@ fn validate_output_matrix(config: &GemmTestConfig, cycle_folder: &str) {
     let extractor = OutputDmExtractor::new(config.pe_layout(), config.dm_layout_config(), config.m);
     extractor.print_layout_info();
 
-    // Read DM files from the final cycle's memory snapshot
-    let num_dms = extractor.total_num_dms();
-    info!("Reading {} DM files from {}...", num_dms, cycle_folder);
+    // Number of DMs per half
+    let num_dms_per_half = extractor.total_num_dms();
+    let total_dms = num_dms_per_half * 2; // Left (DM0-3) + Right (DM4-7)
+    info!("Reading {} DM files from {}...", total_dms, cycle_folder);
 
-    let dm_contents: Vec<String> = (0..num_dms)
+    // Read all DM files (both halves)
+    let all_dm_contents: Vec<String> = (0..total_dms)
         .map(|dm_idx| {
             let path = format!("{}/mem/dm{}", cycle_folder, dm_idx);
             info!("  Reading {}", path);
@@ -169,21 +219,37 @@ fn validate_output_matrix(config: &GemmTestConfig, cycle_folder: &str) {
         })
         .collect();
 
-    // Extract output matrix
-    let output_matrix = extractor.extract_all_outputs(&dm_contents);
+    // ========== Validate Left Half (DM0-3) ==========
+    info!("=== Validating Left Half (DM0-3) ===");
+    let dm_contents_left: Vec<String> = all_dm_contents[0..num_dms_per_half].to_vec();
+    let output_matrix_left = extractor.extract_all_outputs(&dm_contents_left);
 
-    // Compute expected output
-    let weight_matrix = config.weight_matrix();
-    let activation_matrix = config.activation_matrix();
-    let expected_output = matmul_ref(&weight_matrix, &activation_matrix, config.m, config.k, config.n);
+    let weight_matrix_left = config.weight_matrix_left();
+    let activation_matrix_left = config.activation_matrix_left();
+    let expected_output_left = matmul_ref(&weight_matrix_left, &activation_matrix_left, config.m, config.k, config.n);
 
-    // Print extracted and expected outputs
-    print_output_matrix(&output_matrix, config.m, config.n, "Extracted output matrix");
-    print_output_matrix(&expected_output, config.m, config.n, "Expected output matrix");
+    print_output_matrix(&output_matrix_left, config.m, config.n, "Extracted output matrix (left half)");
+    print_output_matrix(&expected_output_left, config.m, config.n, "Expected output matrix (left half)");
 
-    // Compare and assert
-    let matches = compare_matrices(&output_matrix, &expected_output, config.m, config.n);
-    assert!(matches, "Output matrix does not match expected result!");
+    let matches_left = compare_matrices(&output_matrix_left, &expected_output_left, config.m, config.n);
+    assert!(matches_left, "Left half output matrix does not match expected result!");
+    info!("Left half output matrix validation successful!");
 
-    info!("Output matrix validation successful!");
+    // ========== Validate Right Half (DM4-7) ==========
+    info!("=== Validating Right Half (DM4-7) ===");
+    let dm_contents_right: Vec<String> = all_dm_contents[num_dms_per_half..total_dms].to_vec();
+    let output_matrix_right = extractor.extract_all_outputs(&dm_contents_right);
+
+    let weight_matrix_right = config.weight_matrix_right();
+    let activation_matrix_right = config.activation_matrix_right();
+    let expected_output_right = matmul_ref(&weight_matrix_right, &activation_matrix_right, config.m, config.k, config.n);
+
+    print_output_matrix(&output_matrix_right, config.m, config.n, "Extracted output matrix (right half)");
+    print_output_matrix(&expected_output_right, config.m, config.n, "Expected output matrix (right half)");
+
+    let matches_right = compare_matrices(&output_matrix_right, &expected_output_right, config.m, config.n);
+    assert!(matches_right, "Right half output matrix does not match expected result!");
+    info!("Right half output matrix validation successful!");
+
+    info!("Both halves output matrix validation successful!");
 }

@@ -85,7 +85,7 @@ switch_config: {
     Open -> south_out,
     Open -> west_out,
     Open -> north_out,
-    WestIn -> east_out,
+    Open -> east_out,
     Open -> alu_op2,
     Open -> alu_op1,
 };
@@ -138,7 +138,7 @@ switch_config: {
     Open -> south_out,
     Open -> west_out,
     Open -> north_out,
-    WestIn -> east_out,
+    Open -> east_out,
     WestIn -> alu_op2,
     ALURes -> alu_op1,
 };
@@ -166,7 +166,7 @@ switch_config: {
     ALUOut -> south_out,
     Open -> west_out,
     Open -> north_out,
-    WestIn -> east_out,
+    Open -> east_out,
     WestIn -> alu_op2,
     ALURes -> alu_op1,
 };
