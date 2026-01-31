@@ -1,5 +1,0 @@
-PC: 0
-CM: [Instruction { inst_type: STORE, inst_mode: STRIDED, data_width: B16, stride: 1 }]
-ARF: [274]
-MAX COUNT: 32
-COUNT: 9

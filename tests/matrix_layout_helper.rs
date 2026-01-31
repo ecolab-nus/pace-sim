@@ -1,16 +1,60 @@
 use pace_sim::sim::dmem::DataMemory;
 
-/// PE array layout configuration for GEMM: Output = Weight^T × Activation
+/// PE array layout configuration for GEMM: Output = Activation × Weight
 /// 
-/// - Weight matrix: K × M (pe_y × pe_x)
-/// - Activation matrix: K × N
-/// - Output matrix: M × N
+/// Matrix dimensions (M × K × N):
+/// - Activation matrix: M × K (M rows, K columns)
+/// - Weight matrix: K × N (K rows, N columns)
+/// - Output matrix: M × N (M rows, N columns)
+/// 
+/// PE array layout:
+/// - pe_x = N (number of PE columns, number of output columns)
+/// - input_pe_y = K (reduction dimension, number of input sections)
+/// - output_pe_y = pe_x = N (number of output sections)
+/// - M varies based on input size (elements per section)
+/// 
+/// Total physical PE rows = input_pe_y + pe_x = K + N
+/// 
+/// Input section layout (for section k):
+/// - N weights: weight[k][0..N] (row k of Weight matrix)
+/// - (k+1) padding elements (bubbles)
+/// - M activations: activation[0..M][k] (column k of Activation matrix)
+/// 
+/// Output section layout:
+/// - Number of output sections = pe_x = N
+/// - Elements per output section = M (one per output row)
+/// - Each output section n contains output[0..M][n] (column n of Output matrix)
+/// - Output sections are in REVERSED order:
+///   - Section y = input_pe_y corresponds to output column (pe_x - 1)
+///   - Section y = input_pe_y + 1 corresponds to output column (pe_x - 2)
+///   - ...
+///   - Section y = input_pe_y + pe_x - 1 corresponds to output column 0
 #[derive(Debug, Clone)]
 pub struct PELayout {
-    /// M: output dimension, number of weights per section
+    /// N: number of PE columns, number of weights per section, number of output columns
+    /// Also equals the number of output sections
     pub pe_x: usize,
-    /// K: reduction dimension, total number of sections across all DMs
-    pub pe_y: usize,
+    /// K: reduction dimension, number of input PE rows / input sections
+    pub input_pe_y: usize,
+}
+
+impl PELayout {
+    /// Create a new PE layout
+    /// - pe_x: N (number of PE columns, output columns)
+    /// - input_pe_y: K (reduction dimension)
+    pub fn new(pe_x: usize, input_pe_y: usize) -> Self {
+        Self { pe_x, input_pe_y }
+    }
+
+    /// Number of output PE rows / output sections (= pe_x = N)
+    pub fn output_pe_y(&self) -> usize {
+        self.pe_x
+    }
+
+    /// Total number of physical PE rows (input + output = K + N)
+    pub fn total_pe_y(&self) -> usize {
+        self.input_pe_y + self.pe_x
+    }
 }
 
 /// DM memory layout configuration
@@ -21,8 +65,6 @@ pub struct DmLayoutConfig {
     /// Size of each data element in bytes (e.g., 2 for u16)
     pub data_size_bytes: usize,
     /// Number of sections per DM (default 2: every 2 consecutive sections go into one DM)
-    /// Number of DM files = ceil(pe_y / sections_per_dm)
-    /// Last DM may not be fully utilized if pe_y is not divisible by sections_per_dm
     pub sections_per_dm: usize,
 }
 
@@ -36,111 +78,146 @@ impl Default for DmLayoutConfig {
     }
 }
 
-/// Helper to generate DM content with multiple sections based on PE layout
-/// 
-/// Terminology:
-/// - Total sections = pe_y (K, reduction dimension)
-/// - Sections per DM = sections_per_dm (typically 2)
-/// - Number of DM files = ceil(pe_y / sections_per_dm)
-/// - Section size = dm_size / sections_per_dm (in bytes or elements)
-/// 
-/// Note: The last DM may not be fully utilized if pe_y is not divisible by sections_per_dm.
-/// 
-/// Sections are packed into DM files:
-/// - DM0 contains sections y=0, 1, ..., (sections_per_dm - 1)
-/// - DM1 contains sections y=sections_per_dm, ..., (2*sections_per_dm - 1)
-/// - etc.
-/// 
-/// Memory layout per DM (with sections_per_dm=2):
-/// ```text
-/// DM0:
-///   Section 0 (y=0, offset 0):
-///     [weights (pe_x elements)] [padding (1 bubble)] [activations]
-///   Section 1 (y=1, offset section_size):
-///     [weights (pe_x elements)] [padding (2 bubbles)] [activations]
-/// DM1:
-///   Section 0 (y=2, offset 0):
-///     [weights (pe_x elements)] [padding (3 bubbles)] [activations]
-///   Section 1 (y=3, offset section_size):
-///     [weights (pe_x elements)] [padding (4 bubbles)] [activations]
-/// ...
-/// ```
-/// 
-/// Padding: Section y has `y + 1` padding elements (bubbles) between weights and activations.
-pub struct MatrixLayoutHelper {
-    pub pe_layout: PELayout,
-    pub config: DmLayoutConfig,
-    /// Section size in number of data elements (= dm_size_bytes / data_size_bytes / sections_per_dm)
-    pub section_size_elements: usize,
-    /// Number of DM files (= ceil(pe_y / sections_per_dm))
-    pub num_dms: usize,
+// ============================================================================
+// Common Layout Calculations
+// ============================================================================
+
+/// Calculate section size in elements
+fn calc_section_size_elements(config: &DmLayoutConfig) -> usize {
+    let total_elements_per_dm = config.dm_size_bytes / config.data_size_bytes;
+    total_elements_per_dm / config.sections_per_dm
 }
 
-impl MatrixLayoutHelper {
-    pub fn new(pe_layout: PELayout, config: DmLayoutConfig) -> Self {
-        // Total elements per DM = dm_size_bytes / data_size_bytes
-        let total_elements_per_dm = config.dm_size_bytes / config.data_size_bytes;
-        // Section size = total elements per DM / sections per DM
-        let section_size_elements = total_elements_per_dm / config.sections_per_dm;
-        // Number of DM files = ceil(pe_y / sections_per_dm)
-        // Last DM may not be fully utilized if pe_y is not divisible by sections_per_dm
-        let num_dms = (pe_layout.pe_y + config.sections_per_dm - 1) / config.sections_per_dm;
+/// Calculate total number of sections (input + output)
+/// Total = input_pe_y + pe_x (output sections = pe_x)
+fn calc_total_sections(pe_layout: &PELayout) -> usize {
+    pe_layout.input_pe_y + pe_layout.pe_x
+}
 
+/// Calculate total number of DM files needed
+fn calc_total_num_dms(pe_layout: &PELayout, config: &DmLayoutConfig) -> usize {
+    let total_sections = calc_total_sections(pe_layout);
+    (total_sections + config.sections_per_dm - 1) / config.sections_per_dm
+}
+
+/// Get the offset (in elements) for a section within its DM
+fn section_offset_in_dm(section_in_dm: usize, section_size_elements: usize) -> usize {
+    section_in_dm * section_size_elements
+}
+
+/// Get the DM index that contains a given global section y
+fn dm_index_for_section(y: usize, sections_per_dm: usize) -> usize {
+    y / sections_per_dm
+}
+
+/// Get the section index within DM for a given global section y
+fn section_in_dm_for_section(y: usize, sections_per_dm: usize) -> usize {
+    y % sections_per_dm
+}
+
+// ============================================================================
+// INPUT DM GENERATOR
+// ============================================================================
+//
+// Generates DM file contents for input matrices (weights and activations).
+// Operates on ALL DM files (total_num_dms), but only fills input sections.
+// Output sections in DMs are left empty (zeros).
+//
+// Matrix dimensions (M × K × N):
+// - Activation: M × K, Weight: K × N, Output: M × N
+// - pe_x = N, input_pe_y = K, M is variable
+//
+// Memory layout per input section k:
+//   [N weights] [padding (k+1 bubbles)] [act0, pad, act1, pad, ..., pad, actM-1]
+//   
+//   Activations are stored with one padding element between each value:
+//   - M activation values + (M-1) padding elements = 2*M - 1 elements total
+//
+// DM layout example (pe_x=3, input_pe_y=5, sections_per_dm=2):
+//   DM0: y=0 (input), y=1 (input)
+//   DM1: y=2 (input), y=3 (input)  
+//   DM2: y=4 (input), y=5 (output - empty)
+//   DM3: y=6 (output - empty), y=7 (output - empty)
+
+/// Generator for input DM file contents
+pub struct InputDmGenerator {
+    pub pe_layout: PELayout,
+    pub config: DmLayoutConfig,
+    /// M: number of rows in activation/output matrix (activations per section)
+    pub m: usize,
+    /// Section size in elements
+    section_size_elements: usize,
+    /// Total number of DM files
+    total_num_dms: usize,
+}
+
+impl InputDmGenerator {
+    /// Create a new input DM generator
+    /// - pe_layout: PE array layout (pe_x = N, input_pe_y = K)
+    /// - config: DM memory configuration
+    /// - m: M dimension (number of activations per section, rows in output)
+    pub fn new(pe_layout: PELayout, config: DmLayoutConfig, m: usize) -> Self {
+        let section_size_elements = calc_section_size_elements(&config);
+        let total_num_dms = calc_total_num_dms(&pe_layout, &config);
+        
         Self {
             pe_layout,
             config,
+            m,
             section_size_elements,
-            num_dms,
+            total_num_dms,
         }
     }
 
-    /// Get the offset (in elements) for a section within its DM.
-    /// `section_in_dm` is 0, 1, ..., (sections_per_dm - 1)
-    pub fn section_offset_in_dm(&self, section_in_dm: usize) -> usize {
-        section_in_dm * self.section_size_elements
-    }
-
-    /// Get the number of padding/bubble elements for a given global section index (y).
+    /// Get the number of padding/bubble elements for a given input section y.
     /// Section y has `y + 1` padding elements between weights and activations.
     pub fn padding_count(&self, y: usize) -> usize {
         y + 1
     }
 
-    /// Get the weight section size (in elements) = pe_x (M, output dimension)
+    /// Get the weight section size (in elements) = pe_x = N
     pub fn weight_size(&self) -> usize {
         self.pe_layout.pe_x
     }
-
-    /// Get the offset where activations start within a section (in elements from section start).
-    /// = weight_size + padding_count(y)
-    #[allow(dead_code)]
-    pub fn activation_offset_in_section(&self, y: usize) -> usize {
-        self.weight_size() + self.padding_count(y)
+    
+    /// Get the activation count = M
+    pub fn activation_size(&self) -> usize {
+        self.m
+    }
+    
+    /// Get the activation storage size (in elements) with inter-activation padding
+    /// M activations + (M-1) padding elements = 2*M - 1
+    pub fn activation_storage_size(&self) -> usize {
+        if self.m == 0 { 0 } else { 2 * self.m - 1 }
     }
 
     /// Validate that the content fits within the section
     fn validate_section_size(&self, y: usize, weights_len: usize, activations_len: usize) {
-        let total_in_section = weights_len + self.padding_count(y) + activations_len;
+        // Activation storage includes padding between values: 2*M - 1 elements
+        let activation_storage = if activations_len == 0 { 0 } else { 2 * activations_len - 1 };
+        let total_in_section = weights_len + self.padding_count(y) + activation_storage;
         if total_in_section > self.section_size_elements {
             panic!(
-                "Section {} content ({} weights + {} padding + {} activations = {} elements) \
+                "Section {} content ({} weights + {} padding + {} activations with {} inter-padding = {} elements) \
                 exceeds section size ({} elements)",
                 y,
                 weights_len,
                 self.padding_count(y),
                 activations_len,
+                activation_storage,
                 total_in_section,
                 self.section_size_elements
             );
         }
     }
 
-    /// Generate all DM contents from weights and activations for each section
+    /// Generate ALL DM file contents from weights and activations.
     /// 
-    /// `weights_per_section`: Vec of weight slices, one per section (pe_y sections)
-    /// `activations_per_section`: Vec of activation slices, one per section (pe_y sections)
+    /// Returns Vec of DM content strings for ALL DMs (total_num_dms).
+    /// Input sections are filled; output sections are left empty.
     /// 
-    /// Returns: Vec of DM content strings, one per DM file
+    /// `weights_per_section`: Vec of weight slices, one per input section (input_pe_y sections)
+    /// `activations_per_section`: Vec of activation slices, one per input section (input_pe_y sections)
     pub fn generate_all_dm_contents(
         &self,
         weights_per_section: &[&[u16]],
@@ -148,17 +225,19 @@ impl MatrixLayoutHelper {
     ) -> Vec<String> {
         assert_eq!(
             weights_per_section.len(),
-            self.pe_layout.pe_y,
-            "weights_per_section length must equal pe_y"
+            self.pe_layout.input_pe_y,
+            "weights_per_section length must equal input_pe_y ({})",
+            self.pe_layout.input_pe_y
         );
         assert_eq!(
             activations_per_section.len(),
-            self.pe_layout.pe_y,
-            "activations_per_section length must equal pe_y"
+            self.pe_layout.input_pe_y,
+            "activations_per_section length must equal input_pe_y ({})",
+            self.pe_layout.input_pe_y
         );
 
-        // Validate all sections
-        for y in 0..self.pe_layout.pe_y {
+        // Validate all input sections
+        for y in 0..self.pe_layout.input_pe_y {
             assert_eq!(
                 weights_per_section[y].len(),
                 self.weight_size(),
@@ -166,12 +245,19 @@ impl MatrixLayoutHelper {
                 y,
                 self.pe_layout.pe_x
             );
+            assert_eq!(
+                activations_per_section[y].len(),
+                self.m,
+                "Section {} activations length must equal m ({})",
+                y,
+                self.m
+            );
             self.validate_section_size(y, weights_per_section[y].len(), activations_per_section[y].len());
         }
 
-        let mut dm_contents = Vec::with_capacity(self.num_dms);
+        let mut dm_contents = Vec::with_capacity(self.total_num_dms);
 
-        for dm_idx in 0..self.num_dms {
+        for dm_idx in 0..self.total_num_dms {
             let dm_content = self.generate_single_dm_content(
                 dm_idx,
                 weights_per_section,
@@ -183,7 +269,7 @@ impl MatrixLayoutHelper {
         dm_contents
     }
 
-    /// Generate content for a single DM file
+    /// Generate content for a single DM file (input sections only)
     fn generate_single_dm_content(
         &self,
         dm_idx: usize,
@@ -195,18 +281,17 @@ impl MatrixLayoutHelper {
         let aligned_bytes = ((total_bytes + 7) / 8) * 8;
         let mut dmem = DataMemory::new(aligned_bytes);
 
-        // Each DM contains sections_per_dm consecutive sections
         let start_y = dm_idx * self.config.sections_per_dm;
 
         for section_in_dm in 0..self.config.sections_per_dm {
-            let y = start_y + section_in_dm; // Global section index
+            let y = start_y + section_in_dm;
             
-            // Skip if this section doesn't exist (last DM may not be fully utilized)
-            if y >= self.pe_layout.pe_y {
+            // Only fill input sections (y < input_pe_y)
+            if y >= self.pe_layout.input_pe_y {
                 break;
             }
             
-            let section_start = self.section_offset_in_dm(section_in_dm);
+            let section_start = section_offset_in_dm(section_in_dm, self.section_size_elements);
 
             // Write weights
             let mut offset = section_start;
@@ -215,78 +300,468 @@ impl MatrixLayoutHelper {
                 offset += 1;
             }
 
-            // Skip padding (bubbles) - padding count is based on global y
+            // Skip padding (bubbles) between weights and activations
             offset += self.padding_count(y);
 
-            // Write activations
-            for &val in activations_per_section[y] {
+            // Write activations with one padding element between each value
+            for (i, &val) in activations_per_section[y].iter().enumerate() {
                 dmem.write16((offset * 2) as u64, val);
                 offset += 1;
+                // Add padding after each activation except the last one
+                if i < activations_per_section[y].len() - 1 {
+                    offset += 1; // skip one element for inter-activation padding
+                }
             }
         }
 
         dmem.to_binary_str()
     }
 
-    /// Print layout information for debugging
+    /// Print input layout information for debugging
     pub fn print_layout_info(&self) {
         let total_elements = self.config.dm_size_bytes / self.config.data_size_bytes;
-        println!("MatrixLayoutHelper configuration:");
-        println!("  PE layout: pe_x={} (M), pe_y={} (K)", self.pe_layout.pe_x, self.pe_layout.pe_y);
-        println!("  DM size: {} bytes", self.config.dm_size_bytes);
-        println!("  Data element size: {} bytes", self.config.data_size_bytes);
+        let total_sections = calc_total_sections(&self.pe_layout);
+        
+        println!("InputDmGenerator configuration:");
+        println!("  Matrix dimensions: M={}, K={}, N={}", self.m, self.pe_layout.input_pe_y, self.pe_layout.pe_x);
+        println!("  PE layout: pe_x={} (N), input_pe_y={} (K)", 
+            self.pe_layout.pe_x, self.pe_layout.input_pe_y);
+        println!("  M (activations per section): {}", self.m);
+        println!("  Activation storage: {} elements (M values + M-1 inter-padding)", self.activation_storage_size());
+        println!("  DM size: {} bytes = {} elements", self.config.dm_size_bytes, total_elements);
         println!("  Sections per DM: {}", self.config.sections_per_dm);
-        println!("  Number of DM files: {} (= pe_y / sections_per_dm)", self.num_dms);
-        println!("  Total elements per DM: {} (= {} bytes / {} bytes)", total_elements, self.config.dm_size_bytes, self.config.data_size_bytes);
-        println!("  Section size: {} elements = {} bytes", self.section_size_elements, self.section_size_elements * self.config.data_size_bytes);
-        println!("  Weight size per section: {} elements (= pe_x)", self.weight_size());
-        println!("\nDM and Section layout (offsets in elements):");
-        for dm_idx in 0..self.num_dms {
+        println!("  Section size: {} elements", self.section_size_elements);
+        println!("  Input sections: {} (y=0 to y={})", self.pe_layout.input_pe_y, self.pe_layout.input_pe_y - 1);
+        println!("  Output sections: {} (y={} to y={})", self.pe_layout.pe_x, self.pe_layout.input_pe_y, total_sections - 1);
+        println!("  Total DM files: {}", self.total_num_dms);
+        
+        println!("\nDM layout (input generation):");
+        println!("  Activation format: [act0, pad, act1, pad, ..., pad, actM-1]");
+        for dm_idx in 0..self.total_num_dms {
             println!("  DM{}:", dm_idx);
             for section_in_dm in 0..self.config.sections_per_dm {
                 let y = dm_idx * self.config.sections_per_dm + section_in_dm;
-                // Skip if this section doesn't exist (last DM may not be fully utilized)
-                if y >= self.pe_layout.pe_y {
+                if y >= total_sections {
                     break;
                 }
-                let offset_elements = self.section_offset_in_dm(section_in_dm);
-                let offset_bytes = offset_elements * self.config.data_size_bytes;
-                println!(
-                    "    Section {} (global y={}, offset={} elements = {} bytes): {} weights + {} padding + activations",
-                    section_in_dm,
-                    y,
-                    offset_elements,
-                    offset_bytes,
-                    self.weight_size(),
-                    self.padding_count(y)
-                );
+                let offset = section_offset_in_dm(section_in_dm, self.section_size_elements);
+                if y < self.pe_layout.input_pe_y {
+                    println!(
+                        "    Section {} (y={}, INPUT): offset={}, {} weights + {} bubble padding + {} act storage ({}M-1)",
+                        section_in_dm, y, offset,
+                        self.weight_size(), self.padding_count(y), self.activation_storage_size(), 2
+                    );
+                } else {
+                    let output_section_idx = y - self.pe_layout.input_pe_y;
+                    let output_col = self.pe_layout.pe_x - 1 - output_section_idx; // Reversed order
+                    println!(
+                        "    Section {} (y={}, OUTPUT col {}): offset={}, (empty - not filled by input generator)",
+                        section_in_dm, y, output_col, offset
+                    );
+                }
             }
         }
     }
 }
+
+// ============================================================================
+// OUTPUT DM EXTRACTOR
+// ============================================================================
+//
+// Extracts output matrix data from DM file contents.
+// Operates on ALL DM files (total_num_dms), but only reads output sections.
+// Input sections in DMs are ignored.
+//
+// Matrix dimensions (M × K × N):
+// - Activation: M × K, Weight: K × N, Output: M × N
+// - pe_x = N, input_pe_y = K, M is variable
+//
+// Output matrix: M × N (m rows, pe_x columns)
+//
+// Output section layout:
+// - Each output section corresponds to one COLUMN of the output matrix
+// - Number of output sections = pe_x = N
+// - Elements per section = M (one per output row)
+// - Sections are in REVERSED order:
+//   - Section y = input_pe_y → output column (pe_x - 1) = (N - 1)
+//   - Section y = input_pe_y + 1 → output column (pe_x - 2) = (N - 2)
+//   - Section y = input_pe_y + pe_x - 1 → output column 0
+//
+// DM layout example (pe_x=3, input_pe_y=5, M=4, sections_per_dm=2):
+//   DM0: y=0 (input), y=1 (input)
+//   DM1: y=2 (input), y=3 (input)
+//   DM2: y=4 (input), y=5 (output col 2, 4 elements)  <- reversed!
+//   DM3: y=6 (output col 1, 4 elements), y=7 (output col 0, 4 elements)
+
+/// Extractor for output data from DM file contents
+pub struct OutputDmExtractor {
+    pub pe_layout: PELayout,
+    pub config: DmLayoutConfig,
+    /// M: number of output rows (elements per output section)
+    pub m: usize,
+    /// Section size in elements
+    section_size_elements: usize,
+    /// Total number of DM files
+    total_num_dms: usize,
+    /// Global section index where output sections start (= input_pe_y)
+    output_section_start: usize,
+}
+
+impl OutputDmExtractor {
+    /// Create a new output DM extractor
+    /// - pe_layout: PE array layout (pe_x = N, input_pe_y = K)
+    /// - config: DM memory configuration
+    /// - m: M dimension (number of output rows, elements per output section)
+    pub fn new(pe_layout: PELayout, config: DmLayoutConfig, m: usize) -> Self {
+        let section_size_elements = calc_section_size_elements(&config);
+        let total_num_dms = calc_total_num_dms(&pe_layout, &config);
+        let output_section_start = pe_layout.input_pe_y;
+        
+        Self {
+            pe_layout,
+            config,
+            m,
+            section_size_elements,
+            total_num_dms,
+            output_section_start,
+        }
+    }
+
+    /// M: number of output rows
+    pub fn num_output_rows(&self) -> usize {
+        self.m
+    }
+
+    /// N: number of output columns = pe_x (each section is one column)
+    pub fn num_output_cols(&self) -> usize {
+        self.pe_layout.pe_x
+    }
+
+    /// Elements per output section = M
+    pub fn elements_per_output_section(&self) -> usize {
+        self.m
+    }
+
+    /// Convert output section index (0-based from output_section_start) to output column index
+    /// Sections are in reversed order: section 0 → col (pe_x-1), section 1 → col (pe_x-2), etc.
+    pub fn output_section_to_col(&self, output_section_idx: usize) -> usize {
+        self.pe_layout.pe_x - 1 - output_section_idx
+    }
+
+    /// Total number of DM files
+    pub fn total_num_dms(&self) -> usize {
+        self.total_num_dms
+    }
+
+    /// Parse a DM binary string content back to a vector of u16 values
+    fn parse_dm_content(&self, dm_content: &str) -> Vec<u16> {
+        let total_elements = self.config.dm_size_bytes / self.config.data_size_bytes;
+        
+        // Use DataMemory to parse the binary string format
+        let dmem = DataMemory::from_binary_str(dm_content);
+        
+        // Extract u16 values using read16
+        let mut result = Vec::with_capacity(total_elements);
+        for i in 0..total_elements {
+            let addr = (i * 2) as u64; // 2 bytes per u16
+            result.push(dmem.read16(addr));
+        }
+        
+        result
+    }
+
+    /// Extract output columns from a single DM file content
+    /// 
+    /// Returns Vec of (output_col_index, col_data) for each output section in this DM.
+    /// col_data contains M elements (one per output row).
+    fn extract_outputs_from_dm(&self, dm_idx: usize, dm_content: &str) -> Vec<(usize, Vec<u16>)> {
+        let dm_data = self.parse_dm_content(dm_content);
+        let mut outputs = Vec::new();
+        
+        let start_y = dm_idx * self.config.sections_per_dm;
+        let total_sections = calc_total_sections(&self.pe_layout);
+        let m = self.m;
+        
+        for section_in_dm in 0..self.config.sections_per_dm {
+            let y = start_y + section_in_dm;
+            
+            // Skip input sections (y < input_pe_y)
+            if y < self.output_section_start {
+                continue;
+            }
+            
+            // Skip if beyond total sections
+            if y >= total_sections {
+                break;
+            }
+            
+            // This is an output section
+            let output_section_idx = y - self.output_section_start;
+            let output_col = self.output_section_to_col(output_section_idx);
+            let section_offset = section_offset_in_dm(section_in_dm, self.section_size_elements);
+            
+            // Output sections have no padding, just M elements (one per output row)
+            let col_data: Vec<u16> = dm_data[section_offset..section_offset + m].to_vec();
+            outputs.push((output_col, col_data));
+        }
+        
+        outputs
+    }
+
+    /// Extract the complete output matrix from ALL DM file contents.
+    /// 
+    /// `dm_contents`: slice of DM file contents (as strings) for ALL DMs
+    /// 
+    /// Returns the output matrix as Vec<u16> in row-major order (M × N)
+    /// where M = m (output rows) and N = pe_x (output columns).
+    /// 
+    /// Matrix layout: output[row * N + col] for row in 0..M, col in 0..N
+    pub fn extract_all_outputs(&self, dm_contents: &[String]) -> Vec<u16> {
+        assert!(
+            dm_contents.len() >= self.total_num_dms,
+            "Expected at least {} DM contents, got {}",
+            self.total_num_dms,
+            dm_contents.len()
+        );
+        
+        let m = self.m;
+        let n = self.pe_layout.pe_x;
+        let mut output_matrix = vec![0u16; m * n];
+        
+        for dm_idx in 0..self.total_num_dms {
+            let outputs = self.extract_outputs_from_dm(dm_idx, &dm_contents[dm_idx]);
+            for (output_col, col_data) in outputs {
+                // col_data[row] = output[row][col]
+                // Store in row-major: output[row * n + col]
+                for (row, &value) in col_data.iter().enumerate() {
+                    if row < m && output_col < n {
+                        output_matrix[row * n + output_col] = value;
+                    }
+                }
+            }
+        }
+        
+        output_matrix
+    }
+
+    /// Debug function: print raw content of all output sections
+    pub fn debug_print_output_sections(&self, dm_contents: &[String]) {
+        println!("\n=== DEBUG: Output Section Contents ===");
+        println!("Configuration: M={}, N={} (pe_x), K={} (input_pe_y)", 
+            self.m, self.pe_layout.pe_x, self.pe_layout.input_pe_y);
+        println!("Output sections start at y={}", self.output_section_start);
+        println!("Section size: {} elements", self.section_size_elements);
+        
+        let total_sections = calc_total_sections(&self.pe_layout);
+        
+        for dm_idx in 0..self.total_num_dms.min(dm_contents.len()) {
+            let dm_data = self.parse_dm_content(&dm_contents[dm_idx]);
+            let start_y = dm_idx * self.config.sections_per_dm;
+            
+            println!("\nDM{} (sections y={}..{}):", dm_idx, start_y, start_y + self.config.sections_per_dm - 1);
+            
+            for section_in_dm in 0..self.config.sections_per_dm {
+                let y = start_y + section_in_dm;
+                if y >= total_sections {
+                    break;
+                }
+                
+                let section_offset = section_offset_in_dm(section_in_dm, self.section_size_elements);
+                let is_output = y >= self.output_section_start;
+                
+                if is_output {
+                    let output_section_idx = y - self.output_section_start;
+                    let output_col = self.output_section_to_col(output_section_idx);
+                    
+                    // Print first M elements of the section
+                    let elements: Vec<u16> = dm_data[section_offset..section_offset + self.m.min(self.section_size_elements)].to_vec();
+                    println!("  Section {} (y={}, OUTPUT, maps to col {}): offset={}", 
+                        section_in_dm, y, output_col, section_offset);
+                    println!("    First {} elements: {:?}", self.m, elements);
+                } else {
+                    println!("  Section {} (y={}, INPUT): offset={} (skipped)", 
+                        section_in_dm, y, section_offset);
+                }
+            }
+        }
+        println!("=== END DEBUG ===\n");
+    }
+
+    /// Print output layout information for debugging
+    pub fn print_layout_info(&self) {
+        let total_elements = self.config.dm_size_bytes / self.config.data_size_bytes;
+        let total_sections = calc_total_sections(&self.pe_layout);
+        let n = self.pe_layout.pe_x;
+        
+        println!("OutputDmExtractor configuration:");
+        println!("  Matrix dimensions: M={}, K={}, N={}", self.m, self.pe_layout.input_pe_y, n);
+        println!("  PE layout: pe_x={} (N), input_pe_y={} (K)", n, self.pe_layout.input_pe_y);
+        println!("  DM size: {} bytes = {} elements", self.config.dm_size_bytes, total_elements);
+        println!("  Sections per DM: {}", self.config.sections_per_dm);
+        println!("  Section size: {} elements", self.section_size_elements);
+        println!("  Output sections: {} (y={} to y={})", n, self.output_section_start, total_sections - 1);
+        println!("  Elements per output section: {} (M)", self.m);
+        println!("  Output matrix size: {} x {} (M x N)", self.m, n);
+        println!("  Output sections in REVERSED order (section 0 → col {}, section {} → col 0)", n - 1, n - 1);
+        println!("  Total DM files: {}", self.total_num_dms);
+        
+        println!("\nDM layout (output extraction):");
+        for dm_idx in 0..self.total_num_dms {
+            println!("  DM{}:", dm_idx);
+            for section_in_dm in 0..self.config.sections_per_dm {
+                let y = dm_idx * self.config.sections_per_dm + section_in_dm;
+                if y >= total_sections {
+                    break;
+                }
+                let offset = section_offset_in_dm(section_in_dm, self.section_size_elements);
+                if y < self.output_section_start {
+                    println!(
+                        "    Section {} (y={}, INPUT): offset={}, (ignored by output extractor)",
+                        section_in_dm, y, offset
+                    );
+                } else {
+                    let output_section_idx = y - self.output_section_start;
+                    let output_col = self.output_section_to_col(output_section_idx);
+                    println!(
+                        "    Section {} (y={}, OUTPUT col {}): offset={}, {} elements",
+                        section_in_dm, y, output_col, offset, self.elements_per_output_section()
+                    );
+                }
+            }
+        }
+    }
+}
+
+// ============================================================================
+// BACKWARD COMPATIBILITY (deprecated)
+// ============================================================================
+
+/// Helper to generate DM content with multiple sections based on PE layout
+/// 
+/// @deprecated Use `InputDmGenerator` for input generation and `OutputDmExtractor` for output extraction.
+#[allow(dead_code)]
+pub struct MatrixLayoutHelper {
+    pub pe_layout: PELayout,
+    pub config: DmLayoutConfig,
+    pub section_size_elements: usize,
+    pub num_dms: usize,
+}
+
+#[allow(dead_code)]
+impl MatrixLayoutHelper {
+    pub fn new(pe_layout: PELayout, config: DmLayoutConfig) -> Self {
+        let section_size_elements = calc_section_size_elements(&config);
+        let num_dms = (pe_layout.input_pe_y + config.sections_per_dm - 1) / config.sections_per_dm;
+        
+        Self {
+            pe_layout,
+            config,
+            section_size_elements,
+            num_dms,
+        }
+    }
+
+    pub fn section_offset_in_dm(&self, section_in_dm: usize) -> usize {
+        section_offset_in_dm(section_in_dm, self.section_size_elements)
+    }
+
+    pub fn padding_count(&self, y: usize) -> usize {
+        y + 1
+    }
+
+    pub fn weight_size(&self) -> usize {
+        self.pe_layout.pe_x
+    }
+
+    pub fn total_sections(&self) -> usize {
+        calc_total_sections(&self.pe_layout)
+    }
+
+    pub fn total_num_dms(&self) -> usize {
+        calc_total_num_dms(&self.pe_layout, &self.config)
+    }
+
+    pub fn output_section_start(&self) -> usize {
+        self.pe_layout.input_pe_y
+    }
+
+    pub fn dm_index_for_section(&self, y: usize) -> usize {
+        dm_index_for_section(y, self.config.sections_per_dm)
+    }
+}
+
+// ============================================================================
+// TESTS
+// ============================================================================
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_layout_helper() {
-        let pe_layout = PELayout { pe_x: 4, pe_y: 4 };
+    fn test_input_generator() {
+        let pe_layout = PELayout::new(3, 5); // pe_x=3, input_pe_y=5
         let config = DmLayoutConfig {
             dm_size_bytes: 512,
             data_size_bytes: 2,
             sections_per_dm: 2,
         };
-        let helper = MatrixLayoutHelper::new(pe_layout, config);
+        let generator = InputDmGenerator::new(pe_layout, config, 4);
 
-        assert_eq!(helper.num_dms, 2); // 4 / 2 = 2 DMs
-        assert_eq!(helper.section_size_elements, 128); // 512 / 2 / 2 = 128
-        assert_eq!(helper.weight_size(), 4);
-        assert_eq!(helper.padding_count(0), 0);
-        assert_eq!(helper.padding_count(1), 1);
-        assert_eq!(helper.padding_count(2), 2);
-        assert_eq!(helper.padding_count(3), 3);
-        assert_eq!(helper.section_offset_in_dm(0), 0);
-        assert_eq!(helper.section_offset_in_dm(1), 128);
+        assert_eq!(generator.total_num_dms, 4); // ceil((5+3)/2) = 4
+        assert_eq!(generator.section_size_elements, 128);
+        assert_eq!(generator.weight_size(), 3);
+        assert_eq!(generator.padding_count(0), 1);
+        assert_eq!(generator.padding_count(4), 5);
+    }
+
+    #[test]
+    fn test_output_extractor() {
+        // pe_x = N = 3, input_pe_y = K = 5, M = 4
+        let pe_layout = PELayout::new(3, 5);
+        let config = DmLayoutConfig {
+            dm_size_bytes: 512,
+            data_size_bytes: 2,
+            sections_per_dm: 2,
+        };
+        let extractor = OutputDmExtractor::new(pe_layout, config, 4); // M = 4
+
+        assert_eq!(extractor.total_num_dms, 4);
+        assert_eq!(extractor.output_section_start, 5);
+        assert_eq!(extractor.num_output_rows(), 4);  // M = 4
+        assert_eq!(extractor.num_output_cols(), 3);  // N = pe_x = 3
+        assert_eq!(extractor.elements_per_output_section(), 4);  // M = 4
+        
+        // Test reversed column mapping (N = 3 output sections → 3 columns)
+        assert_eq!(extractor.output_section_to_col(0), 2); // section 0 → col 2
+        assert_eq!(extractor.output_section_to_col(1), 1); // section 1 → col 1
+        assert_eq!(extractor.output_section_to_col(2), 0); // section 2 → col 0
+    }
+
+    #[test]
+    fn test_section_layout() {
+        // pe_x=3, input_pe_y=5, sections_per_dm=2
+        // Total sections = 5 + 3 = 8
+        // DM0: y=0,1 (input)
+        // DM1: y=2,3 (input)
+        // DM2: y=4 (input), y=5 (output col 2)  <- reversed!
+        // DM3: y=6 (output col 1), y=7 (output col 0)
+        let pe_layout = PELayout::new(3, 5); // pe_x=3, input_pe_y=5
+        let config = DmLayoutConfig {
+            dm_size_bytes: 512,
+            data_size_bytes: 2,
+            sections_per_dm: 2,
+        };
+
+        assert_eq!(calc_total_sections(&pe_layout), 8);
+        assert_eq!(calc_total_num_dms(&pe_layout, &config), 4);
+        
+        // DM index for each section
+        assert_eq!(dm_index_for_section(0, 2), 0);
+        assert_eq!(dm_index_for_section(1, 2), 0);
+        assert_eq!(dm_index_for_section(4, 2), 2);
+        assert_eq!(dm_index_for_section(5, 2), 2); // First output section shares DM2 with last input
+        assert_eq!(dm_index_for_section(6, 2), 3);
+        assert_eq!(dm_index_for_section(7, 2), 3);
     }
 }

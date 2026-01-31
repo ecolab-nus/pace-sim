@@ -142,7 +142,7 @@ input_register_used: {};
 input_register_write: {};
 
 // The 11th cycle
-operation: JUMP? [12, 13]
+operation: JUMP [12, 13]
 switch_config: {
     Open -> predicate,
     Open -> south_out,

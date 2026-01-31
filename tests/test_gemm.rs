@@ -2,10 +2,8 @@ use log::{error, info};
 use pace_sim::sim::grid::{DoubleSidedMemoryGrid, SimulationError};
 
 mod matrix_layout_helper;
-use matrix_layout_helper::{DmLayoutConfig, MatrixLayoutHelper, PELayout};
+use matrix_layout_helper::{DmLayoutConfig, InputDmGenerator, OutputDmExtractor, PELayout};
 
-/// This test uses the old non-AGU model which is no longer supported.
-/// Memory operations now require AGU in the new design.
 #[test]
 fn test_gemm() {
     env_logger::init();
@@ -43,34 +41,26 @@ fn test_gemm() {
             break;
         }
     }
-    // check the result in dm0, compare with expected_dm0
-    let dm0 = std::fs::read_to_string("tests/gemm/cycle_5/dm0")
-        .unwrap()
-        .replace(" ", "")
-        .replace("\n", "");
-
-    // let dm0_expected = std::fs::read_to_string("tests/single_sided_fvmac_2x2/expected_dm0")
-    //     .unwrap()
-    //     .replace(" ", "")
-    //     .replace("\n", "");
-    // assert_eq!(dm0, dm0_expected);
 }
 
-/// Reference matrix multiplication with transposed weight: C = W^T × A
-/// W is KxM (stored row-major), A is KxN, C is MxN
-/// output[m][n] = sum over k: weight[k][m] × activation[k][n]
-fn matmul_weight_transposed(weight: &[u16], activation: &[u16], m: usize, k: usize, n: usize) -> Vec<u16> {
-    assert_eq!(weight.len(), k * m, "Weight matrix size mismatch: expected {}x{}={}", k, m, k * m);
-    assert_eq!(activation.len(), k * n, "Activation matrix size mismatch: expected {}x{}={}", k, n, k * n);
+/// Reference matrix multiplication: Output = Activation × Weight
+/// - Activation: M × K (column-major storage: act[m][k] = activation[k * M + m])
+/// - Weight: K × N (row-major storage: w[k][n] = weight[k * N + n])
+/// - Output: M × N (row-major storage: out[m][n] = output[m * N + n])
+fn matmul_ref(weight: &[u16], activation: &[u16], m: usize, k: usize, n: usize) -> Vec<u16> {
+    assert_eq!(weight.len(), k * n, "Weight matrix size mismatch: expected K×N = {}×{} = {}", k, n, k * n);
+    assert_eq!(activation.len(), m * k, "Activation matrix size mismatch: expected M×K = {}×{} = {}", m, k, m * k);
 
     let mut output = vec![0u16; m * n];
     for mi in 0..m {
         for ni in 0..n {
             let mut sum: u32 = 0;
             for ki in 0..k {
-                // weight[ki][mi] is at weight[ki * m + mi]
-                // activation[ki][ni] is at activation[ki * n + ni]
-                sum += weight[ki * m + mi] as u32 * activation[ki * n + ni] as u32;
+                // activation[mi][ki] in column-major: activation[ki * m + mi]
+                // weight[ki][ni] in row-major: weight[ki * n + ni]
+                let act_val = activation[ki * m + mi] as u32;
+                let weight_val = weight[ki * n + ni] as u32;
+                sum += act_val * weight_val;
             }
             output[mi * n + ni] = sum as u16; // truncate to 16 bits
         }
@@ -81,77 +71,96 @@ fn matmul_weight_transposed(weight: &[u16], activation: &[u16], m: usize, k: usi
 #[test]
 #[ignore] // Run with: cargo test --test test_gemm generate_dm_files -- --ignored --nocapture
 fn generate_dm_files() {
-    // PE array: 3x5 (pe_x=3, pe_y=5)
-    // - pe_y = 5 is K (reduction dimension, number of sections)
-    // - pe_x = 3 is M (output dimension, number of weights per section)
+    // Matrix multiplication: Activation × Weight = Output
+    // - Activation: M × K (4 × 5)
+    // - Weight: K × N (5 × 3)
+    // - Output: M × N (4 × 3)
     //
-    // Weight matrix (K x M = 5x3 = 15 values): one row per section, pe_x weights per row
-    // Activation matrix (K x N = 5x4 = 20 values): one row per section, 4 activations per row
+    // PE array: pe_x=3 (N), pe_y=5 (K)
+    // - pe_x = N = 3 (number of PE columns, weight columns)
+    // - pe_y = K = 5 (reduction dimension, number of input sections)
+    // - M = 4 (activations per section, output rows)
     //
-    // Weight (5x3):       Activation (5x4):
-    // [ 1,  2,  3]        [ 1,  2,  3,  4]
-    // [ 4,  5,  6]        [ 5,  6,  7,  8]
-    // [ 7,  8,  9]        [ 9, 10, 11, 12]
-    // [10, 11, 12]        [13, 14, 15, 16]
-    // [13, 14, 15]        [17, 18, 19, 20]
+    // Weight (K=5 x N=3):    Activation (M=4 x K=5, stored column-major):
+    // [ 1,  2,  3]           Col 0: [ 1,  2,  3,  4]
+    // [ 4,  5,  6]           Col 1: [ 5,  6,  7,  8]
+    // [ 7,  8,  9]           Col 2: [ 9, 10, 11, 12]
+    // [10, 11, 12]           Col 3: [13, 14, 15, 16]
+    // [13, 14, 15]           Col 4: [17, 18, 19, 20]
     //
-    // Output = Weight^T × Activation (M x N = 3x4)
-    // output[m][n] = sum over k: weight[k][m] × activation[k][n]
+    // Each input section k contains:
+    //   - N weights: weight[k][0..N] (row k of Weight)
+    //   - M activations: activation[0..M][k] (column k of Activation)
     //
-    // DM packing (sections_per_dm=2, num_dms=3):
-    // DM0: Section 0 (y=0): weights[1,2,3] + activations[1,2,3,4]
-    //      Section 1 (y=1): weights[4,5,6] + activations[5,6,7,8]
-    // DM1: Section 0 (y=2): weights[7,8,9] + activations[9,10,11,12]
-    //      Section 1 (y=3): weights[10,11,12] + activations[13,14,15,16]
-    // DM2: Section 0 (y=4): weights[13,14,15] + activations[17,18,19,20]
+    // DM packing (sections_per_dm=2):
+    // DM0: y=0 (input), y=1 (input)
+    // DM1: y=2 (input), y=3 (input)
+    // DM2: y=4 (input), y=5 (output col 2)
+    // DM3: y=6 (output col 1), y=7 (output col 0)
 
-    let pe_x = 3;  // M (output dimension)
-    let pe_y = 5;  // K (reduction dimension)
-    let n = 4;     // N (activation columns)
+    // Matrix dimensions: M × K × N
+    // - Activation: M × K (M rows, K columns) - stored as K columns, M elements each
+    // - Weight: K × N (K rows, N columns) - stored as K rows, N elements each
+    // - Output: M × N (M rows, N columns)
+    let m = 4;     // M (activation rows, output rows)
+    let k = 5;     // K (reduction dimension)
+    let n = 3;     // N (weight columns, output columns, PE columns)
+    
+    let pe_x = n;  // N (number of PE columns)
+    let pe_y = k;  // K (reduction dimension, input PE rows)
 
-    let weight_matrix: Vec<u16> = (1..=(pe_y * pe_x) as u16).collect();     // K x M = 5 x 3
-    let activation_matrix: Vec<u16> = (1..=(pe_y * n) as u16).collect();    // K x N = 5 x 4
+    let weight_matrix: Vec<u16> = (1..=(k * n) as u16).collect();     // K x N = 5 x 3
+    let activation_matrix: Vec<u16> = (1..=(m * k) as u16).collect(); // M x K = 4 x 5 (stored column-major)
 
-    // Reference matrix multiplication: Weight^T (M x K) × Activation (K x N) = Output (M x N)
-    // output[m][n] = sum over k: weight[k][m] × activation[k][n]
-    let output_matrix = matmul_weight_transposed(&weight_matrix, &activation_matrix, pe_x, pe_y, n);
+    // Reference matrix multiplication: Activation (M x K) × Weight (K x N) = Output (M x N)
+    // output[mi][ni] = sum over ki: activation[mi][ki] × weight[ki][ni]
+    let output_matrix = matmul_ref(&weight_matrix, &activation_matrix, m, k, n);
 
-    println!("Weight matrix (K={} x M={}):", pe_y, pe_x);
-    for k in 0..pe_y {
-        println!("  {:?}", &weight_matrix[k * pe_x..(k + 1) * pe_x]);
+    println!("Weight matrix (K={} x N={}):", k, n);
+    for ki in 0..k {
+        println!("  {:?}", &weight_matrix[ki * n..(ki + 1) * n]);
     }
 
-    println!("\nActivation matrix (K={} x N={}):", pe_y, n);
-    for k in 0..pe_y {
-        println!("  {:?}", &activation_matrix[k * n..(k + 1) * n]);
+    println!("\nActivation matrix (M={} x K={}):", m, k);
+    for mi in 0..m {
+        // Activation is stored column-major for DM (columns = sections)
+        // For display, show row-major
+        let row: Vec<u16> = (0..k).map(|ki| activation_matrix[ki * m + mi]).collect();
+        println!("  {:?}", row);
     }
 
-    println!("\nExpected output matrix (M={} x N={}) = Weight^T × Activation:", pe_x, n);
-    for m in 0..pe_x {
-        println!("  {:?}", &output_matrix[m * n..(m + 1) * n]);
+    println!("\nExpected output matrix (M={} x N={}) = Activation × Weight:", m, n);
+    for mi in 0..m {
+        println!("  {:?}", &output_matrix[mi * n..(mi + 1) * n]);
     }
 
     // Configure PE layout and DM memory
-    let pe_layout = PELayout { pe_x, pe_y };
+    // pe_x = N (output columns, PE columns)
+    // input_pe_y = K (reduction dimension)
+    // m = M (activations per section, output rows)
+    let pe_layout = PELayout::new(pe_x, pe_y);
     let config = DmLayoutConfig {
         dm_size_bytes: 512,   // 512 bytes = 256 u16 elements
         data_size_bytes: 2,   // u16
-        sections_per_dm: 2,   // 2 sections per DM file (3 DMs total for 5 sections)
+        sections_per_dm: 2,   // 2 sections per DM file
     };
-    let helper = MatrixLayoutHelper::new(pe_layout, config);
-    helper.print_layout_info();
+    let generator = InputDmGenerator::new(pe_layout, config, m);
+    generator.print_layout_info();
 
-    // Prepare weights and activations per section (one row per section)
-    // Each section y has: pe_x weights and n activations
-    let weights_per_section: Vec<&[u16]> = (0..pe_y)
-        .map(|y| &weight_matrix[y * pe_x..(y + 1) * pe_x])
+    // Prepare weights and activations per section
+    // Each section ki (0..K) has:
+    //   - N weights: weight[ki][0..N] (row ki of Weight matrix)
+    //   - M activations: activation[0..M][ki] (column ki of Activation matrix)
+    let weights_per_section: Vec<&[u16]> = (0..k)
+        .map(|ki| &weight_matrix[ki * n..(ki + 1) * n])
         .collect();
-    let activations_per_section: Vec<&[u16]> = (0..pe_y)
-        .map(|y| &activation_matrix[y * n..(y + 1) * n])
+    // Activation is stored column-major: activation[ki * m..(ki + 1) * m] is column ki
+    let activations_per_section: Vec<&[u16]> = (0..k)
+        .map(|ki| &activation_matrix[ki * m..(ki + 1) * m])
         .collect();
 
     // Generate all DM contents
-    let dm_contents = helper.generate_all_dm_contents(&weights_per_section, &activations_per_section);
+    let dm_contents = generator.generate_all_dm_contents(&weights_per_section, &activations_per_section);
 
     // for (dm_idx, dm_content) in dm_contents.iter().enumerate() {
     //     println!("\nDM{} content:\n{}", dm_idx, dm_content);
@@ -161,5 +170,85 @@ fn generate_dm_files() {
     for (dm_idx, dm_content) in dm_contents.iter().enumerate() {
         println!("Writing DM{} to file tests/gemm/dm{}", dm_idx, dm_idx);
         std::fs::write(format!("tests/gemm/dm{}", dm_idx), dm_content).unwrap();
+    }
+}
+
+#[test]
+#[ignore] // Run with: cargo test --test test_gemm read_output_matrix -- --ignored --nocapture
+fn read_output_matrix() {
+    // Same configuration as generate_dm_files:
+    // Matrix multiplication: Activation × Weight = Output
+    // - Activation: M × K (4 × 5)
+    // - Weight: K × N (5 × 3)
+    // - Output: M × N (4 × 3)
+    let m = 4;     // M (activation rows, output rows)
+    let k = 5;     // K (reduction dimension)
+    let n = 3;     // N (weight columns, output columns, PE columns)
+    
+    let pe_x = n;  // N (number of PE columns)
+    let pe_y = k;  // K (reduction dimension, input PE rows)
+
+    // Configure PE layout and DM memory (same as generate_dm_files)
+    let pe_layout = PELayout::new(pe_x, pe_y);
+    let config = DmLayoutConfig {
+        dm_size_bytes: 512,   // 512 bytes = 256 u16 elements
+        data_size_bytes: 2,   // u16
+        sections_per_dm: 2,   // 2 sections per DM file
+    };
+    
+    // Create output extractor
+    let extractor = OutputDmExtractor::new(pe_layout, config, m);
+    extractor.print_layout_info();
+
+    // Read DM files from disk
+    let num_dms = extractor.total_num_dms();
+    println!("\nReading {} DM files...", num_dms);
+    
+    let dm_contents: Vec<String> = (0..num_dms)
+        .map(|dm_idx| {
+            let path = format!("tests/gemm/cycle_20/mem/dm{}", dm_idx);
+            println!("  Reading {}", path);
+            std::fs::read_to_string(&path)
+                .unwrap_or_else(|e| panic!("Failed to read {}: {}", path, e))
+        })
+        .collect();
+
+    // Debug: print raw output section contents
+    extractor.debug_print_output_sections(&dm_contents);
+
+    // Extract output matrix
+    let output_matrix = extractor.extract_all_outputs(&dm_contents);
+
+    // Print output matrix (M × N)
+    println!("\nExtracted output matrix (M={} x N={}):", m, n);
+    for mi in 0..m {
+        println!("  {:?}", &output_matrix[mi * n..(mi + 1) * n]);
+    }
+
+    // Optionally compare with expected output
+    // Compute expected output using the same matrices as generate_dm_files
+    let weight_matrix: Vec<u16> = (1..=(k * n) as u16).collect();     // K x N = 5 x 3
+    let activation_matrix: Vec<u16> = (1..=(m * k) as u16).collect(); // M x K = 4 x 5 (stored column-major)
+    let expected_output = matmul_ref(&weight_matrix, &activation_matrix, m, k, n);
+
+    println!("\nExpected output matrix (M={} x N={}):", m, n);
+    for mi in 0..m {
+        println!("  {:?}", &expected_output[mi * n..(mi + 1) * n]);
+    }
+
+    // Compare
+    if output_matrix == expected_output {
+        println!("\n✓ Output matches expected!");
+    } else {
+        println!("\n✗ Output does NOT match expected!");
+        println!("Differences:");
+        for mi in 0..m {
+            for ni in 0..n {
+                let idx = mi * n + ni;
+                if output_matrix[idx] != expected_output[idx] {
+                    println!("  [{},{}]: got {}, expected {}", mi, ni, output_matrix[idx], expected_output[idx]);
+                }
+            }
+        }
     }
 }

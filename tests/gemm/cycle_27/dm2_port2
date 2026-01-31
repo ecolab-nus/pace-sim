@@ -1,5 +1,0 @@
-wire_dmem_addr: Some(272),
-wire_dmem_data: 0x0000000000000000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ],
-reg_dmem_data: None,
-reg_dmem_data_s: None,
-mode: Write16

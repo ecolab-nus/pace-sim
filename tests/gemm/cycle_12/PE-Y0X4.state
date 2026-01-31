@@ -14,7 +14,7 @@ Sig:
 wire_alu_out: None
 wire_north_in: None
 wire_south_in: None
-wire_west_in: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+wire_west_in: 0x0004|SIMD[00000100/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 wire_east_in: None
 wire_north_out: None
 wire_south_out: None

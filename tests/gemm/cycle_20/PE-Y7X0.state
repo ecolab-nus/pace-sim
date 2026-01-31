@@ -33,4 +33,4 @@ switch_config: {
 input_register_used: {};
 input_register_write: {};
 AGU CM (1 cycle ago): None
-AGU CM (2 cycles ago): Some(Instruction { inst_type: LOAD, inst_mode: STRIDED, data_width: B16, stride: 1 })
+AGU CM (2 cycles ago): Some(Instruction { inst_type: STORE, inst_mode: STRIDED, data_width: B16, stride: 1 })

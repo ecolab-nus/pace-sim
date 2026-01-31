@@ -12,13 +12,13 @@ reg_loop_start: 12
 reg_loop_end: 13
 Sig:
 wire_alu_out: None
-wire_north_in: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+wire_north_in: 0x0258|SIMD[01011000/16 00000010/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 wire_south_in: None
 wire_west_in: None
 wire_east_in: None
 wire_north_out: None
 wire_south_out: None
-wire_west_out: 0x0000|SIMD[00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
+wire_west_out: 0x0258|SIMD[01011000/16 00000010/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 00000000/0 ]
 wire_east_out: None
 Conf: operation: NOP 
 switch_config: {
