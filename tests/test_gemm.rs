@@ -1,5 +1,8 @@
 use log::{error, info};
-use pace_sim::sim::grid::{DoubleSidedMemoryGrid, SimulationError};
+use pace_sim::sim::dump_header::DumpHeader;
+use pace_sim::sim::global_mem::GlobalMemory;
+use pace_sim::sim::grid::SimulationError;
+use pace_sim::sim::pace::PACESystem;
 
 mod matrix_layout_helper;
 use matrix_layout_helper::{DmLayoutConfig, InputDmGenerator, OutputDmExtractor, PELayout};
@@ -36,8 +39,19 @@ impl GemmTestConfig {
 
 #[test]
 fn test_gemm() {
-    env_logger::init();
+    // Spawn a thread with larger stack size to avoid stack overflow
+    // (PACESystem and GlobalMemory require significant stack space)
+    let handle = std::thread::Builder::new()
+        .stack_size(1024 * 1024 * 1024) // 1 GiB
+        .spawn(|| {
+            env_logger::init();
+            run_gemm_test();
+        })
+        .unwrap();
+    handle.join().unwrap();
+}
 
+fn run_gemm_test() {
     let config = GemmTestConfig {
         m: 4,
         k: 5,
@@ -51,7 +65,14 @@ fn test_gemm() {
 
     // Step 2: Run simulation
     info!("Starting GEMM simulation...");
-    let mut grid = DoubleSidedMemoryGrid::from_folder(config.test_folder);
+    let pace = PACESystem::from_folder(config.test_folder);
+    let mut grid = pace.to_grid();
+
+    // Dump initial state (packed memory format)
+    let global_mem = GlobalMemory::from_grid(&grid);
+    global_mem.dump_to_64b_format(&format!("{}/start.mem", config.test_folder));
+    grid.dump_header(&format!("{}/pace_sys_start.h", config.test_folder));
+
     let mut cycle = 0;
     let mut simulation_success = false;
 
@@ -84,6 +105,11 @@ fn test_gemm() {
         grid.next_cycle();
         cycle += 1;
     }
+
+    // Dump final state (packed memory format)
+    let global_mem = GlobalMemory::from_grid(&grid);
+    global_mem.dump_to_64b_format(&format!("{}/end.mem", config.test_folder));
+    grid.dump_header(&format!("{}/pace_sys_end.h", config.test_folder));
 
     assert!(simulation_success, "Simulation did not complete successfully");
 
