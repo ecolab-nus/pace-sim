@@ -161,7 +161,7 @@ switch_config: {
     Open -> south_out,
     Open -> west_out,
     Open -> north_out,
-    WestIn -> east_out,
+    NorthIn -> east_out,
     Open -> alu_op2,
     Open -> alu_op1,
 };

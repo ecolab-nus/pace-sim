@@ -255,8 +255,10 @@ impl PE {
         self.update_res(&operation);
         // Update router input registers
         self.update_router_input_registers(&configuration.router_config)?;
-        // Update operands registers
+        // Update operands registers (does not raise errors for missing wire signals)
         self.update_operands_registers(&configuration.router_config)?;
+        // Validate that all required wire signals were properly set after propagation
+        self.validate_operands_signals(&configuration.router_config)?;
 
         // Update AGU CM pipeline for memory PEs
         if self.is_mem_pe() {

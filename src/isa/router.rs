@@ -188,6 +188,8 @@ impl RouterSwitchConfig {
 
 impl PE {
     /// Update the operands registers (Predicate, ALU Op1 and Op2)
+    /// Note: This function does not raise errors for missing wire signals.
+    /// Use validate_operands_signals() after all propagation is complete to check for missing signals.
     pub fn update_operands_registers(
         &mut self,
         router_config: &RouterConfig,
@@ -196,31 +198,30 @@ impl PE {
             RouterInDir::EastIn => {
                 if router_config.input_register_used.east {
                     self.regs.reg_op1 = self.regs.reg_east_in;
-                } else {
-                    self.regs.reg_op1 = self.signals.wire_east_in.ok_or("EastIn is not updated")?;
+                } else if let Some(val) = self.signals.wire_east_in {
+                    self.regs.reg_op1 = val;
                 }
+                // No error if wire is None - will be validated later
             }
             RouterInDir::SouthIn => {
                 if router_config.input_register_used.south {
                     self.regs.reg_op1 = self.regs.reg_south_in;
-                } else {
-                    self.regs.reg_op1 =
-                        self.signals.wire_south_in.ok_or("SouthIn is not updated")?;
+                } else if let Some(val) = self.signals.wire_south_in {
+                    self.regs.reg_op1 = val;
                 }
             }
             RouterInDir::WestIn => {
                 if router_config.input_register_used.west {
                     self.regs.reg_op1 = self.regs.reg_west_in;
-                } else {
-                    self.regs.reg_op1 = self.signals.wire_west_in.ok_or("WestIn is not updated")?;
+                } else if let Some(val) = self.signals.wire_west_in {
+                    self.regs.reg_op1 = val;
                 }
             }
             RouterInDir::NorthIn => {
                 if router_config.input_register_used.north {
                     self.regs.reg_op1 = self.regs.reg_north_in;
-                } else {
-                    self.regs.reg_op1 =
-                        self.signals.wire_north_in.ok_or("NorthIn is not updated")?;
+                } else if let Some(val) = self.signals.wire_north_in {
+                    self.regs.reg_op1 = val;
                 }
             }
             RouterInDir::ALUOut => {
@@ -239,31 +240,29 @@ impl PE {
             RouterInDir::EastIn => {
                 if router_config.input_register_used.east {
                     self.regs.reg_op2 = self.regs.reg_east_in;
-                } else {
-                    self.regs.reg_op2 = self.signals.wire_east_in.ok_or("EastIn is not updated")?;
+                } else if let Some(val) = self.signals.wire_east_in {
+                    self.regs.reg_op2 = val;
                 }
             }
             RouterInDir::SouthIn => {
                 if router_config.input_register_used.south {
                     self.regs.reg_op2 = self.regs.reg_south_in;
-                } else {
-                    self.regs.reg_op2 =
-                        self.signals.wire_south_in.ok_or("SouthIn is not updated")?;
+                } else if let Some(val) = self.signals.wire_south_in {
+                    self.regs.reg_op2 = val;
                 }
             }
             RouterInDir::WestIn => {
                 if router_config.input_register_used.west {
                     self.regs.reg_op2 = self.regs.reg_west_in;
-                } else {
-                    self.regs.reg_op2 = self.signals.wire_west_in.ok_or("WestIn is not updated")?;
+                } else if let Some(val) = self.signals.wire_west_in {
+                    self.regs.reg_op2 = val;
                 }
             }
             RouterInDir::NorthIn => {
                 if router_config.input_register_used.north {
                     self.regs.reg_op2 = self.regs.reg_north_in;
-                } else {
-                    self.regs.reg_op2 =
-                        self.signals.wire_north_in.ok_or("NorthIn is not updated")?;
+                } else if let Some(val) = self.signals.wire_north_in {
+                    self.regs.reg_op2 = val;
                 }
             }
             RouterInDir::ALUOut => {
@@ -300,6 +299,82 @@ impl PE {
             RouterInDir::Invalid => unreachable!(),
             RouterInDir::Open => {}
         }
+        Ok(())
+    }
+
+    /// Validate that all required wire signals for operands are properly set.
+    /// This should be called after all PE propagation is complete.
+    /// Returns an error if any required wire signal is missing.
+    pub fn validate_operands_signals(&self, router_config: &RouterConfig) -> Result<(), String> {
+        // Validate alu_op1 wire signal
+        match router_config.switch_config.alu_op1 {
+            RouterInDir::EastIn => {
+                if !router_config.input_register_used.east && self.signals.wire_east_in.is_none() {
+                    return Err("ALU Op1: EastIn wire signal is not updated".to_string());
+                }
+            }
+            RouterInDir::SouthIn => {
+                if !router_config.input_register_used.south && self.signals.wire_south_in.is_none()
+                {
+                    return Err("ALU Op1: SouthIn wire signal is not updated".to_string());
+                }
+            }
+            RouterInDir::WestIn => {
+                if !router_config.input_register_used.west && self.signals.wire_west_in.is_none() {
+                    return Err("ALU Op1: WestIn wire signal is not updated".to_string());
+                }
+            }
+            RouterInDir::NorthIn => {
+                if !router_config.input_register_used.north && self.signals.wire_north_in.is_none()
+                {
+                    return Err("ALU Op1: NorthIn wire signal is not updated".to_string());
+                }
+            }
+            RouterInDir::ALUOut => {
+                if self.signals.wire_alu_out.is_none() {
+                    return Err("ALU Op1: ALUOut wire signal is not updated".to_string());
+                }
+            }
+            // ALURes, Invalid, Open don't need wire signal validation
+            _ => {}
+        }
+
+        // Validate alu_op2 wire signal
+        match router_config.switch_config.alu_op2 {
+            RouterInDir::EastIn => {
+                if !router_config.input_register_used.east && self.signals.wire_east_in.is_none() {
+                    return Err("ALU Op2: EastIn wire signal is not updated".to_string());
+                }
+            }
+            RouterInDir::SouthIn => {
+                if !router_config.input_register_used.south && self.signals.wire_south_in.is_none()
+                {
+                    return Err("ALU Op2: SouthIn wire signal is not updated".to_string());
+                }
+            }
+            RouterInDir::WestIn => {
+                if !router_config.input_register_used.west && self.signals.wire_west_in.is_none() {
+                    return Err("ALU Op2: WestIn wire signal is not updated".to_string());
+                }
+            }
+            RouterInDir::NorthIn => {
+                if !router_config.input_register_used.north && self.signals.wire_north_in.is_none()
+                {
+                    return Err("ALU Op2: NorthIn wire signal is not updated".to_string());
+                }
+            }
+            RouterInDir::ALUOut => {
+                if self.signals.wire_alu_out.is_none() {
+                    return Err("ALU Op2: ALUOut wire signal is not updated".to_string());
+                }
+            }
+            // ALURes, Invalid, Open don't need wire signal validation
+            _ => {}
+        }
+
+        // Note: Predicate validation is not implemented since the predicate handling uses todo!()
+        // When predicate handling is implemented, add validation here as well.
+
         Ok(())
     }
 
