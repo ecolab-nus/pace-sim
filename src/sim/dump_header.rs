@@ -222,7 +222,7 @@ impl DumpHeader for DoubleSidedMemoryGrid {
         let mut agu_max_count_addr =
             format!("uint32_t agu_max_count_addr[{}] = {{\n", self.agus.len());
         for (agu_idx, agu) in self.agus.iter().enumerate() {
-            // for each max count, the upper(most significant) 8 bits are used for the loop end (the total number of instructions),
+            // for each max count, the upper(most significant) 8 bits are used for the loop end PC index,
             // the lower 24 bits are used for the actual max count
             let b32_lower = agu.max_count.clone() as u32;
             assert!(
@@ -238,7 +238,8 @@ impl DumpHeader for DoubleSidedMemoryGrid {
                 inst_count <= 256,
                 "The number of instructions is represented within 8 bits"
             );
-            let b32 = b32_lower | (inst_count as u32) << 24;
+            let loop_end_pc = (inst_count - 1) as u32;
+            let b32 = b32_lower | loop_end_pc << 24;
             agu_max_count_data.push_str(&format!("\t0x{:08x},\n", b32));
             // dump the AGU max count address
             // calculate the corresponding PE index from AGU index
